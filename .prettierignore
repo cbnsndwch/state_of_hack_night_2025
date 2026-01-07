@@ -1,0 +1,21 @@
+.vscode
+assets
+dist
+/docs
+!/docs/**/*.js
+!/docs/**/*.jsx
+!/docs/**/*.graphql
+node_modules
+.editorconfig
+.gitignore
+.prettierignore
+.prettierrc
+.env
+
+# yarn
+.yarn
+.yarnrc.yml
+CHANGELOG.md
+
+# pnpm
+pnpm-lock.yaml
