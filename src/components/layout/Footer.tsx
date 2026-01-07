@@ -10,7 +10,7 @@ export function Footer() {
                     <a
                         target="_blank"
                         rel="noopener noreferrer"
-                        href="https://github.com/cbnsndwch/state_of_hack_night_2025"
+                        href="https://github.com/cbnsndwch/state_of_hack_night_2025/blob/main/LICENSE.md?utm_source=state_of_hack_night_2025&utm_medium=footer_link&utm_campaign=cbn_vercel"
                         className="text-white hover:underline hover:text-primary decoration-2 underline-offset-4 decoration-primary"
                     >
                         MIT (code) + CC BY-SA 4.0 (content & data)
@@ -23,20 +23,20 @@ export function Footer() {
                     <a
                         target="_blank"
                         rel="noopener noreferrer"
+                        href="https://x.com/joinhello_miami?utm_source=state_of_hack_night_2025&utm_medium=footer_link&utm_campaign=cbn_vercel"
+                        className="text-white hover:underline hover:text-primary decoration-2 underline-offset-4 decoration-primary lowercase!"
+                    >
+                        <XIcon className="inline-block w-4 h-4 mb-0.5 mr-1" />
+                        @joinhello_miami
+                    </a>
+                    <a
+                        target="_blank"
+                        rel="noopener noreferrer"
                         href="https://luma.com/hello_miami?utm_source=state_of_hack_night_2025&utm_medium=footer_link&utm_campaign=cbn_vercel"
                         className="text-white hover:underline hover:text-primary decoration-2 underline-offset-4 decoration-primary"
                     >
                         <CalendarIcon className="inline-block w-4 h-4 mb-0.5 mr-1" />
                         Event Calendar
-                    </a>
-                    <a
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        href="#https://x.com/joinhello_miami"
-                        className="text-white hover:underline hover:text-primary decoration-2 underline-offset-4 decoration-primary"
-                    >
-                        <XIcon className="inline-block w-4 h-4 mb-0.5 mr-1" />
-                        Twitter / X
                     </a>
                 </div>
             </div>
