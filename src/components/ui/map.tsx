@@ -34,6 +34,9 @@ type MapProps = {
         light?: MapStyleOption;
         dark?: MapStyleOption;
     };
+    onLoad?: (map: MapLibreGL.Map) => void;
+    onMove?: (map: MapLibreGL.Map) => void;
+    onMoveEnd?: (map: MapLibreGL.Map) => void;
 } & Omit<MapLibreGL.MapOptions, 'container' | 'style'>;
 
 type MapRef = MapLibreGL.Map;
@@ -49,7 +52,7 @@ const DefaultLoader = () => (
 );
 
 const Map = forwardRef<MapRef, MapProps>(function Map(
-    { children, styles, ...props },
+    { children, styles, onLoad, onMove, onMoveEnd, ...props },
     ref
 ) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -91,10 +94,16 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
         });
 
         const styleDataHandler = () => setIsStyleLoaded(true);
-        const loadHandler = () => setIsLoaded(true);
+        const loadHandler = () => {
+            setIsLoaded(true);
+            onLoad?.(map);
+        };
 
         map.on('load', loadHandler);
         map.on('styledata', styleDataHandler);
+        if (onMove) map.on('move', () => onMove(map));
+        if (onMoveEnd) map.on('moveend', () => onMoveEnd(map));
+
         setMapInstance(map);
 
         return () => {
@@ -427,21 +436,34 @@ function MarkerTooltip({
 
         tooltip.setDOMContent(container);
 
-        const handleMouseEnter = () => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+
+        const show = () => {
+            clearTimeout(timeoutId);
             tooltip.setLngLat(marker.getLngLat()).addTo(map);
         };
-        const handleMouseLeave = () => tooltip.remove();
 
-        marker.getElement()?.addEventListener('mouseenter', handleMouseEnter);
-        marker.getElement()?.addEventListener('mouseleave', handleMouseLeave);
+        const hide = () => {
+            timeoutId = setTimeout(() => {
+                tooltip.remove();
+            }, 150);
+        };
+
+        const handleMouseEnter = () => show();
+        const handleMouseLeave = () => hide();
+
+        const element = marker.getElement();
+        element?.addEventListener('mouseenter', handleMouseEnter);
+        element?.addEventListener('mouseleave', handleMouseLeave);
+        container.addEventListener('mouseenter', handleMouseEnter);
+        container.addEventListener('mouseleave', handleMouseLeave);
 
         return () => {
-            marker
-                .getElement()
-                ?.removeEventListener('mouseenter', handleMouseEnter);
-            marker
-                .getElement()
-                ?.removeEventListener('mouseleave', handleMouseLeave);
+            element?.removeEventListener('mouseenter', handleMouseEnter);
+            element?.removeEventListener('mouseleave', handleMouseLeave);
+            container.removeEventListener('mouseenter', handleMouseEnter);
+            container.removeEventListener('mouseleave', handleMouseLeave);
+            clearTimeout(timeoutId);
             tooltip.remove();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
