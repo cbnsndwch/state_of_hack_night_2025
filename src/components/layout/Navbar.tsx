@@ -112,9 +112,9 @@ export function Navbar() {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <a
-                                href="https://github.com/cbn/luma-api-spec"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                href="https://github.com/cbnsndwch/state_of_hack_night_2025"
                                 className="text-white font-mono uppercase text-sm font-bold hover:bg-white hover:text-black px-2 py-1 transition-all border border-transparent hover:border-current"
                             >
                                 <GithubIcon className="inline-block size-6" />
