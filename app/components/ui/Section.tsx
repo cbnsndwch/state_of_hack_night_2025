@@ -24,7 +24,7 @@ export function Section({
                     containerClassName
                 )}
             >
-                {(title || subtitle) && (
+                {title || subtitle ? (
                     <div className="mb-12 border-b-2 border-dashed border-zinc-800 pb-8">
                         {title ? (
                             <div className="inline-block px-4 py-1 mb-4 bg-white text-black font-sans text-sm font-bold lowercase tracking-wider">
@@ -32,17 +32,18 @@ export function Section({
                             </div>
                         ) : null}
                         {title ? (
-                            <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 tracking-tighter lowercase text-white">
+                            <h2 className="text-4xl md:text-5xl font-sans font-bold mb-4 tracking-tighter lowercase text-white">
                                 {title}
                             </h2>
                         ) : null}
                         {subtitle ? (
-                            <p className="text-xl text-zinc-400 max-w-2xl font-heading">
+                            <p className="text-xl text-zinc-400 max-w-2xl font-sans">
                                 {subtitle}
                             </p>
                         ) : null}
                     </div>
-                )}
+                ) : null}
+
                 {children}
             </div>
         </section>

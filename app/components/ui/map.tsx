@@ -386,7 +386,7 @@ function MarkerPopup({
                 className
             )}
         >
-            {closeButton && (
+            {closeButton ? (
                 <button
                     type="button"
                     onClick={handleClose}
@@ -396,7 +396,7 @@ function MarkerPopup({
                     <X className="h-4 w-4" />
                     <span className="sr-only">Close</span>
                 </button>
-            )}
+            ) : null}
             {children}
         </div>,
         container
@@ -838,7 +838,7 @@ function MapPopup({
                 className
             )}
         >
-            {closeButton && (
+            {closeButton ? (
                 <button
                     type="button"
                     onClick={handleClose}
@@ -848,7 +848,7 @@ function MapPopup({
                     <X className="h-4 w-4" />
                     <span className="sr-only">Close</span>
                 </button>
-            )}
+            ) : null}
             {children}
         </div>,
         container

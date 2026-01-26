@@ -11,7 +11,7 @@ export function Interests() {
     return (
         <Section
             title="community interests"
-            subtitle="what our builders want to see more of."
+            subtitle="what our builders want to see more of"
             id="interests"
         >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
