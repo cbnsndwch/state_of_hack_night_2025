@@ -27,12 +27,12 @@ export function Section({
                 {(title || subtitle) && (
                     <div className="mb-12 border-b-2 border-dashed border-zinc-800 pb-8">
                         {title ? (
-                            <div className="inline-block px-4 py-1 mb-4 bg-white text-black font-mono text-sm font-bold uppercase tracking-wider">
+                            <div className="inline-block px-4 py-1 mb-4 bg-white text-black font-sans text-sm font-bold lowercase tracking-wider">
                                 {props.id || 'Section'}
                             </div>
                         ) : null}
                         {title ? (
-                            <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 tracking-tighter uppercase text-white">
+                            <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 tracking-tighter lowercase text-white">
                                 {title}
                             </h2>
                         ) : null}

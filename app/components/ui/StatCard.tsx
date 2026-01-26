@@ -25,7 +25,7 @@ export function StatCard({
             className={cn('flex flex-col gap-2', className)}
         >
             <div className="flex items-center justify-between text-zinc-400 border-b border-zinc-800 pb-2 mb-2">
-                <span className="text-sm font-bold uppercase tracking-wider font-mono">
+                <span className="text-sm font-bold uppercase tracking-wider font-sans">
                     {label}
                 </span>
                 {icon && <div className="text-white">{icon}</div>}
@@ -34,7 +34,7 @@ export function StatCard({
                 {value}
             </div>
             {subtext && (
-                <div className="text-xs text-zinc-500 font-mono mt-1">
+                <div className="text-xs text-zinc-500 font-sans mt-1">
                     {subtext}
                 </div>
             )}
