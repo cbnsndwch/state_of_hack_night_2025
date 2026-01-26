@@ -18,55 +18,60 @@ export default function Manifesto() {
         <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="grow py-20 px-4">
-                <article className="max-w-3xl mx-auto prose prose-invert font-serif">
-                    <h1 className="text-5xl font-mono text-[#22c55e] mb-12 drop-shadow-[4px_4px_0px_rgba(34,197,94,0.2)]">
+                <article className="max-w-3xl mx-auto prose prose-invert font-sans">
+                    <h1 className="text-5xl font-sans text-primary mb-12 drop-shadow-[4px_4px_0px_color-mix(in_srgb,var(--primary),transparent_80%)]">
                         the hello_miami manifesto
                     </h1>
 
-                    <div className="space-y-12 text-lg leading-relaxed text-zinc-300">
+                    <div className="space-y-12 text-lg leading-relaxed lowercase text-zinc-300">
                         <section>
-                            <h2 className="text-2xl font-mono text-white mb-4">
+                            <h2 className="text-2xl font-sans text-white mb-4">
                                 i. the third place
                             </h2>
                             <p>
-                                In a city often defined by surface-level
-                                connections, hello_miami is the anchor. It is a
-                                "Third Place"—a neutral ground for builders to
+                                in a city often defined by surface-level
+                                connections, hello_miami is the anchor. it is a
+                                "third place"—a neutral ground for builders to
                                 gather, away from the pressures of work and the
                                 isolation of home.
                             </p>
                         </section>
 
                         <section>
-                            <h2 className="text-2xl font-mono text-white mb-4">
+                            <h2 className="text-2xl font-sans text-white mb-4">
                                 ii. radical no-ego
                             </h2>
                             <p>
-                                We check our titles at the door. It doesn't
-                                matter if you're a Senior Engineer at a FAANG
-                                company or a student shipping your first "Hello
-                                World." Our status is determined solely by the
+                                we check our titles at the door. it doesn't
+                                matter if you're a senior engineer at a faang
+                                company or a student shipping your first "hello
+                                world." our status is determined solely by the
                                 curiosity we bring and the lines of code we
                                 commit.
                             </p>
                         </section>
 
                         <section>
-                            <h2 className="text-2xl font-mono text-white mb-4">
+                            <h2 className="text-2xl font-sans text-white mb-4">
                                 iii. shipping as momentum
                             </h2>
                             <p>
-                                We don't do networking. we do building. The
-                                loudest person in the room is the one who just
-                                demoed something they started three hours ago.
-                                We prioritize the "ugly" version 1.0 over the
-                                perfect version 0.0.
+                                rather than doing networking, we do building.
+                                the loudest person in the room is the one who
+                                just demoed something they started three hours
+                                ago. we prioritize the "ugly" version 0.1 over
+                                the perfect version 0.0.
                             </p>
                         </section>
 
-                        <section className="bg-zinc-900 p-8 border-l-4 border-[#22c55e] font-mono italic">
-                            "We show up because we must build. We stay because
-                            we found our people."
+                        <section className="bg-zinc-900 p-8 border-l-4 border-primary font-sans italic">
+                            <p className="mb-2">
+                                "we show up because we want to build. we stay
+                                because we found our people."
+                            </p>
+                            <p className="text-right text-sm not-italic font-bold text-primary">
+                                — all of us
+                            </p>
                         </section>
                     </div>
                 </article>
