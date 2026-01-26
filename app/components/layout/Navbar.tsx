@@ -81,12 +81,13 @@ export function Navbar() {
                             </Tooltip>
                         </div>
                     ) : (
-                        <button
+                        <Button
+                            variant="primary"
+                            className="px-4 py-1.5 text-xs h-auto"
                             onClick={() => signInWithGitHub()}
-                            className="bg-primary text-black px-4 py-1.5 font-sans text-xs font-bold border-2 border-black shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] transition-all"
                         >
                             member_login
-                        </button>
+                        </Button>
                     )}
 
                     {/* <div className="h-4 w-px bg-zinc-800" />
