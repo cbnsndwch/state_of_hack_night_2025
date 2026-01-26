@@ -1,4 +1,5 @@
-import { type MetaFunction } from 'react-router';
+import type { MetaFunction } from 'react-router';
+
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/sections/Hero';
