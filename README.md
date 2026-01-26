@@ -1,4 +1,6 @@
-# State of the Hack Night 2025
+# hello_miami
+
+## State of the Hack Night 2025
 
 A data visualization dashboard exploring the growth, impact, geographical reach, and interests of the hack night community. This project serves as an interactive report for the "State of the Hack Night 2025".
 

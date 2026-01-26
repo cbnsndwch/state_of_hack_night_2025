@@ -12,6 +12,10 @@
         "types": [
             "vite/client"
         ],
+        "rootDirs": [
+            ".",
+            "./.react-router/types"
+        ],
         "skipLibCheck": true,
         /* Bundler mode */
         "moduleResolution": "bundler",
@@ -31,13 +35,14 @@
         "baseUrl": ".",
         "paths": {
             "@/*": [
-                "./src/*"
+                "./app/*"
             ]
         },
         "resolveJsonModule": true
     },
     "include": [
-        "src",
+        "app",
+        ".react-router/types",
         ".local/scripts/luma.ts"
     ]
 }

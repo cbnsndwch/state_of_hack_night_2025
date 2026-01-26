@@ -5,9 +5,11 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "dev": "vite",
-        "build": "tsc -b && vite build",
-        "format": "prettier --write ./src",
+        "dev": "react-router dev",
+        "build": "react-router build",
+        "start": "react-router-serve ./build/server/index.js",
+        "types": "react-router typegen && tsc",
+        "format": "prettier --write ./app",
         "lint": "eslint .",
         "preview": "vite preview"
     },
@@ -40,6 +42,8 @@
         "@radix-ui/react-toggle": "^1.1.10",
         "@radix-ui/react-toggle-group": "^1.1.11",
         "@radix-ui/react-tooltip": "^1.2.8",
+        "@react-router/node": "^7.13.0",
+        "@supabase/supabase-js": "^2.91.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
@@ -56,6 +60,7 @@
         "react-dom": "^19.2.0",
         "react-hook-form": "^7.70.0",
         "react-resizable-panels": "^4.2.2",
+        "react-router": "^7.13.0",
         "recharts": "^2.15.4",
         "sonner": "^2.0.7",
         "supercluster": "^8.0.1",
@@ -64,10 +69,12 @@
         "topojson-client": "^3.1.0",
         "use-supercluster": "^1.2.0",
         "vaul": "^1.1.2",
-        "zod": "^3.25.76"
+        "zod": "^3.25.76",
+        "isbot": "^5"
     },
     "devDependencies": {
         "@eslint/js": "^9.39.1",
+        "@react-router/dev": "^7.13.0",
         "@tailwindcss/vite": "^4.1.18",
         "@types/d3-geo": "^3.1.0",
         "@types/node": "^24.10.1",
