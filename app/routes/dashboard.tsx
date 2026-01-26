@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { supabase } from '@/utils/supabase';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
@@ -177,7 +176,6 @@ export default function Dashboard() {
                     <ProjectGallery />
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }

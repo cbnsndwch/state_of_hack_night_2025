@@ -49,7 +49,7 @@ create policy "Projects are viewable by everyone."
 
 create policy "Authenticated users can create projects."
   on public.projects for insert
-  with check ( auth.role() = 'authenticated' );
+  with check ( auth.role() = 'authenticated' and member_id = auth.uid() );
 
 create policy "Users can update their own projects."
   on public.projects for update

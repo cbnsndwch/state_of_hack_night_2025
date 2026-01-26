@@ -27,7 +27,7 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en">
+        <html lang="en" className="h-full">
             <head>
                 <meta charSet="utf-8" />
                 <meta
@@ -37,7 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Meta />
                 <Links />
             </head>
-            <body className="font-sans antialiased bg-[#0a0a0a] text-white">
+            <body className="font-sans antialiased bg-[#0a0a0a] text-white h-full">
                 <TooltipProvider>{children}</TooltipProvider>
                 <ScrollRestoration />
                 <Scripts />
