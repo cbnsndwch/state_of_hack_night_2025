@@ -1,6 +1,10 @@
 packages:
-    - '.'
-    - 'server'
+  - .
+  - server
+
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - unrs-resolver
 
 onlyBuiltDependencies:
-    - esbuild
+  - esbuild

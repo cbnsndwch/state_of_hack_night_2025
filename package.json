@@ -75,6 +75,7 @@
     "devDependencies": {
         "@eslint/js": "^9.39.1",
         "@react-router/dev": "^7.13.0",
+        "@supabase/mcp-server-supabase": "^0.6.1",
         "@tailwindcss/vite": "^4.1.18",
         "@types/d3-geo": "^3.1.0",
         "@types/node": "^24.10.1",
