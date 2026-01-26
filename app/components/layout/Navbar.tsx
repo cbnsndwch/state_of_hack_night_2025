@@ -1,9 +1,11 @@
 import { GithubIcon, Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
 import { useState } from 'react';
+
 import { useAuth } from '@/hooks/use-auth';
 
 import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
+import { Button } from '../ui/button';
 
 export function Navbar() {
     const location = useLocation();
@@ -22,18 +24,17 @@ export function Navbar() {
     };
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b-2 border-[#22c55e]/30 bg-black/80 backdrop-blur-md">
+        <header className="sticky top-0 z-50 w-full border-b-2 border-primary/30 bg-black/80 backdrop-blur-md">
             <div className="mx-auto px-4 h-16 max-w-7xl flex items-center justify-between">
                 <Link
                     to="/"
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity font-mono"
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                 >
-                    <div className="w-8 h-8 bg-[#22c55e] flex items-center justify-center font-bold text-black border-2 border-black shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]">
-                        H
-                    </div>
-                    <span className="font-bold hidden sm:block tracking-tighter">
-                        hello_miami
-                    </span>
+                    <img
+                        src="/logo_horizontal.svg"
+                        alt="hello_miami"
+                        className="h-8 w-auto"
+                    />
                 </Link>
 
                 {/* Desktop Nav */}
@@ -42,9 +43,9 @@ export function Navbar() {
                         <Link
                             key={link.href}
                             to={link.href}
-                            className={`font-mono text-sm tracking-widest hover:text-[#22c55e] transition-colors ${
+                            className={`font-sans text-sm tracking-widest hover:text-primary transition-colors ${
                                 isActive(link.href)
-                                    ? 'text-[#22c55e]'
+                                    ? 'text-primary'
                                     : 'text-zinc-400'
                             }`}
                         >
@@ -58,29 +59,37 @@ export function Navbar() {
                         <div className="flex items-center gap-4">
                             <Link
                                 to="/dashboard"
-                                className="font-mono text-xs text-[#22c55e] flex items-center gap-2 hover:opacity-80"
+                                className="font-sans text-sm text-primary flex items-center gap-2 hover:opacity-80"
                             >
-                                <LayoutDashboard className="w-3 h-3" />
+                                <LayoutDashboard className="size-4" />
                                 dashboard
                             </Link>
-                            <button
-                                onClick={() => signOut()}
-                                className="text-zinc-500 hover:text-white transition-colors"
-                                title="logout"
-                            >
-                                <LogOut className="w-4 h-4" />
-                            </button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        title="logout"
+                                        className="text-zinc-500 hover:text-white transition-colors"
+                                        onClick={() => signOut()}
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-primary text-black font-sans border-2 border-black">
+                                    logout
+                                </TooltipContent>
+                            </Tooltip>
                         </div>
                     ) : (
                         <button
                             onClick={() => signInWithGitHub()}
-                            className="bg-[#22c55e] text-black px-4 py-1.5 font-mono text-xs font-bold border-2 border-black shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] transition-all"
+                            className="bg-primary text-black px-4 py-1.5 font-sans text-xs font-bold border-2 border-black shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] transition-all"
                         >
                             member_login
                         </button>
                     )}
 
-                    <div className="h-4 w-px bg-zinc-800" />
+                    {/* <div className="h-4 w-px bg-zinc-800" />
 
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -88,20 +97,20 @@ export function Navbar() {
                                 href="https://github.com/cbnsndwch/state-of-the-hack-night-2025"
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-zinc-400 hover:text-[#22c55e] transition-colors"
+                                className="text-zinc-400 hover:text-primary transition-colors"
                             >
                                 <GithubIcon size={20} />
                             </a>
                         </TooltipTrigger>
-                        <TooltipContent className="bg-[#22c55e] text-black font-mono border-2 border-black">
+                        <TooltipContent className="bg-primary text-black font-sans border-2 border-black">
                             Open Source
                         </TooltipContent>
-                    </Tooltip>
+                    </Tooltip> */}
                 </nav>
 
                 {/* Mobile Menu Button */}
                 <button
-                    className="md:hidden p-2 text-zinc-400 hover:text-[#22c55e]"
+                    className="md:hidden p-2 text-zinc-400 hover:text-primary"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
                     {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -110,7 +119,7 @@ export function Navbar() {
 
             {/* Mobile Nav */}
             {isMenuOpen && (
-                <div className="md:hidden bg-black border-b-2 border-[#22c55e]/30 p-4 space-y-4 font-mono uppercase tracking-widest text-sm">
+                <div className="md:hidden bg-black border-b-2 border-primary/30 p-4 space-y-4 font-sans uppercase tracking-widest text-sm">
                     {navLinks.map(link => (
                         <Link
                             key={link.href}
@@ -118,7 +127,7 @@ export function Navbar() {
                             onClick={() => setIsMenuOpen(false)}
                             className={`block py-2 ${
                                 isActive(link.href)
-                                    ? 'text-[#22c55e]'
+                                    ? 'text-primary'
                                     : 'text-zinc-400'
                             }`}
                         >

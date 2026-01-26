@@ -57,8 +57,8 @@
     --popover-foreground: hsl(0 0% 98%);
 
     /* Updated Green Palette */
-    --primary: hsl(155 80% 40%);
-    --primary-foreground: hsl(0 0% 100%);
+    --primary: hsl(92 80% 82%);
+    --primary-foreground: hsl(0 0% 0%);
 
     --secondary: hsl(0 0% 14.9%);
     --secondary-foreground: hsl(0 0% 98%);
@@ -74,14 +74,14 @@
 
     --border: hsl(0 0% 20%);
     --input: hsl(0 0% 14.9%);
-    --ring: hsl(155 80% 40%);
+    --ring: hsl(92 80% 82%);
 
     /* Green Monochromatic Palette */
-    --chart-1: hsl(155 80% 40%);
-    --chart-2: hsl(155 60% 30%);
-    --chart-3: hsl(155 90% 60%);
-    --chart-4: hsl(155 50% 20%);
-    --chart-5: hsl(155 80% 50%);
+    --chart-1: hsl(92 80% 82%);
+    --chart-2: hsl(92 60% 60%);
+    --chart-3: hsl(92 90% 90%);
+    --chart-4: hsl(92 50% 40%);
+    --chart-5: hsl(92 80% 70%);
 
     --radius: 0px;
 
@@ -106,8 +106,8 @@
     --popover-foreground: hsl(0 0% 98%);
 
     /* Updated Green Palette */
-    --primary: hsl(155 80% 40%);
-    --primary-foreground: hsl(0 0% 100%);
+    --primary: hsl(92 80% 82%);
+    --primary-foreground: hsl(0 0% 0%);
 
     --secondary: hsl(0 0% 14.9%);
     --secondary-foreground: hsl(0 0% 98%);
@@ -123,14 +123,14 @@
 
     --border: hsl(0 0% 20%);
     --input: hsl(0 0% 14.9%);
-    --ring: hsl(155 80% 40%);
+    --ring: hsl(92 80% 82%);
 
     /* Green Monochromatic Palette */
-    --chart-1: hsl(155 80% 40%);
-    --chart-2: hsl(155 60% 30%);
-    --chart-3: hsl(155 90% 60%);
-    --chart-4: hsl(155 50% 20%);
-    --chart-5: hsl(155 80% 50%);
+    --chart-1: hsl(92 80% 82%);
+    --chart-2: hsl(92 60% 60%);
+    --chart-3: hsl(92 90% 90%);
+    --chart-4: hsl(92 50% 40%);
+    --chart-5: hsl(92 80% 70%);
 
     --radius: 0px;
 
@@ -149,16 +149,16 @@
     border: 2px solid white;
 }
 .neo-shadow {
-    box-shadow: 6px 6px 0px 0px rgba(74, 222, 128, 1); /* Green-400 */
+    box-shadow: 6px 6px 0px 0px var(--primary);
 }
 .neo-shadow-cyan {
-    box-shadow: 6px 6px 0px 0px #22c55e; /* Green-500 */
+    box-shadow: 6px 6px 0px 0px var(--primary);
 }
 .neo-shadow-magenta {
-    box-shadow: 6px 6px 0px 0px #16a34a; /* Green-600 */
+    box-shadow: 6px 6px 0px 0px var(--primary);
 }
 .neo-shadow-yellow {
-    box-shadow: 6px 6px 0px 0px #15803d; /* Green-700 */
+    box-shadow: 6px 6px 0px 0px var(--primary);
 }
 
 .bg-dots-zinc-900 {
@@ -218,7 +218,31 @@
     .maplibregl-popup-content {
         @apply bg-transparent! shadow-none! p-0! rounded-none!;
     }
+
     .maplibregl-popup-tip {
         @apply hidden!;
+    }
+}
+
+@layer utilities {
+    .typewriter {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        width: 14ch;
+        animation: typing 3s steps(14);
+        vertical-align: bottom; /* Fix alignment issues */
+    }
+}
+
+@keyframes typing {
+    0% {
+        width: 0;
+    }
+    70% {
+        width: 14ch;
+    }
+    100% {
+        width: 14ch;
     }
 }
