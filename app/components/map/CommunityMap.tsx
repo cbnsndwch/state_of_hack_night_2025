@@ -166,7 +166,7 @@ export function CommunityMap() {
                                                     >
                                                         <div className="flex items-center gap-2">
                                                             <div className="size-1.5 rounded-full bg-primary/70" />
-                                                            <span className="font-mono text-sm text-foreground">
+                                                            <span className="font-sans text-sm text-foreground">
                                                                 {p.zip}
                                                             </span>
                                                         </div>

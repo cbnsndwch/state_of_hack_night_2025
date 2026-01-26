@@ -38,13 +38,13 @@ export function Impact() {
                     <div className="space-y-4">
                         {roles.map(item => (
                             <div key={item.name}>
-                                <div className="flex justify-between text-sm font-mono mb-1 font-bold">
+                                <div className="flex justify-between text-sm font-sans mb-1 font-bold">
                                     <span>{item.name}</span>
                                     <span>{item.value}</span>
                                 </div>
                                 <div className="w-full bg-zinc-900 border-2 border-border h-3">
                                     <div
-                                        className="h-full bg-emerald-400"
+                                        className="h-full bg-primary"
                                         style={{
                                             width: `${(item.value / roles[0].value) * 100}%`
                                         }}
@@ -62,13 +62,13 @@ export function Impact() {
                     <div className="space-y-4">
                         {experience.map(item => (
                             <div key={item.name}>
-                                <div className="flex justify-between text-sm font-mono mb-1 font-bold text-white">
+                                <div className="flex justify-between text-sm font-sans mb-1 font-bold text-white">
                                     <span>{item.name} years</span>
                                     <span>{item.value}</span>
                                 </div>
                                 <div className="w-full bg-zinc-900 h-3 border-2 border-border">
                                     <div
-                                        className="h-full bg-emerald-400"
+                                        className="h-full bg-primary"
                                         style={{
                                             width: `${(item.value / Math.max(...experience.map(e => e.value))) * 100}%`
                                         }}

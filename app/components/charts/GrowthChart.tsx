@@ -50,7 +50,7 @@ export function GrowthChart() {
                         cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
                         contentStyle={{
                             backgroundColor: '#09090b', // zinc-950
-                            border: '2px solid #00d492', // Green Border
+                            border: '2px solid var(--primary)', // Green Border
                             borderRadius: '0px',
                             color: '#ffffff',
                             fontFamily: 'monospace'
@@ -58,7 +58,7 @@ export function GrowthChart() {
                     />
                     <Bar
                         dataKey="count"
-                        fill="#00d492" // green-500
+                        fill="var(--primary)" // green-500
                         radius={[0, 0, 0, 0]}
                         name="Attendees"
                     />

@@ -42,7 +42,7 @@ export function Interests() {
                                     }}
                                 />
                             </div>
-                            <div className="text-right font-mono text-sm mt-1 text-zinc-400">
+                            <div className="text-right font-sans text-sm mt-1 text-zinc-400">
                                 {item.value} votes
                             </div>
                         </div>

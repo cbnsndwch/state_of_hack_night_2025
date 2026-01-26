@@ -10,13 +10,13 @@ export function Hero() {
         <section className="min-h-[90vh] flex flex-col justify-center items-center relative py-20 px-4">
             <div className="max-w-6xl w-full mx-auto space-y-16">
                 <div className="text-center space-y-8">
-                    <div className="inline-block px-4 py-2 bg-zinc-950 text-white neo-shadow border-2 border-primary font-mono text-sm md:text-base lg:text-3xl font-bold tracking-widest transform -rotate-2">
+                    <div className="inline-block px-4 py-2 bg-zinc-950 text-white neo-shadow border-2 border-primary font-sans text-sm md:text-base lg:text-3xl font-bold tracking-widest transform -rotate-2">
                         hack night - 2025 year in review
                     </div>
                     <h1 className="text-6xl md:text-8xl lg:text-9xl font-black font-sans tracking-tighter text-white leading-[0.9] pt-2">
                         hello_miami
                     </h1>
-                    <p className="text-xl md:text-2xl font-mono text-white max-w-3xl mx-auto border-y-2 border-primary py-6 bg-zinc-950 neo-shadow">
+                    <p className="text-xl md:text-2xl font-sans text-white max-w-3xl mx-auto border-y-2 border-primary py-6 bg-zinc-950 neo-shadow">
                         we just want to hang out with other nerds and build cool
                         sh*t
                     </p>
