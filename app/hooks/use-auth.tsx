@@ -28,7 +28,8 @@ export function useAuth() {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'github',
             options: {
-                redirectTo: window.location.origin
+                redirectTo: window.location.origin,
+                scopes: 'read:user user:email'
             }
         });
         if (error) throw error;
