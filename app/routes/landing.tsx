@@ -27,7 +27,7 @@ export default function Landing() {
                             <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
                             <div className="w-3 h-3 rounded-full bg-primary/50" />
                         </div>
-                        <div className="bg-[#0a0a0a] p-8 border-2 border-zinc-800 min-h-75 flex flex-col justify-center">
+                        <div className="bg-[#0a0a0a] p-4 md:p-8 border-2 border-zinc-800 min-h-75 flex flex-col justify-center">
                             <h1 className="text-4xl md:text-6xl text-primary font-sans mb-4 typewriter">
                                 hello_miami&gt; _
                             </h1>
@@ -35,10 +35,10 @@ export default function Landing() {
                                 a "no-ego" builder community for miami hackers.
                                 twice a week. zero fluff. all about building.
                             </p>
-                            <div className="mt-8 flex gap-4">
+                            <div className="mt-8 flex flex-col md:flex-row gap-4">
                                 <Link
                                     to="/manifesto"
-                                    className="px-6 py-3 bg-primary text-black font-bold border-2 border-black hover:translate-x-1 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-none"
+                                    className="w-full md:w-auto text-center px-6 py-3 bg-primary text-black font-bold border-2 border-black hover:translate-x-1 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-none"
                                 >
                                     read_manifesto
                                 </Link>
@@ -46,7 +46,7 @@ export default function Landing() {
                                     href="https://lu.ma/hello_miami"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-6 py-3 bg-transparent text-primary font-bold border-2 border-primary hover:bg-primary/10 transition-colors"
+                                    className="w-full md:w-auto text-center px-6 py-3 bg-transparent text-primary font-bold border-2 border-primary hover:bg-primary/10 transition-colors"
                                 >
                                     join_next_event
                                 </a>
