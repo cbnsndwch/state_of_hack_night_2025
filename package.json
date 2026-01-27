@@ -7,7 +7,7 @@
     "scripts": {
         "dev": "react-router dev",
         "build": "react-router build",
-        "start": "react-router-serve ./build/server/index.js",
+        "start": "vite preview",
         "types": "react-router typegen && tsc",
         "format": "prettier --write ./app",
         "lint": "eslint .",
