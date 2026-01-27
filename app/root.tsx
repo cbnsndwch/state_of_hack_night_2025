@@ -37,7 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Meta />
                 <Links />
             </head>
-            <body className="font-sans antialiased bg-[#0a0a0a] text-white h-full">
+            <body className="font-sans antialiased bg-[#0a0a0a] text-white h-full overflow-x-hidden">
                 <TooltipProvider>{children}</TooltipProvider>
                 <ScrollRestoration />
                 <Scripts />

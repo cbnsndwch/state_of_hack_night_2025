@@ -176,7 +176,7 @@
     --color-sidebar-ring: var(--sidebar-ring);
     --animate-accordion-down: accordion-down 0.2s ease-out;
     --animate-accordion-up: accordion-up 0.2s ease-out;
-    --font-heading: 'Courier New', Courier, monospace;
+    --font-heading: var(--font-sans);
 
     @keyframes accordion-down {
         from {
@@ -230,6 +230,7 @@
         overflow: hidden;
         white-space: nowrap;
         width: 14ch;
+        max-width: 100%;
         animation: typing 3s steps(14);
         vertical-align: bottom; /* Fix alignment issues */
     }
