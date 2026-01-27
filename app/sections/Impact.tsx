@@ -25,14 +25,14 @@ export function Impact() {
         >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                 <NeoCard className="lg:col-span-2">
-                    <h3 className="text-2xl font-bold mb-6 font-heading">
+                    <h3 className="text-2xl font-bold mb-6 font-sans">
                         monthly attendance
                     </h3>
                     <GrowthChart />
                 </NeoCard>
 
                 <NeoCard variant="cyan">
-                    <h3 className="text-2xl font-bold mb-6 font-heading">
+                    <h3 className="text-2xl font-bold mb-6 font-sans">
                         builder roles
                     </h3>
                     <div className="space-y-4">
@@ -56,7 +56,7 @@ export function Impact() {
                 </NeoCard>
 
                 <NeoCard variant="magenta">
-                    <h3 className="text-2xl font-bold mb-6 font-heading text-white">
+                    <h3 className="text-2xl font-bold mb-6 font-sans text-white">
                         years of experience
                     </h3>
                     <div className="space-y-4">
