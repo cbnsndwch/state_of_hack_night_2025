@@ -37,10 +37,10 @@ export default function Landing() {
                             </p>
                             <div className="mt-8 flex flex-col md:flex-row gap-4">
                                 <Link
-                                    to="/manifesto"
+                                    to="/ethos"
                                     className="w-full md:w-auto text-center px-6 py-3 bg-primary text-black font-bold border-2 border-black hover:translate-x-1 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-none"
                                 >
-                                    read_manifesto
+                                    read_our_why
                                 </Link>
                                 <a
                                     href="https://lu.ma/hello_miami"

@@ -3,18 +3,24 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Navbar } from '@/components/layout/Navbar';
 import { NeoCard } from '@/components/ui/NeoCard';
-import { supabase } from '@/utils/supabase';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
 import { ProjectGallery } from '@/components/projects/ProjectGallery';
-import type { Database } from '@/types/supabase';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+interface Profile {
+    id: string;
+    supabaseUserId: string;
+    githubUid: string | null;
+    bio: string | null;
+    streakCount: number;
+    createdAt: string;
+}
 
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [projectCount, setProjectCount] = useState(0);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -24,22 +30,18 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (user) {
-            supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single()
-                .then(({ data }) => {
-                    if (data) setProfile(data);
-                });
-
-            supabase
-                .from('projects')
-                .select('*', { count: 'exact', head: true })
-                .eq('member_id', user.id)
-                .then(({ count }) => setProjectCount(count || 0));
+            // Fetch profile and project count from API
+            fetch(`/api/profile?supabaseUserId=${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.profile) {
+                        setProfile(data.profile);
+                        setProjectCount(data.projectCount);
+                    }
+                })
+                .catch(err => console.error('Error fetching profile:', err));
         }
-    }, [user]);
+    }, [user, refreshKey]);
 
     if (loading) {
         return (
@@ -106,7 +108,7 @@ export default function Dashboard() {
                                         attendance streak
                                     </div>
                                     <div className="text-2xl font-sans text-primary">
-                                        {profile?.streak_count || 0} weeks
+                                        {profile?.streakCount || 0} weeks
                                     </div>
                                 </div>
                                 <div className="p-4 bg-zinc-900/50 border border-zinc-800">
@@ -150,19 +152,8 @@ export default function Dashboard() {
                             </p>
                             <AddProjectDialog
                                 onProjectAdded={() => {
-                                    // Refresh count
-                                    if (user) {
-                                        supabase
-                                            .from('projects')
-                                            .select('*', {
-                                                count: 'exact',
-                                                head: true
-                                            })
-                                            .eq('member_id', user.id)
-                                            .then(({ count }) =>
-                                                setProjectCount(count || 0)
-                                            );
-                                    }
+                                    // Trigger refresh of profile data
+                                    setRefreshKey(k => k + 1);
                                 }}
                             />
                         </NeoCard>

@@ -4,7 +4,7 @@ import { Footer } from '@/components/layout/Footer';
 
 export const meta: MetaFunction = () => {
     return [
-        { title: 'hello_miami | manifesto' },
+        { title: 'hello_miami | ethos' },
         {
             name: 'description',
             content:
@@ -13,14 +13,14 @@ export const meta: MetaFunction = () => {
     ];
 };
 
-export default function Manifesto() {
+export default function Ethos() {
     return (
         <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="grow py-20 px-4">
                 <article className="max-w-3xl mx-auto prose prose-invert font-sans">
                     <h1 className="text-5xl font-sans text-primary mb-12 drop-shadow-[4px_4px_0px_color-mix(in_srgb,var(--primary),transparent_80%)]">
-                        the hello_miami manifesto
+                        the hello_miami ethos
                     </h1>
 
                     <div className="space-y-12 text-lg leading-relaxed lowercase text-zinc-300">

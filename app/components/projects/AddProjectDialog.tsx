@@ -38,6 +38,7 @@ export function AddProjectDialog({
         try {
             const imageUrls: string[] = [];
 
+            // Upload image to Supabase Storage (keeping Supabase for file storage)
             if (file) {
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${user.id}/${Math.random()}.${fileExt}`;
@@ -48,26 +49,31 @@ export function AddProjectDialog({
                 if (uploadError) throw uploadError;
 
                 const {
-                    data: { publicUrl }
+                    data: { publicUrl: imagePublicUrl }
                 } = supabase.storage.from('projects').getPublicUrl(fileName);
 
-                imageUrls.push(publicUrl);
+                imageUrls.push(imagePublicUrl);
             }
 
-            const { error } = await supabase.from('projects').insert({
-                member_id: user.id,
-                title,
-                description,
-                github_url: githubUrl,
-                public_url: publicUrl,
-                tags: tags
-                    .split(',')
-                    .map(t => t.trim())
-                    .filter(Boolean),
-                image_urls: imageUrls
+            // Submit project data via API route (MongoDB)
+            const formData = new FormData();
+            formData.append('supabaseUserId', user.id);
+            formData.append('title', title);
+            formData.append('description', description);
+            formData.append('githubUrl', githubUrl);
+            formData.append('publicUrl', publicUrl);
+            formData.append('tags', tags);
+            formData.append('imageUrls', JSON.stringify(imageUrls));
+
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                body: formData
             });
 
-            if (error) throw error;
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create project');
+            }
 
             setOpen(false);
             setTitle('');

@@ -1,6 +1,7 @@
-
--- 5. STORAGE
--- Secure buckets for user assets
+-- STORAGE BUCKETS
+-- Supabase is used ONLY for file storage (not data).
+-- All application data is stored in MongoDB.
+-- Secure buckets for user assets (project images).
 
 insert into storage.buckets (id, name, public)
 values ('projects', 'projects', true);

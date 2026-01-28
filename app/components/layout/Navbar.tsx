@@ -14,7 +14,7 @@ export function Navbar() {
 
     const navLinks = [
         { href: '/', label: 'home' },
-        { href: '/manifesto', label: 'manifesto' },
+        { href: '/ethos', label: 'ethos' },
         { href: '/reports/2025', label: '2025 report' }
     ];
 

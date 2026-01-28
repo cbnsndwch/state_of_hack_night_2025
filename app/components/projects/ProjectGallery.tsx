@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/utils/supabase';
 import { NeoCard } from '@/components/ui/NeoCard';
-import type { Database } from '@/types/supabase';
 
-type Project = Database['public']['Tables']['projects']['Row'];
+interface Project {
+    id: string;
+    title: string;
+    description: string | null;
+    tags: string[];
+    imageUrls: string[];
+    githubUrl: string | null;
+    publicUrl: string | null;
+    createdAt: string;
+}
 
 export function ProjectGallery() {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -11,19 +18,18 @@ export function ProjectGallery() {
 
     useEffect(() => {
         async function fetchProjects() {
-            const { data, error } = await supabase
-                .from('projects')
-                .select('*')
-                .order('created_at', { ascending: false });
+            try {
+                const response = await fetch('/api/projects-list');
+                const data = await response.json();
 
-            if (error) {
+                if (data.projects) {
+                    setProjects(data.projects);
+                }
+            } catch (error) {
                 console.error('Error fetching projects:', error);
+            } finally {
+                setLoading(false);
             }
-
-            if (data) {
-                setProjects(data);
-            }
-            setLoading(false);
         }
 
         fetchProjects();
@@ -43,10 +49,10 @@ export function ProjectGallery() {
                     key={project.id}
                     className="h-full flex flex-col group hover:shadow-[8px_8px_0px_0px_rgba(208,246,174,0.5)] transition-shadow"
                 >
-                    {project.image_urls?.[0] ? (
+                    {project.imageUrls?.[0] ? (
                         <div className="aspect-video w-full mb-4 overflow-hidden border-2 border-primary bg-black">
                             <img
-                                src={project.image_urls[0]}
+                                src={project.imageUrls[0]}
                                 alt={project.title}
                                 className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                             />
@@ -81,9 +87,9 @@ export function ProjectGallery() {
                             </div>
                         )}
 
-                        {project.github_url && (
+                        {project.githubUrl && (
                             <a
-                                href={project.github_url}
+                                href={project.githubUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="block text-right text-xs font-sans text-zinc-500 hover:text-primary hover:underline"
@@ -91,9 +97,9 @@ export function ProjectGallery() {
                                 view_source -&gt;
                             </a>
                         )}
-                        {project.public_url && (
+                        {project.publicUrl && (
                             <a
-                                href={project.public_url}
+                                href={project.publicUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="block text-right text-xs font-sans text-zinc-500 hover:text-primary hover:underline"
