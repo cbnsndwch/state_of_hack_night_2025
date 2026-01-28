@@ -1,28 +1,28 @@
 {
-  "interests": [
-    {
-      "name": "hackathon",
-      "value": 358
-    },
-    {
-      "name": "hack nights",
-      "value": 344
-    },
-    {
-      "name": "dinners with local engineers",
-      "value": 341
-    },
-    {
-      "name": "text invites to exclusive technical events in Miami",
-      "value": 267
-    },
-    {
-      "name": "demo nights",
-      "value": 267
-    },
-    {
-      "name": "workshops led by guest experts",
-      "value": 237
-    }
-  ]
+    "interests": [
+        {
+            "name": "hackathon",
+            "value": 358
+        },
+        {
+            "name": "hack nights",
+            "value": 344
+        },
+        {
+            "name": "dinners with local engineers",
+            "value": 341
+        },
+        {
+            "name": "text invites to exclusive technical events in Miami",
+            "value": 267
+        },
+        {
+            "name": "demo nights",
+            "value": 267
+        },
+        {
+            "name": "workshops led by guest experts",
+            "value": 237
+        }
+    ]
 }
