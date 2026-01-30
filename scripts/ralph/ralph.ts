@@ -49,7 +49,13 @@ const AGENTS: Record<string, AgentConfig> = {
         usesPromptFile: true,
         buildArgs: (prompt, options) => {
             // prompt here is actually the path to the prompt file
-            const args = ['run', '-f', prompt, 'Execute the task in the attached file'];
+            // OpenCode syntax: opencode run [message..] -f <file>
+            const args = [
+                'run',
+                'Execute the task described in the attached prompt file',
+                '-f',
+                prompt
+            ];
             if (options.model) args.push('-m', options.model);
             return args;
         }
@@ -467,14 +473,14 @@ async function runAgent(
 ): Promise<{ output: string; exitCode: number }> {
     return new Promise(resolve => {
         let promptArg = prompt;
-        
+
         // For agents that use prompt files, write the prompt to a file
         if (agent.usesPromptFile) {
             ensureDir(STATE_DIR);
             writeFileSync(PROMPT_FILE_PATH, prompt, 'utf-8');
             promptArg = PROMPT_FILE_PATH;
         }
-        
+
         const args = agent.buildArgs(promptArg, options);
         const child = spawn(agent.command, args, {
             stdio: ['inherit', 'pipe', 'pipe'],

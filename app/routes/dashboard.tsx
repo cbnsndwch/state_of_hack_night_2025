@@ -5,13 +5,16 @@ import { Navbar } from '@/components/layout/Navbar';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
 import { ProjectGallery } from '@/components/projects/ProjectGallery';
+import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
 
 interface Profile {
     id: string;
     supabaseUserId: string;
     githubUid: string | null;
+    lumaAttendeeId: string | null;
     bio: string | null;
     streakCount: number;
+    onboardingDismissed: boolean;
     createdAt: string;
 }
 
@@ -21,6 +24,8 @@ export default function Dashboard() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [projectCount, setProjectCount] = useState(0);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -37,6 +42,8 @@ export default function Dashboard() {
                     if (data.profile) {
                         setProfile(data.profile);
                         setProjectCount(data.projectCount);
+                        // Show onboarding if not dismissed
+                        setShowOnboarding(!data.profile.onboardingDismissed);
                     }
                 })
                 .catch(err => console.error('Error fetching profile:', err));
@@ -55,6 +62,60 @@ export default function Dashboard() {
 
     if (!user) return null;
 
+    // Define onboarding checklist items
+    const onboardingItems = [
+        {
+            id: 'profile-complete',
+            label: 'Complete your profile',
+            description: 'Add a bio and link your Luma Attendee ID',
+            completed: !!(profile?.bio && profile?.lumaAttendeeId),
+            action: {
+                label: 'Edit Profile',
+                href: '/dashboard/profile'
+            }
+        },
+        {
+            id: 'first-project',
+            label: 'Share your first project',
+            description: "Show the community what you're building",
+            completed: projectCount > 0,
+            action: {
+                label: 'Add Project',
+                onClick: () => setAddProjectDialogOpen(true)
+            }
+        },
+        {
+            id: 'rsvp-event',
+            label: 'RSVP to a hack night',
+            description:
+                'Join us at The DOCK (Tuesdays) or Moonlighter (Thursdays)',
+            completed: false, // TODO: Track RSVPs when event system is implemented
+            action: {
+                label: 'View Events',
+                href: 'https://luma.com/hello_miami'
+            }
+        }
+    ];
+
+    const handleDismissOnboarding = async () => {
+        if (!user) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('supabaseUserId', user.id);
+            formData.append('dismissed', 'true');
+
+            await fetch('/api/onboarding', {
+                method: 'POST',
+                body: formData
+            });
+
+            setShowOnboarding(false);
+        } catch (err) {
+            console.error('Error dismissing onboarding:', err);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-black text-white selection:bg-primary selection:text-black">
             <Navbar />
@@ -69,6 +130,16 @@ export default function Dashboard() {
                             user.email?.split('@')[0]}
                     </p>
                 </header>
+
+                {/* Onboarding Checklist */}
+                {showOnboarding && (
+                    <div className="mb-8">
+                        <OnboardingChecklist
+                            items={onboardingItems}
+                            onDismiss={handleDismissOnboarding}
+                        />
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Profile Stats */}
@@ -151,6 +222,8 @@ export default function Dashboard() {
                                 show the community what you've been building.
                             </p>
                             <AddProjectDialog
+                                open={addProjectDialogOpen}
+                                onOpenChange={setAddProjectDialogOpen}
                                 onProjectAdded={() => {
                                     // Trigger refresh of profile data
                                     setRefreshKey(k => k + 1);

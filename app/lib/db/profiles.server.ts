@@ -55,6 +55,7 @@ export async function createProfile(data: ProfileInsert): Promise<Profile> {
         ...data,
         isAppAdmin: data.isAppAdmin ?? false,
         streakCount: data.streakCount ?? 0,
+        onboardingDismissed: data.onboardingDismissed ?? false,
         createdAt: now,
         updatedAt: now
     };

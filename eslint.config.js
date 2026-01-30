@@ -12,7 +12,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig([
-    globalIgnores(['dist', 'build', '.react-router', 'server/**', '.local/**']),
+    globalIgnores([
+        '.local/**',
+        '.react-router',
+        'build',
+        'dist',
+        'scripts/ralph',
+        'server/**'
+    ]),
     {
         files: ['**/*.{ts,tsx}'],
         extends: [

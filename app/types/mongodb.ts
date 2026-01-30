@@ -22,6 +22,8 @@ export interface Profile {
     lumaAttendeeId: string | null;
     bio: string | null;
     streakCount: number;
+    /** Whether user has dismissed the onboarding checklist */
+    onboardingDismissed: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -34,6 +36,7 @@ export interface ProfileInsert {
     lumaAttendeeId?: string | null;
     bio?: string | null;
     streakCount?: number;
+    onboardingDismissed?: boolean;
 }
 
 export interface ProfileUpdate {
@@ -44,6 +47,7 @@ export interface ProfileUpdate {
     supabaseUserId?: string | null;
     bio?: string | null;
     streakCount?: number;
+    onboardingDismissed?: boolean;
 }
 
 // ============================================================================

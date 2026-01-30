@@ -16,12 +16,20 @@ import {
 } from '@/components/ui/dialog';
 
 export function AddProjectDialog({
-    onProjectAdded
+    onProjectAdded,
+    open: externalOpen,
+    onOpenChange: externalOnOpenChange
 }: {
     onProjectAdded?: () => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }) {
     const { user } = useAuth();
-    const [open, setOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    // Use external state if provided, otherwise use internal state
+    const open = externalOpen !== undefined ? externalOpen : internalOpen;
+    const setOpen = externalOnOpenChange || setInternalOpen;
     const [loading, setLoading] = useState(false);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -96,7 +104,10 @@ export function AddProjectDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="font-sans bg-primary text-black hover:bg-primary/90">
+                <Button
+                    className="font-sans bg-primary text-black hover:bg-primary/90"
+                    data-add-project-trigger
+                >
                     submit_build
                 </Button>
             </DialogTrigger>

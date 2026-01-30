@@ -29,8 +29,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
             supabaseUserId: profile.supabaseUserId,
             lumaEmail: profile.lumaEmail,
             verificationStatus: profile.verificationStatus,
+            lumaAttendeeId: profile.lumaAttendeeId,
             bio: profile.bio,
             streakCount: profile.streakCount,
+            onboardingDismissed: profile.onboardingDismissed ?? false,
             createdAt: profile.createdAt.toISOString()
         },
         projectCount: projects.length
