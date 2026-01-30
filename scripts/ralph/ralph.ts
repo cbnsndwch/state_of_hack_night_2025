@@ -42,6 +42,16 @@ interface AgentOptions {
 }
 
 const AGENTS: Record<string, AgentConfig> = {
+    opencode: {
+        name: 'OpenCode',
+        command: 'opencode',
+        buildArgs: (prompt, options) => {
+            const args = ['run'];
+            if (options.model) args.push('-m', options.model);
+            args.push(prompt);
+            return args;
+        }
+    },
     'claude-code': {
         name: 'Claude Code',
         command: 'claude',
@@ -378,7 +388,7 @@ function renderTemplate(template: string, ctx: PromptContext): string {
 
     // Handle simple {{variable}} replacements
     result = result.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-        const value = (ctx as any as  Record<string, unknown>)[key];
+        const value = (ctx as any as Record<string, unknown>)[key];
         return value !== null && value !== undefined ? String(value) : '';
     });
 
@@ -541,7 +551,7 @@ Arguments:
   task                Task description for the AI to work on
 
 Options:
-  --agent AGENT       AI agent: claude-code (default), codex
+  --agent AGENT       AI agent: opencode (default), claude-code, codex
   --min-iterations N  Minimum iterations before completion (default: 1)
   --max-iterations N  Maximum iterations before stopping (default: unlimited)
   --completion-promise TEXT  Phrase that signals completion (default: COMPLETE)
@@ -1102,7 +1112,7 @@ async function main(): Promise<void> {
     // Parse main options
     const options: CliOptions = {
         task: '',
-        agent: 'claude-code',
+        agent: 'opencode',
         model: '',
         minIterations: 1,
         maxIterations: 0,
