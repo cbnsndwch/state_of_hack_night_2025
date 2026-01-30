@@ -12,7 +12,8 @@
         "format": "prettier --write ./app",
         "lint": "eslint .",
         "preview": "vite preview",
-        "ralph": "tsx scripts/ralph/ralph.ts"
+        "ralph": "tsx scripts/ralph/ralph.ts",
+        "seed:survey": "tsx scripts/seed-survey.ts"
     },
     "dependencies": {
         "@fontsource/inter": "^5.2.8",

@@ -10,3 +10,5 @@ export * from './profiles.server';
 export * from './projects.server';
 export * from './badges.server';
 export * from './attendance.server';
+export * from './surveys.server';
+export * from './survey-responses.server';

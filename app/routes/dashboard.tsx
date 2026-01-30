@@ -137,6 +137,34 @@ export default function Dashboard() {
                     </p>
                 </header>
 
+                {/* Luma Attendee ID Prompt - Shows if not linked */}
+                {profile && !profile.lumaAttendeeId && (
+                    <div className="mb-8">
+                        <div className="bg-yellow-900/20 border-2 border-yellow-500 p-6 neo-shadow-yellow">
+                            <div className="flex items-start gap-4">
+                                <div className="text-3xl">⚠️</div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-sans text-yellow-400 mb-2">
+                                        link_your_luma_account
+                                    </h3>
+                                    <p className="text-sm text-zinc-300 mb-4">
+                                        Connect your Luma Attendee ID to enable
+                                        automated check-ins and attendance
+                                        tracking. This helps us recognize your
+                                        participation at hack nights.
+                                    </p>
+                                    <a
+                                        href="/dashboard/profile"
+                                        className="inline-block px-4 py-2 bg-yellow-500 text-black border-2 border-yellow-500 font-sans text-sm hover:bg-yellow-400 transition-colors neo-shadow"
+                                    >
+                                        add_luma_id
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Onboarding Checklist */}
                 {showOnboarding && (
                     <div className="mb-8">

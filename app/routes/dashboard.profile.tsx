@@ -292,10 +292,41 @@ export default function ProfileEdit() {
                                     ) => setLumaAttendeeId(e.target.value)}
                                     placeholder="att-xxxxxxxxxxxxx"
                                 />
-                                <p className="text-xs text-zinc-500">
-                                    Link your Luma account for automated
-                                    check-ins and attendance tracking
-                                </p>
+                                <div className="text-xs text-zinc-500 space-y-1">
+                                    <p>
+                                        Link your Luma account for automated
+                                        check-ins and attendance tracking.
+                                    </p>
+                                    <p className="mt-2">
+                                        <strong className="text-zinc-400">
+                                            How to find your Attendee ID:
+                                        </strong>
+                                    </p>
+                                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                                        <li>
+                                            Visit{' '}
+                                            <a
+                                                href="https://lu.ma/hello_miami"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-primary hover:underline"
+                                            >
+                                                lu.ma/hello_miami
+                                            </a>
+                                        </li>
+                                        <li>
+                                            Make sure you're logged into Luma
+                                        </li>
+                                        <li>
+                                            Check your profile or registration
+                                            confirmation emails
+                                        </li>
+                                        <li>
+                                            Your ID starts with "att-" followed
+                                            by letters and numbers
+                                        </li>
+                                    </ol>
+                                </div>
                             </div>
                         </div>
 

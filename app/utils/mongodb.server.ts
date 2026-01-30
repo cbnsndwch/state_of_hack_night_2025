@@ -49,5 +49,7 @@ export const CollectionName = {
     MEMBER_BADGES: 'member_badges',
     ATTENDANCE: 'attendance',
     PENDING_USERS: 'pending_users',
-    LUMA_WEBHOOKS: 'luma_webhooks'
+    LUMA_WEBHOOKS: 'luma_webhooks',
+    SURVEYS: 'surveys',
+    SURVEY_RESPONSES: 'survey_responses'
 } as const;

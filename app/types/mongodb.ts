@@ -245,3 +245,129 @@ export interface ProjectWithMember extends Omit<Project, 'memberId'> {
 export interface ProfileWithBadges extends Profile {
     badges: Badge[];
 }
+
+// ============================================================================
+// Survey - Survey definitions and questions
+// ============================================================================
+
+export type SurveyType = 'onboarding' | 'annual' | 'event';
+
+export type SurveyQuestionType =
+    | 'text'
+    | 'textarea'
+    | 'single-choice'
+    | 'multiple-choice'
+    | 'scale'
+    | 'boolean';
+
+export interface SurveyQuestion {
+    /** Unique question ID within the survey */
+    id: string;
+    /** Question text */
+    text: string;
+    /** Question type */
+    type: SurveyQuestionType;
+    /** Whether question is required */
+    required: boolean;
+    /** Options for choice questions */
+    options?: string[];
+    /** Min/max for scale questions */
+    scale?: {
+        min: number;
+        max: number;
+        minLabel?: string;
+        maxLabel?: string;
+    };
+    /** Help text or description */
+    helpText?: string;
+}
+
+export interface Survey {
+    _id: ObjectId;
+    /** Survey identifier (e.g., "onboarding-2026", "annual-2026") */
+    slug: string;
+    title: string;
+    description: string;
+    /** Survey type */
+    type: SurveyType;
+    /** Whether survey is currently active */
+    isActive: boolean;
+    /** Survey questions configuration */
+    questions: SurveyQuestion[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface SurveyInsert {
+    slug: string;
+    title: string;
+    description: string;
+    type: SurveyType;
+    isActive?: boolean;
+    questions: SurveyQuestion[];
+}
+
+export interface SurveyUpdate {
+    slug?: string;
+    title?: string;
+    description?: string;
+    type?: SurveyType;
+    isActive?: boolean;
+    questions?: SurveyQuestion[];
+}
+
+// ============================================================================
+// SurveyResponse - Member responses to surveys
+// ============================================================================
+
+export type SurveyAnswer =
+    | { type: 'text'; value: string }
+    | { type: 'textarea'; value: string }
+    | { type: 'single-choice'; value: string }
+    | { type: 'multiple-choice'; value: string[] }
+    | { type: 'scale'; value: number }
+    | { type: 'boolean'; value: boolean };
+
+export interface SurveyResponse {
+    _id: ObjectId;
+    /** Reference to Survey._id */
+    surveyId: ObjectId;
+    /** Reference to Profile._id */
+    memberId: ObjectId;
+    /** Responses keyed by question ID */
+    responses: Record<string, SurveyAnswer>;
+    /** Whether response is complete */
+    isComplete: boolean;
+    submittedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface SurveyResponseInsert {
+    surveyId: ObjectId;
+    memberId: ObjectId;
+    responses?: Record<string, SurveyAnswer>;
+    isComplete?: boolean;
+    submittedAt?: Date;
+}
+
+export interface SurveyResponseUpdate {
+    responses?: Record<string, SurveyAnswer>;
+    isComplete?: boolean;
+    submittedAt?: Date;
+}
+
+// ============================================================================
+// Aggregated survey types
+// ============================================================================
+
+export interface SurveyWithResponseCount extends Survey {
+    responseCount: number;
+}
+
+export interface SurveyResponseWithProfile extends Omit<
+    SurveyResponse,
+    'memberId'
+> {
+    member: Pick<Profile, '_id' | 'lumaEmail' | 'githubUsername'>;
+}
