@@ -268,3 +268,66 @@ export async function hasMemberCompletedSurvey(
 
     return response !== null;
 }
+
+/**
+ * Get member's completed surveys with survey details (aggregation)
+ */
+export async function getMemberCompletedSurveysWithDetails(
+    memberId: string
+): Promise<
+    Array<{
+        _id: ObjectId;
+        surveyId: ObjectId;
+        surveySlug: string;
+        surveyTitle: string;
+        surveyDescription: string;
+        submittedAt: Date;
+    }>
+> {
+    const db = await getMongoDb();
+
+    const results = await db
+        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
+        .aggregate([
+            {
+                $match: {
+                    memberId: new ObjectId(memberId),
+                    isComplete: true
+                }
+            },
+            {
+                $lookup: {
+                    from: CollectionName.SURVEYS,
+                    localField: 'surveyId',
+                    foreignField: '_id',
+                    as: 'survey'
+                }
+            },
+            {
+                $unwind: '$survey'
+            },
+            {
+                $project: {
+                    _id: 1,
+                    surveyId: '$survey._id',
+                    surveySlug: '$survey.slug',
+                    surveyTitle: '$survey.title',
+                    surveyDescription: '$survey.description',
+                    submittedAt: 1
+                }
+            },
+            {
+                $sort: { submittedAt: -1 }
+            }
+        ])
+        .toArray();
+
+    return results as Array<{
+        _id: ObjectId;
+        surveyId: ObjectId;
+        surveySlug: string;
+        surveyTitle: string;
+        surveyDescription: string;
+        submittedAt: Date;
+    }>;
+}

@@ -25,11 +25,23 @@ interface Profile {
     createdAt: string;
 }
 
+interface CompletedSurvey {
+    id: string;
+    surveyId: string;
+    surveySlug: string;
+    surveyTitle: string;
+    surveyDescription: string;
+    submittedAt: string;
+}
+
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [projectCount, setProjectCount] = useState(0);
+    const [completedSurveys, setCompletedSurveys] = useState<CompletedSurvey[]>(
+        []
+    );
     const [refreshKey, setRefreshKey] = useState(0);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
@@ -49,6 +61,7 @@ export default function Dashboard() {
                     if (data.profile) {
                         setProfile(data.profile);
                         setProjectCount(data.projectCount);
+                        setCompletedSurveys(data.completedSurveys || []);
                         // Show onboarding if not dismissed
                         setShowOnboarding(!data.profile.onboardingDismissed);
                     }
@@ -286,6 +299,41 @@ export default function Dashboard() {
                         </NeoCard>
                     </div>
                 </div>
+
+                {/* Completed Surveys Section */}
+                {completedSurveys.length > 0 && (
+                    <div className="mt-12">
+                        <h2 className="text-2xl font-sans text-primary mb-6">
+                            survey_insights
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {completedSurveys.map(survey => (
+                                <NeoCard key={survey.id} className="p-6">
+                                    <h3 className="text-lg font-sans text-primary mb-2">
+                                        {survey.surveyTitle}
+                                    </h3>
+                                    <p className="text-sm text-zinc-400 mb-4 line-clamp-2">
+                                        {survey.surveyDescription}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-zinc-500">
+                                            Completed:{' '}
+                                            {new Date(
+                                                survey.submittedAt
+                                            ).toLocaleDateString()}
+                                        </span>
+                                        <a
+                                            href={`/dashboard/survey/${survey.surveySlug}/results?supabaseUserId=${user.id}`}
+                                            className="px-4 py-2 bg-primary text-black border-2 border-black font-sans text-sm hover:translate-x-px hover:translate-y-px transition-transform"
+                                        >
+                                            view_results
+                                        </a>
+                                    </div>
+                                </NeoCard>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="mt-12">
                     <h2 className="text-2xl font-sans text-primary mb-6">

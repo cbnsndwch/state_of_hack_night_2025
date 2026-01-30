@@ -151,8 +151,10 @@ export default function SurveyPage() {
     }
 
     const handleSubmitSuccess = () => {
-        // Navigate back to dashboard on successful submission
-        navigate('/dashboard?surveyComplete=true');
+        // Navigate to results page on successful submission
+        navigate(
+            `/dashboard/survey/${loaderData.survey.slug}/results?supabaseUserId=${user.id}`
+        );
     };
 
     return (

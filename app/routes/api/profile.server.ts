@@ -1,6 +1,7 @@
 import { data, type LoaderFunctionArgs } from 'react-router';
 import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
 import { getProjectsByMemberId } from '@/lib/db/projects.server';
+import { getMemberCompletedSurveysWithDetails } from '@/lib/db/survey-responses.server';
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const url = new URL(request.url);
@@ -23,6 +24,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Get their projects count
     const projects = await getProjectsByMemberId(profile._id.toString());
 
+    // Get completed surveys with details
+    const completedSurveys = await getMemberCompletedSurveysWithDetails(
+        profile._id.toString()
+    );
+
     return data({
         profile: {
             id: profile._id.toString(),
@@ -43,6 +49,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
             isAppAdmin: profile.isAppAdmin || false,
             createdAt: profile.createdAt.toISOString()
         },
-        projectCount: projects.length
+        projectCount: projects.length,
+        completedSurveys: completedSurveys.map(s => ({
+            id: s._id.toString(),
+            surveyId: s.surveyId.toString(),
+            surveySlug: s.surveySlug,
+            surveyTitle: s.surveyTitle,
+            surveyDescription: s.surveyDescription,
+            submittedAt: s.submittedAt.toISOString()
+        }))
     });
 }
