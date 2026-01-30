@@ -110,6 +110,84 @@ export async function getDemoSlotsWithMembers(options?: {
 }
 
 /**
+ * Get demo slots with both member and event information (for organizer view).
+ */
+export async function getDemoSlotsWithMembersAndEvents(options?: {
+    eventId?: string;
+    status?: 'pending' | 'confirmed' | 'canceled';
+}): Promise<
+    Array<
+        DemoSlotWithMember & {
+            event: { _id: string; name: string; startAt: Date };
+        }
+    >
+> {
+    const db = await getMongoDb();
+    const demoSlotsCollection = db.collection<DemoSlot>(
+        CollectionName.DEMO_SLOTS
+    );
+
+    const filter: Record<string, unknown> = {};
+    if (options?.eventId) {
+        filter.eventId = new ObjectId(options.eventId);
+    }
+    if (options?.status) {
+        filter.status = options.status;
+    }
+
+    const pipeline = [
+        { $match: filter },
+        {
+            $lookup: {
+                from: CollectionName.PROFILES,
+                localField: 'memberId',
+                foreignField: '_id',
+                as: 'memberData'
+            }
+        },
+        { $unwind: '$memberData' },
+        {
+            $lookup: {
+                from: CollectionName.EVENTS,
+                localField: 'eventId',
+                foreignField: '_id',
+                as: 'eventData'
+            }
+        },
+        { $unwind: '$eventData' },
+        {
+            $project: {
+                _id: 1,
+                eventId: 1,
+                title: 1,
+                description: 1,
+                requestedTime: 1,
+                durationMinutes: 1,
+                status: 1,
+                confirmedByOrganizer: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                'member._id': '$memberData._id',
+                'member.lumaEmail': '$memberData.lumaEmail',
+                'member.githubUsername': '$memberData.githubUsername',
+                'event._id': '$eventData._id',
+                'event.name': '$eventData.name',
+                'event.startAt': '$eventData.startAt'
+            }
+        },
+        { $sort: { 'event.startAt': -1, createdAt: -1 } }
+    ];
+
+    const results = await demoSlotsCollection.aggregate(pipeline).toArray();
+
+    return results as unknown as Array<
+        DemoSlotWithMember & {
+            event: { _id: string; name: string; startAt: Date };
+        }
+    >;
+}
+
+/**
  * Get a demo slot by its ID.
  */
 export async function getDemoSlotById(id: string): Promise<DemoSlot | null> {

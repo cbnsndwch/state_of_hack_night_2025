@@ -256,12 +256,20 @@ export default function Dashboard() {
                                     View survey insights and manage community
                                     data.
                                 </p>
-                                <a
-                                    href={`/admin/surveys?userId=${user.id}`}
-                                    className="block w-full py-2 bg-primary text-black border border-primary text-center font-sans text-sm hover:bg-primary/80 transition-all"
-                                >
-                                    survey insights
-                                </a>
+                                <div className="space-y-2">
+                                    <a
+                                        href={`/admin/surveys?userId=${user.id}`}
+                                        className="block w-full py-2 bg-primary text-black border border-primary text-center font-sans text-sm hover:bg-primary/80 transition-all"
+                                    >
+                                        survey insights
+                                    </a>
+                                    <a
+                                        href={`/admin/demo-slots?userId=${user.id}`}
+                                        className="block w-full py-2 bg-primary text-black border border-primary text-center font-sans text-sm hover:bg-primary/80 transition-all"
+                                    >
+                                        manage demo slots
+                                    </a>
+                                </div>
                             </NeoCard>
                         )}
 
