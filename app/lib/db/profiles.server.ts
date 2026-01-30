@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { getMongoDb, COLLECTIONS } from '@/utils/mongodb.server';
+import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
 import type { Profile, ProfileInsert, ProfileUpdate } from '@/types/mongodb';
 
 /**
@@ -7,7 +7,7 @@ import type { Profile, ProfileInsert, ProfileUpdate } from '@/types/mongodb';
  */
 export async function getProfiles(): Promise<Profile[]> {
     const db = await getMongoDb();
-    return db.collection<Profile>(COLLECTIONS.PROFILES).find().toArray();
+    return db.collection<Profile>(CollectionName.PROFILES).find().toArray();
 }
 
 /**
@@ -15,7 +15,7 @@ export async function getProfiles(): Promise<Profile[]> {
  */
 export async function getProfileById(id: string): Promise<Profile | null> {
     const db = await getMongoDb();
-    return db.collection<Profile>(COLLECTIONS.PROFILES).findOne({
+    return db.collection<Profile>(CollectionName.PROFILES).findOne({
         _id: new ObjectId(id)
     });
 }
@@ -27,9 +27,21 @@ export async function getProfileBySupabaseUserId(
     supabaseUserId: string
 ): Promise<Profile | null> {
     const db = await getMongoDb();
-    return db.collection<Profile>(COLLECTIONS.PROFILES).findOne({
+    return db.collection<Profile>(CollectionName.PROFILES).findOne({
         supabaseUserId
     });
+}
+
+/**
+ * Get a profile by Luma email
+ */
+export async function getProfileByLumaEmail(
+    lumaEmail: string
+): Promise<Profile | null> {
+    const db = await getMongoDb();
+    return db
+        .collection<Profile>(CollectionName.PROFILES)
+        .findOne({ lumaEmail });
 }
 
 /**
@@ -41,13 +53,14 @@ export async function createProfile(data: ProfileInsert): Promise<Profile> {
 
     const doc = {
         ...data,
+        isAppAdmin: data.isAppAdmin ?? false,
         streakCount: data.streakCount ?? 0,
         createdAt: now,
         updatedAt: now
     };
 
     const result = await db
-        .collection<Profile>(COLLECTIONS.PROFILES)
+        .collection<Profile>(CollectionName.PROFILES)
         .insertOne(doc as Profile);
 
     return {
@@ -66,7 +79,7 @@ export async function updateProfile(
     const db = await getMongoDb();
 
     const result = await db
-        .collection<Profile>(COLLECTIONS.PROFILES)
+        .collection<Profile>(CollectionName.PROFILES)
         .findOneAndUpdate(
             { _id: new ObjectId(id) },
             {
@@ -86,6 +99,7 @@ export async function updateProfile(
  */
 export async function getOrCreateProfile(
     supabaseUserId: string,
+    lumaEmail: string,
     defaults?: Partial<ProfileInsert>
 ): Promise<Profile> {
     const existing = await getProfileBySupabaseUserId(supabaseUserId);
@@ -95,6 +109,8 @@ export async function getOrCreateProfile(
 
     return createProfile({
         supabaseUserId,
+        lumaEmail,
+        verificationStatus: 'verified',
         ...defaults
     });
 }

@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { getMongoDb, COLLECTIONS } from '@/utils/mongodb.server';
+import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
 import type {
     Attendance,
     AttendanceInsert,
@@ -15,7 +15,7 @@ export async function getAttendanceByMemberId(
 ): Promise<Attendance[]> {
     const db = await getMongoDb();
     return db
-        .collection<Attendance>(COLLECTIONS.ATTENDANCE)
+        .collection<Attendance>(CollectionName.ATTENDANCE)
         .find({ memberId: new ObjectId(memberId) })
         .sort({ createdAt: -1 })
         .toArray();
@@ -29,7 +29,7 @@ export async function getAttendanceByEventId(
 ): Promise<Attendance[]> {
     const db = await getMongoDb();
     return db
-        .collection<Attendance>(COLLECTIONS.ATTENDANCE)
+        .collection<Attendance>(CollectionName.ATTENDANCE)
         .find({ lumaEventId })
         .toArray();
 }
@@ -42,7 +42,7 @@ export async function getAttendance(
     lumaEventId: string
 ): Promise<Attendance | null> {
     const db = await getMongoDb();
-    return db.collection<Attendance>(COLLECTIONS.ATTENDANCE).findOne({
+    return db.collection<Attendance>(CollectionName.ATTENDANCE).findOne({
         memberId: new ObjectId(memberId),
         lumaEventId
     });
@@ -63,7 +63,7 @@ export async function createAttendance(
     };
 
     const result = await db
-        .collection<Attendance>(COLLECTIONS.ATTENDANCE)
+        .collection<Attendance>(CollectionName.ATTENDANCE)
         .insertOne(doc as Attendance);
 
     return {
@@ -83,7 +83,7 @@ export async function updateAttendance(
     const db = await getMongoDb();
 
     const result = await db
-        .collection<Attendance>(COLLECTIONS.ATTENDANCE)
+        .collection<Attendance>(CollectionName.ATTENDANCE)
         .findOneAndUpdate(
             {
                 memberId: new ObjectId(memberId),
@@ -137,7 +137,7 @@ export async function getEventAttendanceCount(
     const db = await getMongoDb();
 
     const result = await db
-        .collection<Attendance>(COLLECTIONS.ATTENDANCE)
+        .collection<Attendance>(CollectionName.ATTENDANCE)
         .aggregate<{ _id: AttendanceStatus; count: number }>([
             { $match: { lumaEventId } },
             { $group: { _id: '$status', count: { $sum: 1 } } }

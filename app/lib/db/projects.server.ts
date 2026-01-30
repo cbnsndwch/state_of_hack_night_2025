@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { getMongoDb, COLLECTIONS } from '@/utils/mongodb.server';
+import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
 import type {
     Project,
     ProjectInsert,
@@ -13,7 +13,7 @@ import type {
 export async function getProjects(limit?: number): Promise<Project[]> {
     const db = await getMongoDb();
     const query = db
-        .collection<Project>(COLLECTIONS.PROJECTS)
+        .collection<Project>(CollectionName.PROJECTS)
         .find()
         .sort({ createdAt: -1 });
 
@@ -36,7 +36,7 @@ export async function getProjectsWithMembers(
         { $sort: { createdAt: -1 } },
         {
             $lookup: {
-                from: COLLECTIONS.PROFILES,
+                from: CollectionName.PROFILES,
                 localField: 'memberId',
                 foreignField: '_id',
                 as: 'memberArray'
@@ -60,7 +60,7 @@ export async function getProjectsWithMembers(
     }
 
     return db
-        .collection<ProjectWithMember>(COLLECTIONS.PROJECTS)
+        .collection<ProjectWithMember>(CollectionName.PROJECTS)
         .aggregate<ProjectWithMember>(pipeline)
         .toArray();
 }
@@ -70,7 +70,7 @@ export async function getProjectsWithMembers(
  */
 export async function getProjectById(id: string): Promise<Project | null> {
     const db = await getMongoDb();
-    return db.collection<Project>(COLLECTIONS.PROJECTS).findOne({
+    return db.collection<Project>(CollectionName.PROJECTS).findOne({
         _id: new ObjectId(id)
     });
 }
@@ -83,7 +83,7 @@ export async function getProjectsByMemberId(
 ): Promise<Project[]> {
     const db = await getMongoDb();
     return db
-        .collection<Project>(COLLECTIONS.PROJECTS)
+        .collection<Project>(CollectionName.PROJECTS)
         .find({ memberId: new ObjectId(memberId) })
         .sort({ createdAt: -1 })
         .toArray();
@@ -105,7 +105,7 @@ export async function createProject(data: ProjectInsert): Promise<Project> {
     };
 
     const result = await db
-        .collection<Project>(COLLECTIONS.PROJECTS)
+        .collection<Project>(CollectionName.PROJECTS)
         .insertOne(doc as Project);
 
     return {
@@ -124,7 +124,7 @@ export async function updateProject(
     const db = await getMongoDb();
 
     const result = await db
-        .collection<Project>(COLLECTIONS.PROJECTS)
+        .collection<Project>(CollectionName.PROJECTS)
         .findOneAndUpdate(
             { _id: new ObjectId(id) },
             {
@@ -145,7 +145,7 @@ export async function updateProject(
 export async function deleteProject(id: string): Promise<boolean> {
     const db = await getMongoDb();
     const result = await db
-        .collection<Project>(COLLECTIONS.PROJECTS)
+        .collection<Project>(CollectionName.PROJECTS)
         .deleteOne({
             _id: new ObjectId(id)
         });
@@ -161,10 +161,12 @@ export async function isProjectOwner(
     memberId: string
 ): Promise<boolean> {
     const db = await getMongoDb();
-    const project = await db.collection<Project>(COLLECTIONS.PROJECTS).findOne({
-        _id: new ObjectId(projectId),
-        memberId: new ObjectId(memberId)
-    });
+    const project = await db
+        .collection<Project>(CollectionName.PROJECTS)
+        .findOne({
+            _id: new ObjectId(projectId),
+            memberId: new ObjectId(memberId)
+        });
 
     return project !== null;
 }

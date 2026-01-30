@@ -11,7 +11,8 @@
         "types": "react-router typegen && tsc",
         "format": "prettier --write ./app",
         "lint": "eslint .",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "ralph": "tsx scripts/ralph/ralph.ts"
     },
     "dependencies": {
         "@fontsource/inter": "^5.2.8",

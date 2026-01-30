@@ -11,9 +11,14 @@ import type { ObjectId } from 'mongodb';
 
 export interface Profile {
     _id: ObjectId;
-    /** Supabase auth user ID */
-    supabaseUserId: string;
-    githubUid: string | null;
+    /** Supabase auth user ID - may be null before first login */
+    supabaseUserId: string | null;
+    /** Email used in Luma registration */
+    lumaEmail: string;
+    /** Verification status */
+    verificationStatus: 'pending' | 'verified';
+    /** Whether this user is an app admin (calendar administrator) */
+    isAppAdmin: boolean;
     lumaAttendeeId: string | null;
     bio: string | null;
     streakCount: number;
@@ -22,16 +27,21 @@ export interface Profile {
 }
 
 export interface ProfileInsert {
-    supabaseUserId: string;
-    githubUid?: string | null;
+    supabaseUserId: string | null;
+    lumaEmail: string;
+    verificationStatus?: 'pending' | 'verified';
+    isAppAdmin?: boolean;
     lumaAttendeeId?: string | null;
     bio?: string | null;
     streakCount?: number;
 }
 
 export interface ProfileUpdate {
-    githubUid?: string | null;
+    lumaEmail?: string;
+    verificationStatus?: 'pending' | 'verified';
+    isAppAdmin?: boolean;
     lumaAttendeeId?: string | null;
+    supabaseUserId?: string | null;
     bio?: string | null;
     streakCount?: number;
 }
@@ -138,11 +148,66 @@ export interface AttendanceUpdate {
 }
 
 // ============================================================================
+// PendingUser - Users who subscribed to calendar but not yet approved
+// ============================================================================
+
+export interface PendingUser {
+    _id: ObjectId;
+    /** Email from Luma subscription */
+    email: string;
+    /** Name from Luma subscription */
+    name: string;
+    /** Luma attendee ID */
+    lumaAttendeeId: string;
+    /** When they subscribed to the calendar */
+    subscribedAt: Date;
+    /** When they were approved (null if not approved) */
+    approvedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface PendingUserInsert {
+    email: string;
+    name: string;
+    lumaAttendeeId: string;
+    subscribedAt?: Date;
+    approvedAt?: Date | null;
+}
+
+export interface PendingUserUpdate {
+    name?: string;
+    approvedAt?: Date | null;
+}
+
+// ============================================================================
+// LumaWebhook - Raw webhook data for audit/debugging
+// ============================================================================
+
+export interface LumaWebhook {
+    _id: ObjectId;
+    /** Webhook type (e.g., 'calendar.person.subscribed') */
+    type: string;
+    /** Raw webhook payload */
+    payload: Record<string, unknown>;
+    /** Webhook signature (if provided) */
+    signature?: string;
+    /** When webhook was received */
+    receivedAt: Date;
+}
+
+export interface LumaWebhookInsert {
+    type: string;
+    payload: Record<string, unknown>;
+    signature?: string;
+}
+
+// ============================================================================
 // Aggregated types for API responses (with populated references)
 // ============================================================================
 
 export interface ProjectWithMember extends Omit<Project, 'memberId'> {
-    member: Pick<Profile, '_id' | 'supabaseUserId' | 'bio' | 'githubUid'>;
+    member: Pick<Profile, '_id' | 'supabaseUserId' | 'bio' | 'lumaEmail'>;
 }
 
 export interface ProfileWithBadges extends Profile {

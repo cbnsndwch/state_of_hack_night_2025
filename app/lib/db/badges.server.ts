@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { getMongoDb, COLLECTIONS } from '@/utils/mongodb.server';
+import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
 import type {
     Badge,
     BadgeInsert,
@@ -12,7 +12,7 @@ import type {
  */
 export async function getBadges(): Promise<Badge[]> {
     const db = await getMongoDb();
-    return db.collection<Badge>(COLLECTIONS.BADGES).find().toArray();
+    return db.collection<Badge>(CollectionName.BADGES).find().toArray();
 }
 
 /**
@@ -20,7 +20,7 @@ export async function getBadges(): Promise<Badge[]> {
  */
 export async function getBadgeById(id: string): Promise<Badge | null> {
     const db = await getMongoDb();
-    return db.collection<Badge>(COLLECTIONS.BADGES).findOne({
+    return db.collection<Badge>(CollectionName.BADGES).findOne({
         _id: new ObjectId(id)
     });
 }
@@ -38,7 +38,7 @@ export async function createBadge(data: BadgeInsert): Promise<Badge> {
     };
 
     const result = await db
-        .collection<Badge>(COLLECTIONS.BADGES)
+        .collection<Badge>(CollectionName.BADGES)
         .insertOne(doc as Badge);
 
     return {
@@ -54,12 +54,12 @@ export async function getMemberBadges(memberId: string): Promise<Badge[]> {
     const db = await getMongoDb();
 
     const memberBadges = await db
-        .collection<MemberBadge>(COLLECTIONS.MEMBER_BADGES)
+        .collection<MemberBadge>(CollectionName.MEMBER_BADGES)
         .aggregate<Badge>([
             { $match: { memberId: new ObjectId(memberId) } },
             {
                 $lookup: {
-                    from: COLLECTIONS.BADGES,
+                    from: CollectionName.BADGES,
                     localField: 'badgeId',
                     foreignField: '_id',
                     as: 'badge'
@@ -88,7 +88,7 @@ export async function awardBadge(
     };
 
     const result = await db
-        .collection<MemberBadge>(COLLECTIONS.MEMBER_BADGES)
+        .collection<MemberBadge>(CollectionName.MEMBER_BADGES)
         .insertOne(doc as MemberBadge);
 
     return {
@@ -106,7 +106,7 @@ export async function hasBadge(
 ): Promise<boolean> {
     const db = await getMongoDb();
     const memberBadge = await db
-        .collection<MemberBadge>(COLLECTIONS.MEMBER_BADGES)
+        .collection<MemberBadge>(CollectionName.MEMBER_BADGES)
         .findOne({
             memberId: new ObjectId(memberId),
             badgeId: new ObjectId(badgeId)
@@ -124,7 +124,7 @@ export async function removeBadge(
 ): Promise<boolean> {
     const db = await getMongoDb();
     const result = await db
-        .collection<MemberBadge>(COLLECTIONS.MEMBER_BADGES)
+        .collection<MemberBadge>(CollectionName.MEMBER_BADGES)
         .deleteOne({
             memberId: new ObjectId(memberId),
             badgeId: new ObjectId(badgeId)

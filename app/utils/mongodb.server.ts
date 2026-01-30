@@ -42,10 +42,12 @@ export async function closeMongoDb(): Promise<void> {
 }
 
 // Collection names
-export const COLLECTIONS = {
+export const CollectionName = {
     PROFILES: 'profiles',
     PROJECTS: 'projects',
     BADGES: 'badges',
     MEMBER_BADGES: 'member_badges',
-    ATTENDANCE: 'attendance'
+    ATTENDANCE: 'attendance',
+    PENDING_USERS: 'pending_users',
+    LUMA_WEBHOOKS: 'luma_webhooks'
 } as const;

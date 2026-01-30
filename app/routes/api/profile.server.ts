@@ -1,8 +1,5 @@
 import { data, type LoaderFunctionArgs } from 'react-router';
-import {
-    getProfileBySupabaseUserId,
-    getOrCreateProfile
-} from '@/lib/db/profiles.server';
+import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
 import { getProjectsByMemberId } from '@/lib/db/projects.server';
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -16,8 +13,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
         );
     }
 
-    // Get or create the profile for this user
-    const profile = await getOrCreateProfile(supabaseUserId);
+    // Get the profile for this user (don't create if it doesn't exist)
+    const profile = await getProfileBySupabaseUserId(supabaseUserId);
+
+    if (!profile) {
+        return data({ error: 'Profile not found' }, { status: 404 });
+    }
 
     // Get their projects count
     const projects = await getProjectsByMemberId(profile._id.toString());
@@ -26,7 +27,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         profile: {
             id: profile._id.toString(),
             supabaseUserId: profile.supabaseUserId,
-            githubUid: profile.githubUid,
+            lumaEmail: profile.lumaEmail,
+            verificationStatus: profile.verificationStatus,
             bio: profile.bio,
             streakCount: profile.streakCount,
             createdAt: profile.createdAt.toISOString()

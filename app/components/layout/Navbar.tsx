@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router';
 import { useState } from 'react';
 
 import { useAuth } from '@/hooks/use-auth';
+import { LoginDialog } from '@/components/auth/LoginDialog';
 
 import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 import { Button } from '../ui/button';
@@ -10,7 +11,7 @@ import { Button } from '../ui/button';
 export function Navbar() {
     const location = useLocation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { user, signInWithGitHub, signOut } = useAuth();
+    const { user, signOut } = useAuth();
 
     const navLinks = [
         { href: '/', label: 'home' },
@@ -81,13 +82,16 @@ export function Navbar() {
                             </Tooltip>
                         </div>
                     ) : (
-                        <Button
-                            variant="primary"
-                            className="px-4 py-1.5 text-xs h-auto"
-                            onClick={() => signInWithGitHub()}
-                        >
-                            member_login
-                        </Button>
+                        <LoginDialog
+                            trigger={
+                                <Button
+                                    variant="primary"
+                                    className="px-4 py-1.5 text-xs h-auto"
+                                >
+                                    member_login
+                                </Button>
+                            }
+                        />
                     )}
 
                     {/* <div className="h-4 w-px bg-zinc-800" />

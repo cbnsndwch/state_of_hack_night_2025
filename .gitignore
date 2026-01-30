@@ -31,4 +31,5 @@ build
 
 .data
 .local
+.ralph
 /supabase/.temp

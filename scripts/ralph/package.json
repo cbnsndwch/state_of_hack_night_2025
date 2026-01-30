@@ -1,0 +1,16 @@
+{
+    "name": "hello-miami-ralph",
+    "version": "1.0.0",
+    "description": "Iterative AI agent loop for hello_miami development",
+    "type": "module",
+    "main": "ralph.ts",
+    "scripts": {
+        "start": "tsx ralph.ts",
+        "ralph": "tsx ralph.ts"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "tsx": "^4.19.0",
+        "@types/node": "^22.0.0"
+    }
+}

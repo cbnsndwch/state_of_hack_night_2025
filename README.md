@@ -52,7 +52,7 @@ This project serves as:
 MONGODB_URI=mongodb://...
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=...
-LUMA_API_KEY=...                # Optional: for Luma API calls
+LUMA_API_KEY=...                # Required: for user authentication via Luma
 LUMA_WEBHOOK_SECRET=...         # Optional: for webhook verification
 ```
 

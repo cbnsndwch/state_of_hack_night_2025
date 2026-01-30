@@ -9,8 +9,8 @@ export default [
     // protected routes
     route('dashboard', 'routes/dashboard.tsx'),
 
-    // API routes (server-side loaders/actions for MongoDB)
-    route('api/projects', 'routes/api/projects.ts'),
-    route('api/projects-list', 'routes/api/projects-list.ts'),
-    route('api/profile', 'routes/api/profile.ts')
+    // api routes
+    route('api/webhooks/luma', 'routes/api/webhooks/luma.ts'),
+    route('api/auth/check-user', 'routes/api/auth/check-user.ts'),
+    route('api/auth/complete-login', 'routes/api/auth/complete-login.ts')
 ] satisfies RouteConfig;
