@@ -8,6 +8,7 @@ import { ProjectGallery } from '@/components/projects/ProjectGallery';
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
 import { DemoSlotBookingDialog } from '@/components/events/DemoSlotBookingDialog';
 import { DemoSlotsList } from '@/components/events/DemoSlotsList';
+import { ImHereButton } from '@/components/events/ImHereButton';
 
 interface Profile {
     id: string;
@@ -273,23 +274,10 @@ export default function Dashboard() {
                             </NeoCard>
                         )}
 
-                        <NeoCard variant="cyan">
-                            <h3 className="text-lg font-sans mb-4">
-                                upcoming_events
-                            </h3>
-                            <p className="text-sm text-zinc-400 mb-4">
-                                check into the next hack night to start your
-                                streak.
-                            </p>
-                            <a
-                                href="https://luma.com/hello_miami"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block w-full py-2 bg-black border border-white text-center font-sans text-sm hover:invert transition-all"
-                            >
-                                view on luma
-                            </a>
-                        </NeoCard>
+                        <ImHereButton
+                            memberId={profile?.id}
+                            lumaAttendeeId={profile?.lumaAttendeeId}
+                        />
 
                         <NeoCard variant="magenta">
                             <h3 className="text-lg font-sans mb-4">
