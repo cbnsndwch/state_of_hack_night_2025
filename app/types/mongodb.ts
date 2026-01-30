@@ -21,6 +21,20 @@ export interface Profile {
     isAppAdmin: boolean;
     lumaAttendeeId: string | null;
     bio: string | null;
+    /** Skills and areas of expertise (e.g., ["Python", "React", "Hardware"]) */
+    skills: string[];
+    /** GitHub username */
+    githubUsername: string | null;
+    /** Twitter/X handle */
+    twitterHandle: string | null;
+    /** Personal or portfolio website */
+    websiteUrl: string | null;
+    /** Current role/occupation */
+    role: string | null;
+    /** Whether seeking funding for projects */
+    seekingFunding: boolean;
+    /** Whether interested in mentoring others */
+    openToMentoring: boolean;
     streakCount: number;
     /** Whether user has dismissed the onboarding checklist */
     onboardingDismissed: boolean;
@@ -35,6 +49,13 @@ export interface ProfileInsert {
     isAppAdmin?: boolean;
     lumaAttendeeId?: string | null;
     bio?: string | null;
+    skills?: string[];
+    githubUsername?: string | null;
+    twitterHandle?: string | null;
+    websiteUrl?: string | null;
+    role?: string | null;
+    seekingFunding?: boolean;
+    openToMentoring?: boolean;
     streakCount?: number;
     onboardingDismissed?: boolean;
 }
@@ -46,6 +67,13 @@ export interface ProfileUpdate {
     lumaAttendeeId?: string | null;
     supabaseUserId?: string | null;
     bio?: string | null;
+    skills?: string[];
+    githubUsername?: string | null;
+    twitterHandle?: string | null;
+    websiteUrl?: string | null;
+    role?: string | null;
+    seekingFunding?: boolean;
+    openToMentoring?: boolean;
     streakCount?: number;
     onboardingDismissed?: boolean;
 }

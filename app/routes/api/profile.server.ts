@@ -31,6 +31,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
             verificationStatus: profile.verificationStatus,
             lumaAttendeeId: profile.lumaAttendeeId,
             bio: profile.bio,
+            skills: profile.skills || [],
+            githubUsername: profile.githubUsername,
+            twitterHandle: profile.twitterHandle,
+            websiteUrl: profile.websiteUrl,
+            role: profile.role,
+            seekingFunding: profile.seekingFunding || false,
+            openToMentoring: profile.openToMentoring || false,
             streakCount: profile.streakCount,
             onboardingDismissed: profile.onboardingDismissed ?? false,
             createdAt: profile.createdAt.toISOString()

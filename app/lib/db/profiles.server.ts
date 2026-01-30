@@ -56,6 +56,13 @@ export async function createProfile(data: ProfileInsert): Promise<Profile> {
         isAppAdmin: data.isAppAdmin ?? false,
         streakCount: data.streakCount ?? 0,
         onboardingDismissed: data.onboardingDismissed ?? false,
+        skills: data.skills ?? [],
+        githubUsername: data.githubUsername ?? null,
+        twitterHandle: data.twitterHandle ?? null,
+        websiteUrl: data.websiteUrl ?? null,
+        role: data.role ?? null,
+        seekingFunding: data.seekingFunding ?? false,
+        openToMentoring: data.openToMentoring ?? false,
         createdAt: now,
         updatedAt: now
     };

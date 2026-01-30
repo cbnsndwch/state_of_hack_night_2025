@@ -10,9 +10,15 @@ import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist
 interface Profile {
     id: string;
     supabaseUserId: string;
-    githubUid: string | null;
     lumaAttendeeId: string | null;
     bio: string | null;
+    skills: string[];
+    githubUsername: string | null;
+    twitterHandle: string | null;
+    websiteUrl: string | null;
+    role: string | null;
+    seekingFunding: boolean;
+    openToMentoring: boolean;
     streakCount: number;
     onboardingDismissed: boolean;
     createdAt: string;
