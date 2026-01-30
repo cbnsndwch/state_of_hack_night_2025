@@ -9,6 +9,7 @@ import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist
 import { DemoSlotBookingDialog } from '@/components/events/DemoSlotBookingDialog';
 import { DemoSlotsList } from '@/components/events/DemoSlotsList';
 import { ImHereButton } from '@/components/events/ImHereButton';
+import { CheckInHistory } from '@/components/events/CheckInHistory';
 
 interface Profile {
     id: string;
@@ -320,6 +321,14 @@ export default function Dashboard() {
                         my_demo_slots
                     </h2>
                     <DemoSlotsList memberId={profile?.id} />
+                </div>
+
+                {/* Check-In History Section */}
+                <div className="mt-12">
+                    <h2 className="text-2xl font-sans text-primary mb-6">
+                        check-in_history
+                    </h2>
+                    <CheckInHistory memberId={profile?.id} />
                 </div>
 
                 {/* Completed Surveys Section */}
