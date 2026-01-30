@@ -378,7 +378,7 @@ function renderTemplate(template: string, ctx: PromptContext): string {
 
     // Handle simple {{variable}} replacements
     result = result.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-        const value = (ctx as Record<string, unknown>)[key];
+        const value = (ctx as any as  Record<string, unknown>)[key];
         return value !== null && value !== undefined ? String(value) : '';
     });
 
