@@ -33,6 +33,7 @@ const VERSION = '1.0.0';
 interface AgentConfig {
     name: string;
     command: string;
+    usesPromptFile?: boolean; // If true, write prompt to file and pass via -f
     buildArgs: (prompt: string, options: AgentOptions) => string[];
 }
 
@@ -45,10 +46,11 @@ const AGENTS: Record<string, AgentConfig> = {
     opencode: {
         name: 'OpenCode',
         command: 'opencode',
+        usesPromptFile: true,
         buildArgs: (prompt, options) => {
-            const args = ['run'];
+            // prompt here is actually the path to the prompt file
+            const args = ['run', '-f', prompt, 'Execute the task in the attached file'];
             if (options.model) args.push('-m', options.model);
-            args.push(prompt);
             return args;
         }
     },
@@ -456,13 +458,24 @@ function extractErrors(output: string): string[] {
     return errors.slice(0, 10);
 }
 
+const PROMPT_FILE_PATH = join(STATE_DIR, 'current-prompt.md');
+
 async function runAgent(
     agent: AgentConfig,
     prompt: string,
     options: AgentOptions
 ): Promise<{ output: string; exitCode: number }> {
     return new Promise(resolve => {
-        const args = agent.buildArgs(prompt, options);
+        let promptArg = prompt;
+        
+        // For agents that use prompt files, write the prompt to a file
+        if (agent.usesPromptFile) {
+            ensureDir(STATE_DIR);
+            writeFileSync(PROMPT_FILE_PATH, prompt, 'utf-8');
+            promptArg = PROMPT_FILE_PATH;
+        }
+        
+        const args = agent.buildArgs(promptArg, options);
         const child = spawn(agent.command, args, {
             stdio: ['inherit', 'pipe', 'pipe'],
             cwd: ROOT_DIR,
