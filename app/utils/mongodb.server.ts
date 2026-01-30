@@ -51,5 +51,6 @@ export const CollectionName = {
     PENDING_USERS: 'pending_users',
     LUMA_WEBHOOKS: 'luma_webhooks',
     SURVEYS: 'surveys',
-    SURVEY_RESPONSES: 'survey_responses'
+    SURVEY_RESPONSES: 'survey_responses',
+    EVENTS: 'events'
 } as const;

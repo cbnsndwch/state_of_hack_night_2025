@@ -73,6 +73,34 @@ export interface LumaListPeopleResponse {
     next_cursor?: string;
 }
 
+export interface LumaEvent {
+    api_id: string;
+    name: string;
+    description?: string;
+    cover_url?: string;
+    url: string;
+    start_at: string; // ISO 8601
+    end_at?: string; // ISO 8601
+    timezone: string;
+    geo_address_info?: {
+        address?: string;
+        city?: string;
+        latitude?: number;
+        longitude?: number;
+        place_name?: string;
+        type?: string;
+    };
+    guest_count?: number;
+    approval_count?: number;
+    is_canceled?: boolean;
+}
+
+export interface LumaListEventsResponse {
+    entries: LumaEvent[];
+    has_more: boolean;
+    next_cursor?: string;
+}
+
 // =============================================================================
 
 // =============================================================================
@@ -121,4 +149,68 @@ export async function checkCalendarSubscription(email: string): Promise<{
         isSubscribed: person !== null,
         person
     };
+}
+
+/**
+ * List events from the calendar.
+ *
+ * @param options - Options for filtering and pagination
+ * @returns List of events with pagination info
+ */
+export async function listCalendarEvents(options?: {
+    /** Starting date filter (ISO 8601) */
+    startingAfter?: string;
+    /** Ending date filter (ISO 8601) */
+    endingBefore?: string;
+    /** Pagination cursor from previous response */
+    paginationCursor?: string;
+    /** Number of events to return (max 100) */
+    paginationLimit?: number;
+}): Promise<LumaListEventsResponse> {
+    const params = new URLSearchParams();
+
+    if (options?.startingAfter) {
+        params.set('period_starts_after', options.startingAfter);
+    }
+    if (options?.endingBefore) {
+        params.set('period_ends_before', options.endingBefore);
+    }
+    if (options?.paginationCursor) {
+        params.set('pagination_cursor', options.paginationCursor);
+    }
+    if (options?.paginationLimit) {
+        params.set('pagination_limit', String(options.paginationLimit));
+    }
+
+    const queryString = params.toString();
+    const endpoint = `/v1/calendar/list-events${queryString ? `?${queryString}` : ''}`;
+
+    return lumaFetch<LumaListEventsResponse>(endpoint);
+}
+
+/**
+ * Fetch all upcoming events from the calendar.
+ * Handles pagination automatically.
+ *
+ * @returns Array of all upcoming events
+ */
+export async function fetchAllUpcomingEvents(): Promise<LumaEvent[]> {
+    const now = new Date().toISOString();
+    const allEvents: LumaEvent[] = [];
+    let cursor: string | undefined;
+    let hasMore = true;
+
+    while (hasMore) {
+        const response = await listCalendarEvents({
+            startingAfter: now,
+            paginationCursor: cursor,
+            paginationLimit: 100
+        });
+
+        allEvents.push(...response.entries);
+        hasMore = response.has_more;
+        cursor = response.next_cursor;
+    }
+
+    return allEvents;
 }

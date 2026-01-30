@@ -371,3 +371,100 @@ export interface SurveyResponseWithProfile extends Omit<
 > {
     member: Pick<Profile, '_id' | 'lumaEmail' | 'githubUsername'>;
 }
+
+// ============================================================================
+// Event - Synced events from Luma calendar
+// ============================================================================
+
+export interface Event {
+    _id: ObjectId;
+    /** Luma event API ID (e.g., "evt-xxxxxxxxxxxxx") */
+    lumaEventId: string;
+    /** Event name/title */
+    name: string;
+    /** Event description (can contain markdown/HTML) */
+    description: string | null;
+    /** Event cover image URL */
+    coverUrl: string | null;
+    /** Event URL on lu.ma */
+    url: string;
+    /** Start time (ISO 8601 datetime) */
+    startAt: Date;
+    /** End time (ISO 8601 datetime) */
+    endAt: Date | null;
+    /** Timezone identifier (e.g., "America/New_York") */
+    timezone: string;
+    /** Event location */
+    location: {
+        /** Location type (e.g., "in_person", "online", "tbd") */
+        type: string;
+        /** Venue name */
+        name: string | null;
+        /** Full address */
+        address: string | null;
+        /** Latitude */
+        lat: number | null;
+        /** Longitude */
+        lng: number | null;
+    } | null;
+    /** Registration counts */
+    stats: {
+        /** Number of registered guests */
+        registered: number;
+        /** Number of checked-in guests */
+        checkedIn: number;
+    };
+    /** Whether event is canceled */
+    isCanceled: boolean;
+    /** Last time this event was synced from Luma */
+    lastSyncedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface EventInsert {
+    lumaEventId: string;
+    name: string;
+    description?: string | null;
+    coverUrl?: string | null;
+    url: string;
+    startAt: Date;
+    endAt?: Date | null;
+    timezone: string;
+    location?: {
+        type: string;
+        name: string | null;
+        address: string | null;
+        lat: number | null;
+        lng: number | null;
+    } | null;
+    stats?: {
+        registered: number;
+        checkedIn: number;
+    };
+    isCanceled?: boolean;
+    lastSyncedAt?: Date;
+}
+
+export interface EventUpdate {
+    name?: string;
+    description?: string | null;
+    coverUrl?: string | null;
+    url?: string;
+    startAt?: Date;
+    endAt?: Date | null;
+    timezone?: string;
+    location?: {
+        type: string;
+        name: string | null;
+        address: string | null;
+        lat: number | null;
+        lng: number | null;
+    } | null;
+    stats?: {
+        registered: number;
+        checkedIn: number;
+    };
+    isCanceled?: boolean;
+    lastSyncedAt?: Date;
+}
