@@ -10,8 +10,10 @@ import { Navbar } from '@/components/layout/Navbar';
 import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
 import {
     getDemoSlotsWithMembersAndEvents,
-    updateDemoSlot
+    updateDemoSlot,
+    getDemoSlotById
 } from '@/lib/db/demo-slots.server';
+import { sendDemoStatusUpdate } from '@/lib/notifications/demo-slots.server';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
 
@@ -138,12 +140,34 @@ export async function action({ request }: ActionFunctionArgs) {
                     status: 'confirmed',
                     confirmedByOrganizer: true
                 });
+                // Send confirmation email (fire and forget)
+                getDemoSlotById(demoSlotId).then(slot => {
+                    if (slot) {
+                        sendDemoStatusUpdate(slot, 'confirmed').catch(error => {
+                            console.error(
+                                'Failed to send confirmation email:',
+                                error
+                            );
+                        });
+                    }
+                });
                 return data({ success: true, message: 'Demo slot confirmed' });
 
             case 'cancel':
                 await updateDemoSlot(demoSlotId, {
                     status: 'canceled',
                     confirmedByOrganizer: false
+                });
+                // Send cancellation email (fire and forget)
+                getDemoSlotById(demoSlotId).then(slot => {
+                    if (slot) {
+                        sendDemoStatusUpdate(slot, 'canceled').catch(error => {
+                            console.error(
+                                'Failed to send cancellation email:',
+                                error
+                            );
+                        });
+                    }
                 });
                 return data({ success: true, message: 'Demo slot canceled' });
 

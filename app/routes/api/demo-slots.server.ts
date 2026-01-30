@@ -21,6 +21,11 @@ import {
     deleteDemoSlot,
     getDemoSlotById
 } from '@/lib/db/demo-slots.server';
+import {
+    sendDemoBookingConfirmation,
+    notifyOrganizersOfNewDemo,
+    sendDemoStatusUpdate
+} from '@/lib/notifications/demo-slots.server';
 
 /**
  * GET handler - Fetch demo slots
@@ -144,6 +149,22 @@ export async function action({ request }: ActionFunctionArgs) {
                 confirmedByOrganizer: false
             });
 
+            // Send confirmation email to member (fire and forget - don't block response)
+            sendDemoBookingConfirmation(demoSlot).catch(error => {
+                console.error(
+                    'Failed to send demo booking confirmation:',
+                    error
+                );
+            });
+
+            // Notify organizers of new demo (fire and forget)
+            notifyOrganizersOfNewDemo(demoSlot).catch(error => {
+                console.error(
+                    'Failed to notify organizers of new demo:',
+                    error
+                );
+            });
+
             return data({
                 success: true,
                 demoSlot: {
@@ -260,6 +281,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
             // Fetch the updated slot
             const updatedSlot = await getDemoSlotById(demoSlotId);
+
+            // If status was updated to confirmed or canceled, send notification
+            if (updatedSlot && status && status !== existingSlot.status) {
+                if (status === 'confirmed' || status === 'canceled') {
+                    sendDemoStatusUpdate(updatedSlot, status).catch(error => {
+                        console.error(
+                            'Failed to send demo status update:',
+                            error
+                        );
+                    });
+                }
+            }
 
             return data({
                 success: true,
