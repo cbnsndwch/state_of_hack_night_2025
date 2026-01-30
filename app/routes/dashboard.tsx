@@ -21,6 +21,7 @@ interface Profile {
     openToMentoring: boolean;
     streakCount: number;
     onboardingDismissed: boolean;
+    isAppAdmin: boolean;
     createdAt: string;
 }
 
@@ -230,6 +231,25 @@ export default function Dashboard() {
 
                     {/* Quick Links / Actions */}
                     <div className="space-y-6">
+                        {/* Admin Panel - Shows only for admins */}
+                        {profile?.isAppAdmin && (
+                            <NeoCard variant="yellow">
+                                <h3 className="text-lg font-sans mb-4">
+                                    admin_panel
+                                </h3>
+                                <p className="text-sm text-zinc-400 mb-4">
+                                    View survey insights and manage community
+                                    data.
+                                </p>
+                                <a
+                                    href={`/admin/surveys?userId=${user.id}`}
+                                    className="block w-full py-2 bg-primary text-black border border-primary text-center font-sans text-sm hover:bg-primary/80 transition-all"
+                                >
+                                    survey insights
+                                </a>
+                            </NeoCard>
+                        )}
+
                         <NeoCard variant="cyan">
                             <h3 className="text-lg font-sans mb-4">
                                 upcoming_events

@@ -40,6 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             openToMentoring: profile.openToMentoring || false,
             streakCount: profile.streakCount,
             onboardingDismissed: profile.onboardingDismissed ?? false,
+            isAppAdmin: profile.isAppAdmin || false,
             createdAt: profile.createdAt.toISOString()
         },
         projectCount: projects.length
