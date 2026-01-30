@@ -371,7 +371,7 @@ function renderTemplate(template: string, ctx: PromptContext): string {
     result = result.replace(
         /\{\{#if (\w+)\}\}([\s\S]*?)(?:\{\{else\}\}([\s\S]*?))?\{\{\/if\}\}/g,
         (_, key, ifContent, elseContent = '') => {
-            const value = (ctx as Record<string, unknown>)[key];
+            const value = (ctx as any as Record<string, unknown>)[key];
             return value ? ifContent : elseContent;
         }
     );
