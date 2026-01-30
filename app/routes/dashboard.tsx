@@ -6,6 +6,8 @@ import { NeoCard } from '@/components/ui/NeoCard';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
 import { ProjectGallery } from '@/components/projects/ProjectGallery';
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
+import { DemoSlotBookingDialog } from '@/components/events/DemoSlotBookingDialog';
+import { DemoSlotsList } from '@/components/events/DemoSlotsList';
 
 interface Profile {
     id: string;
@@ -297,7 +299,31 @@ export default function Dashboard() {
                                 }}
                             />
                         </NeoCard>
+
+                        <NeoCard variant="cyan">
+                            <h3 className="text-lg font-sans mb-4">
+                                demo_night
+                            </h3>
+                            <p className="text-sm text-zinc-400 mb-4">
+                                reserve a time slot to present your project at
+                                an upcoming hack night.
+                            </p>
+                            <DemoSlotBookingDialog
+                                onDemoBooked={() => {
+                                    // Trigger refresh of profile data
+                                    setRefreshKey(k => k + 1);
+                                }}
+                            />
+                        </NeoCard>
                     </div>
+                </div>
+
+                {/* Demo Slots Section */}
+                <div className="mt-12">
+                    <h2 className="text-2xl font-sans text-primary mb-6">
+                        my_demo_slots
+                    </h2>
+                    <DemoSlotsList memberId={profile?.id} />
                 </div>
 
                 {/* Completed Surveys Section */}

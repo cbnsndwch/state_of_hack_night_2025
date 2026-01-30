@@ -52,5 +52,6 @@ export const CollectionName = {
     LUMA_WEBHOOKS: 'luma_webhooks',
     SURVEYS: 'surveys',
     SURVEY_RESPONSES: 'survey_responses',
-    EVENTS: 'events'
+    EVENTS: 'events',
+    DEMO_SLOTS: 'demo_slots'
 } as const;

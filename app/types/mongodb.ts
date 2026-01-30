@@ -468,3 +468,61 @@ export interface EventUpdate {
     isCanceled?: boolean;
     lastSyncedAt?: Date;
 }
+
+// ============================================================================
+// DemoSlot - Demo presentations scheduled for hack nights
+// ============================================================================
+
+export interface DemoSlot {
+    _id: ObjectId;
+    /** Reference to Profile._id of the presenter */
+    memberId: ObjectId;
+    /** Reference to Event._id for the hack night */
+    eventId: ObjectId;
+    /** Demo title/topic */
+    title: string;
+    /** Demo description */
+    description: string | null;
+    /** Requested start time within event (e.g., "8:30 PM") */
+    requestedTime: string | null;
+    /** Duration in minutes (default: 5) */
+    durationMinutes: number;
+    /** Current status of demo slot */
+    status: 'pending' | 'confirmed' | 'canceled';
+    /** Whether organizer has approved this slot */
+    confirmedByOrganizer: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface DemoSlotInsert {
+    memberId: ObjectId;
+    eventId: ObjectId;
+    title: string;
+    description?: string | null;
+    requestedTime?: string | null;
+    durationMinutes?: number;
+    status?: 'pending' | 'confirmed' | 'canceled';
+    confirmedByOrganizer?: boolean;
+}
+
+export interface DemoSlotUpdate {
+    title?: string;
+    description?: string | null;
+    requestedTime?: string | null;
+    durationMinutes?: number;
+    status?: 'pending' | 'confirmed' | 'canceled';
+    confirmedByOrganizer?: boolean;
+}
+
+// ============================================================================
+// Aggregated demo slot types
+// ============================================================================
+
+export interface DemoSlotWithMember extends Omit<DemoSlot, 'memberId'> {
+    member: Pick<Profile, '_id' | 'lumaEmail' | 'githubUsername'>;
+}
+
+export interface DemoSlotWithEvent extends Omit<DemoSlot, 'eventId'> {
+    event: Pick<Event, '_id' | 'name' | 'startAt' | 'endAt'>;
+}
