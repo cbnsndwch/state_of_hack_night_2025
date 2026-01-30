@@ -15,6 +15,7 @@ import {
     checkInToEvent
 } from '@/lib/db/attendance.server';
 import { getEventByLumaId } from '@/lib/db/events.server';
+import { updateMemberStreak } from '@/lib/db/streaks.server';
 
 /**
  * Update guest check-in status in Luma.
@@ -169,6 +170,15 @@ export async function action({ request }: ActionFunctionArgs) {
             }
         }
 
+        // Update member's attendance streak
+        let streakCount = 0;
+        try {
+            streakCount = await updateMemberStreak(memberId);
+        } catch (error) {
+            console.error('Error updating streak count:', error);
+            // Don't fail the check-in if streak update fails
+        }
+
         return data({
             success: true,
             message: 'Checked in successfully',
@@ -180,6 +190,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 checkedInAt: attendance.checkedInAt?.toISOString() ?? null,
                 createdAt: attendance.createdAt.toISOString()
             },
+            streakCount,
             lumaUpdated: lumaUpdateResult?.success ?? false
         });
     } catch (error) {

@@ -37,6 +37,7 @@ export function ImHereButton({ memberId, lumaAttendeeId }: ImHereButtonProps) {
         'idle' | 'success' | 'error' | 'already-checked-in'
     >('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [streakCount, setStreakCount] = useState<number | null>(null);
 
     // Fetch the next upcoming event
     useEffect(() => {
@@ -131,6 +132,10 @@ export function ImHereButton({ memberId, lumaAttendeeId }: ImHereButtonProps) {
                 }
             } else {
                 setCheckInStatus('success');
+                // Update streak count from response
+                if (result.streakCount !== undefined) {
+                    setStreakCount(result.streakCount);
+                }
             }
         } catch (error) {
             console.error('Error checking in:', error);
@@ -225,6 +230,12 @@ export function ImHereButton({ memberId, lumaAttendeeId }: ImHereButtonProps) {
                     <div className="text-xs text-zinc-400 mt-1">
                         your attendance has been recorded. keep building!
                     </div>
+                    {streakCount !== null && streakCount > 0 && (
+                        <div className="text-xs text-primary mt-2 font-sans">
+                            🔥 current streak: {streakCount}{' '}
+                            {streakCount === 1 ? 'week' : 'weeks'}
+                        </div>
+                    )}
                 </div>
             )}
 
