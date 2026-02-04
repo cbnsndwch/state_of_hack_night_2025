@@ -9,9 +9,9 @@
  */
 
 import { data, type ActionFunctionArgs } from 'react-router';
-import { createClient } from '@supabase/supabase-js';
+import { getAuth } from '@clerk/react-router/ssr.server';
 import { recalculateAllStreaks } from '@/lib/db/streaks.server';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
 /**
  * GET handler - Not supported
@@ -30,35 +30,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     try {
-        // Get the JWT from the Authorization header
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return data({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // Get authenticated user from Clerk
+        const auth = await getAuth({ request } as any);
+        const userId = auth.userId;
 
-        const token = authHeader.replace('Bearer ', '');
-
-        // Initialize Supabase client
-        const supabaseUrl = process.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseAnonKey) {
-            console.error('Missing Supabase credentials');
-            return data(
-                { error: 'Server configuration error' },
-                { status: 500 }
-            );
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-        // Verify the user
-        const {
-            data: { user },
-            error: authError
-        } = await supabase.auth.getUser(token);
-
-        if (authError || !user) {
+        if (!userId) {
             return data(
                 { error: 'Unauthorized - Please sign in' },
                 { status: 401 }
@@ -66,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         // Verify user is an admin
-        const profile = await getProfileBySupabaseUserId(user.id);
+        const profile = await getProfileByClerkUserId(userId);
         if (!profile?.isAppAdmin) {
             return data(
                 { error: 'Forbidden - Admin access required' },
