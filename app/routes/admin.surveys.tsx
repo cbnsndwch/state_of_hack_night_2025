@@ -3,7 +3,7 @@ import { data, type LoaderFunctionArgs } from 'react-router';
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Navbar } from '@/components/layout/Navbar';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { getSurveysWithResponseCounts } from '@/lib/db/surveys.server';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
@@ -28,18 +28,18 @@ type LoaderData = {
  * Shows list of surveys with response counts
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-    // Parse Supabase user ID from request headers or session
+    // Parse Clerk user ID from request headers or session
     const url = new URL(request.url);
-    const supabaseUserId = url.searchParams.get('userId');
+    const clerkUserId = url.searchParams.get('userId');
 
-    if (!supabaseUserId) {
+    if (!clerkUserId) {
         return data({ surveys: [], error: 'Not authenticated' } as LoaderData, {
             status: 401
         });
     }
 
     // Check if user is an app admin
-    const profile = await getProfileBySupabaseUserId(supabaseUserId);
+    const profile = await getProfileByClerkUserId(clerkUserId);
     if (!profile || !profile.isAppAdmin) {
         return data(
             { surveys: [], error: 'Access denied - admin only' } as LoaderData,

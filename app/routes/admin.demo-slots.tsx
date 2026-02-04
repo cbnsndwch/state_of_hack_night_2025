@@ -7,7 +7,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Navbar } from '@/components/layout/Navbar';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import {
     getDemoSlotsWithMembersAndEvents,
     updateDemoSlot,
@@ -50,9 +50,9 @@ type LoaderData = {
  * Shows all scheduled demos with organizer actions
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-    // Parse Supabase user ID from request headers or session
+    // Parse Clerk user ID from request headers or session
     const url = new URL(request.url);
-    const supabaseUserId = url.searchParams.get('userId');
+    const clerkUserId = url.searchParams.get('userId');
     const eventId = url.searchParams.get('eventId') || undefined;
     const status = url.searchParams.get('status') as
         | 'pending'
@@ -60,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         | 'canceled'
         | undefined;
 
-    if (!supabaseUserId) {
+    if (!clerkUserId) {
         return data(
             { demoSlots: [], error: 'Not authenticated' } as LoaderData,
             {
@@ -70,7 +70,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     // Check if user is an app admin
-    const profile = await getProfileBySupabaseUserId(supabaseUserId);
+    const profile = await getProfileByClerkUserId(clerkUserId);
     if (!profile || !profile.isAppAdmin) {
         return data(
             {
@@ -113,14 +113,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
  */
 export async function action({ request }: ActionFunctionArgs) {
     const url = new URL(request.url);
-    const supabaseUserId = url.searchParams.get('userId');
+    const clerkUserId = url.searchParams.get('userId');
 
-    if (!supabaseUserId) {
+    if (!clerkUserId) {
         return data({ error: 'Not authenticated' }, { status: 401 });
     }
 
     // Check if user is an app admin
-    const profile = await getProfileBySupabaseUserId(supabaseUserId);
+    const profile = await getProfileByClerkUserId(clerkUserId);
     if (!profile || !profile.isAppAdmin) {
         return data({ error: 'Access denied - admin only' }, { status: 403 });
     }
