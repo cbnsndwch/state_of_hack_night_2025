@@ -3,7 +3,7 @@ import { data, type LoaderFunctionArgs } from 'react-router';
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Navbar } from '@/components/layout/Navbar';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { getSurveyBySlug } from '@/lib/db/surveys.server';
 import {
     getMemberSurveyResponse,
@@ -53,11 +53,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         );
     }
 
-    // Parse Supabase user ID from request
+    // Parse Clerk user ID from request
     const url = new URL(request.url);
-    const supabaseUserId = url.searchParams.get('supabaseUserId');
+    const clerkUserId = url.searchParams.get('clerkUserId');
 
-    if (!supabaseUserId) {
+    if (!clerkUserId) {
         return data(
             {
                 survey: null,
@@ -71,7 +71,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     }
 
     // Get member profile
-    const profile = await getProfileBySupabaseUserId(supabaseUserId);
+    const profile = await getProfileByClerkUserId(clerkUserId);
     if (!profile) {
         return data(
             {
@@ -196,7 +196,7 @@ export default function SurveyResultsPage() {
                         <div className="flex gap-4 justify-center">
                             {!hasCompleted && (
                                 <Link
-                                    to={`/dashboard/survey/${survey?._id}?supabaseUserId=${user.id}`}
+                                    to={`/dashboard/survey/${survey?._id}?clerkUserId=${user.id}`}
                                 >
                                     <NeoButton>Take Survey</NeoButton>
                                 </Link>
@@ -404,7 +404,7 @@ export default function SurveyResultsPage() {
                             </NeoButton>
                         </Link>
                         <Link
-                            to={`/dashboard/survey/${survey._id}?supabaseUserId=${user.id}`}
+                            to={`/dashboard/survey/${survey._id}?clerkUserId=${user.id}`}
                         >
                             <NeoButton>Update My Responses</NeoButton>
                         </Link>

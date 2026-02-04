@@ -344,7 +344,7 @@ export default function Dashboard() {
                                             ).toLocaleDateString()}
                                         </span>
                                         <a
-                                            href={`/dashboard/survey/${survey.surveySlug}/results?supabaseUserId=${user.id}`}
+                                            href={`/dashboard/survey/${survey.surveySlug}/results?clerkUserId=${user.id}`}
                                             className="px-4 py-2 bg-primary text-black border-2 border-black font-sans text-sm hover:translate-x-px hover:translate-y-px transition-transform"
                                         >
                                             view_results

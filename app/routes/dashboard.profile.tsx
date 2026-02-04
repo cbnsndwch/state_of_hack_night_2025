@@ -9,7 +9,7 @@ import { NeoTextarea } from '@/components/ui/NeoTextarea';
 
 interface ProfileData {
     id: string;
-    supabaseUserId: string;
+    clerkUserId: string;
     lumaEmail: string;
     lumaAttendeeId: string | null;
     bio: string | null;
@@ -51,7 +51,7 @@ export default function ProfileEdit() {
 
     useEffect(() => {
         if (user) {
-            fetch(`/api/profile?supabaseUserId=${user.id}`)
+            fetch(`/api/profile?clerkUserId=${user.id}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.profile) {
