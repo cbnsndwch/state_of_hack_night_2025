@@ -1,6 +1,6 @@
 import { data, type ActionFunctionArgs } from 'react-router';
 import {
-    getProfileBySupabaseUserId,
+    getProfileByClerkUserId,
     updateProfile
 } from '@/lib/db/profiles.server';
 
@@ -10,15 +10,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const formData = await request.formData();
-    const supabaseUserId = formData.get('supabaseUserId') as string;
+    const clerkUserId = formData.get('clerkUserId') as string;
     const dismissed = formData.get('dismissed') === 'true';
 
-    if (!supabaseUserId) {
-        return data({ error: 'Missing supabaseUserId' }, { status: 400 });
+    if (!clerkUserId) {
+        return data({ error: 'Missing clerkUserId' }, { status: 400 });
     }
 
     // Get the profile for this user
-    const profile = await getProfileBySupabaseUserId(supabaseUserId);
+    const profile = await getProfileByClerkUserId(clerkUserId);
 
     if (!profile) {
         return data({ error: 'Profile not found' }, { status: 404 });

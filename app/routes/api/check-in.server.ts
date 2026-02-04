@@ -16,6 +16,7 @@ import {
 } from '@/lib/db/attendance.server';
 import { getEventByLumaId } from '@/lib/db/events.server';
 import { updateMemberStreak } from '@/lib/db/streaks.server';
+import { awardCheckInBadges } from '@/lib/db/badge-assignment.server';
 
 /**
  * Update guest check-in status in Luma.
@@ -179,6 +180,26 @@ export async function action({ request }: ActionFunctionArgs) {
             // Don't fail the check-in if streak update fails
         }
 
+        // Check and award badges based on check-in milestones and streaks
+        let awardedBadges: Array<{
+            id: string;
+            name: string;
+            iconAscii: string;
+            criteria: string;
+        }> = [];
+        try {
+            const badges = await awardCheckInBadges(memberId, streakCount);
+            awardedBadges = badges.map(badge => ({
+                id: badge._id.toString(),
+                name: badge.name,
+                iconAscii: badge.iconAscii,
+                criteria: badge.criteria
+            }));
+        } catch (error) {
+            console.error('Error awarding badges:', error);
+            // Don't fail the check-in if badge award fails
+        }
+
         return data({
             success: true,
             message: 'Checked in successfully',
@@ -191,6 +212,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 createdAt: attendance.createdAt.toISOString()
             },
             streakCount,
+            awardedBadges,
             lumaUpdated: lumaUpdateResult?.success ?? false
         });
     } catch (error) {

@@ -1,12 +1,12 @@
 import { data, type ActionFunctionArgs } from 'react-router';
 import { ObjectId } from 'mongodb';
 import { createProject } from '@/lib/db/projects.server';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
 export async function action({ request }: ActionFunctionArgs) {
     const formData = await request.formData();
 
-    const supabaseUserId = formData.get('supabaseUserId') as string;
+    const clerkUserId = formData.get('clerkUserId') as string;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string | null;
     const githubUrl = formData.get('githubUrl') as string | null;
@@ -14,7 +14,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const tagsString = formData.get('tags') as string | null;
     const imageUrlsString = formData.get('imageUrls') as string | null;
 
-    if (!supabaseUserId) {
+    if (!clerkUserId) {
         return data({ error: 'Not authenticated' }, { status: 401 });
     }
 
@@ -22,8 +22,8 @@ export async function action({ request }: ActionFunctionArgs) {
         return data({ error: 'Title is required' }, { status: 400 });
     }
 
-    // Get the profile for this Supabase user
-    const profile = await getProfileBySupabaseUserId(supabaseUserId);
+    // Get the profile for this Clerk user
+    const profile = await getProfileByClerkUserId(clerkUserId);
     if (!profile) {
         return data({ error: 'Profile not found' }, { status: 404 });
     }

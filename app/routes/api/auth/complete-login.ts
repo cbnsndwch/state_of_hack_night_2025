@@ -1,56 +1,65 @@
 import { data, type ActionFunctionArgs } from 'react-router';
-import { createClient } from '@supabase/supabase-js';
+import { getAuth } from '@clerk/react-router/server';
 import {
     getProfileByLumaEmail,
+    getProfileByClerkUserId,
     updateProfile,
     createProfile
 } from '@/lib/db/profiles.server';
 import { checkCalendarSubscription } from '@/utils/luma-api.server';
 import { isAppAdmin } from '@/utils/app-admins.server';
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action(args: ActionFunctionArgs) {
+    const { request } = args;
+
     if (request.method !== 'POST') {
         return data({ error: 'Method not allowed' }, { status: 405 });
     }
 
     try {
-        // Get the JWT from the Authorization header
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
+        // Get authenticated user from Clerk
+        const auth = await getAuth(args);
+        const userId = auth.userId;
+
+        if (!userId) {
             return data({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const token = authHeader.replace('Bearer ', '');
+        // Get user details from Clerk
+        const clerkResponse = await fetch(
+            `https://api.clerk.com/v1/users/${userId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`
+                }
+            }
+        );
 
-        // Initialize Supabase client
-        const supabaseUrl = process.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseAnonKey) {
-            console.error('Missing Supabase credentials');
-            return data(
-                { error: 'Server configuration error' },
-                { status: 500 }
-            );
+        if (!clerkResponse.ok) {
+            return data({ error: 'Failed to fetch user' }, { status: 500 });
         }
 
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const clerkUser = await clerkResponse.json();
+        const primaryEmail =
+            clerkUser.email_addresses?.find(
+                (email: { id: string }) =>
+                    email.id === clerkUser.primary_email_address_id
+            )?.email_address || clerkUser.email_addresses?.[0]?.email_address;
 
-        // Verify the user
-        const {
-            data: { user },
-            error: authError
-        } = await supabase.auth.getUser(token);
-
-        if (authError || !user || !user.email) {
-            return data({ error: 'Invalid token' }, { status: 401 });
+        if (!primaryEmail) {
+            return data({ error: 'No email found' }, { status: 400 });
         }
 
-        const normalizedEmail = user.email.toLowerCase().trim();
+        const normalizedEmail = primaryEmail.toLowerCase().trim();
         const userIsAppAdmin = isAppAdmin(normalizedEmail);
 
-        // Find the profile for this email
-        let profile = await getProfileByLumaEmail(normalizedEmail);
+        // Check if profile exists by clerkUserId first
+        let profile = await getProfileByClerkUserId(userId);
+
+        if (!profile) {
+            // Try to find by email (for existing users migrating from Supabase)
+            profile = await getProfileByLumaEmail(normalizedEmail);
+        }
 
         if (!profile) {
             // No profile exists - verify with Luma API that user is allowed
@@ -63,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
             // Create a new profile for this user
             profile = await createProfile({
-                supabaseUserId: user.id,
+                clerkUserId: userId,
                 lumaEmail: normalizedEmail,
                 verificationStatus: 'verified',
                 isAppAdmin: userIsAppAdmin,
@@ -81,8 +90,8 @@ export async function action({ request }: ActionFunctionArgs) {
         // Profile exists - update it if needed
         const updates: Record<string, unknown> = {};
 
-        if (profile.supabaseUserId !== user.id) {
-            updates.supabaseUserId = user.id;
+        if (profile.clerkUserId !== userId) {
+            updates.clerkUserId = userId;
         }
         if (profile.verificationStatus !== 'verified') {
             updates.verificationStatus = 'verified';
@@ -96,7 +105,7 @@ export async function action({ request }: ActionFunctionArgs) {
         if (Object.keys(updates).length > 0) {
             await updateProfile(profile._id.toString(), updates);
             console.log(
-                `Updated profile ${profile._id} for Supabase user ${user.id}`
+                `Updated profile ${profile._id} for Clerk user ${userId}`
             );
         }
 

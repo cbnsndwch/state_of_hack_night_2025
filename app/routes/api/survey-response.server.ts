@@ -1,6 +1,6 @@
 import { data, type ActionFunctionArgs } from 'react-router';
 import { ObjectId } from 'mongodb';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import {
     upsertSurveyResponse,
     getMemberSurveyResponse
@@ -14,7 +14,7 @@ import type { SurveyAnswer } from '@/types/mongodb';
  *
  * Expected FormData fields:
  * - surveyId: string (MongoDB ObjectId as string)
- * - supabaseUserId: string (to identify the member)
+ * - clerkUserId: string (to identify the member)
  * - responses: string (JSON stringified Record<string, SurveyAnswer>)
  * - isComplete: 'true' | 'false' (optional, defaults to true)
  */
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
         // Extract and validate required fields
         const surveyId = formData.get('surveyId') as string;
-        const supabaseUserId = formData.get('supabaseUserId') as string;
+        const clerkUserId = formData.get('clerkUserId') as string;
         const responsesJson = formData.get('responses') as string;
         const isComplete = formData.get('isComplete') !== 'false'; // defaults to true
 
@@ -37,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
             return data({ error: 'Survey ID is required' }, { status: 400 });
         }
 
-        if (!supabaseUserId) {
+        if (!clerkUserId) {
             return data(
                 { error: 'User authentication required' },
                 { status: 401 }
@@ -65,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         // Get member profile
-        const profile = await getProfileBySupabaseUserId(supabaseUserId);
+        const profile = await getProfileByClerkUserId(clerkUserId);
         if (!profile) {
             return data({ error: 'User profile not found' }, { status: 404 });
         }
