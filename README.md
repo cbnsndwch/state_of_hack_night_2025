@@ -34,7 +34,8 @@ This project serves as:
 - **Maps**: [MapLibre GL JS](https://maplibre.org/) + D3 Geo
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
 - **Database**: MongoDB (profiles, projects, badges, attendance)
-- **Auth & Storage**: Supabase (Email OTP authentication, file uploads)
+- **Authentication**: Clerk (user authentication with GitHub OAuth)
+- **File Storage**: Cloudinary (project images, member avatars)
 - **Event Integration**: Luma (calendar subscriptions, webhooks)
 
 ## Getting Started
@@ -44,16 +45,29 @@ This project serves as:
 - Node.js >= v20
 - pnpm
 - MongoDB instance (local or Atlas)
-- Supabase project (for auth + storage)
+- Clerk account (for authentication)
+- Cloudinary account (for file storage)
 
 ### Environment Variables
 
 ```env
+# Database
 MONGODB_URI=mongodb://...
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=...
-LUMA_API_KEY=...                # Required: for user authentication via Luma
+
+# Authentication (Clerk)
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# File Storage (Cloudinary)
+VITE_CLOUDINARY_CLOUD_NAME=...
+VITE_CLOUDINARY_UPLOAD_PRESET=...
+
+# Event Integration (Luma)
+LUMA_API_KEY=...                # Required: for event sync and check-ins
 LUMA_WEBHOOK_SECRET=...         # Optional: for webhook verification
+
+# Email Notifications (Resend)
+RESEND_API_KEY=...              # Optional: for demo slot and badge notifications
 ```
 
 ### Installation
