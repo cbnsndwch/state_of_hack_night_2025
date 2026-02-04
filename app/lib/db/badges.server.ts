@@ -26,6 +26,14 @@ export async function getBadgeById(id: string): Promise<Badge | null> {
 }
 
 /**
+ * Get a badge by name
+ */
+export async function getBadgeByName(name: string): Promise<Badge | null> {
+    const db = await getMongoDb();
+    return db.collection<Badge>(CollectionName.BADGES).findOne({ name });
+}
+
+/**
  * Create a new badge
  */
 export async function createBadge(data: BadgeInsert): Promise<Badge> {

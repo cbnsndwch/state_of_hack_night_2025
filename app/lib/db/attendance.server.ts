@@ -159,3 +159,16 @@ export async function getEventAttendanceCount(
 
     return counts;
 }
+
+/**
+ * Get total checked-in count for a member
+ */
+export async function getCheckedInCountByMember(
+    memberId: string
+): Promise<number> {
+    const db = await getMongoDb();
+    return db.collection<Attendance>(CollectionName.ATTENDANCE).countDocuments({
+        memberId: new ObjectId(memberId),
+        status: 'checked-in'
+    });
+}
