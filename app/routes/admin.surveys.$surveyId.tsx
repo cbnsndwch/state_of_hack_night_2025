@@ -3,7 +3,7 @@ import { data, type LoaderFunctionArgs } from 'react-router';
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Navbar } from '@/components/layout/Navbar';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { getSurveyById } from '@/lib/db/surveys.server';
 import {
     getCompletedSurveyResponsesWithProfiles,
@@ -51,11 +51,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         );
     }
 
-    // Parse Supabase user ID from request
+    // Parse Clerk user ID from request
     const url = new URL(request.url);
-    const supabaseUserId = url.searchParams.get('userId');
+    const clerkUserId = url.searchParams.get('userId');
 
-    if (!supabaseUserId) {
+    if (!clerkUserId) {
         return data(
             {
                 survey: null,
@@ -68,7 +68,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     }
 
     // Check if user is an app admin
-    const profile = await getProfileBySupabaseUserId(supabaseUserId);
+    const profile = await getProfileByClerkUserId(clerkUserId);
     if (!profile || !profile.isAppAdmin) {
         return data(
             {
