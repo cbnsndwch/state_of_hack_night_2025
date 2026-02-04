@@ -21,7 +21,20 @@ export async function getProfileById(id: string): Promise<Profile | null> {
 }
 
 /**
- * Get a profile by Supabase user ID
+ * Get a profile by Clerk user ID
+ */
+export async function getProfileByClerkUserId(
+    clerkUserId: string
+): Promise<Profile | null> {
+    const db = await getMongoDb();
+    return db.collection<Profile>(CollectionName.PROFILES).findOne({
+        clerkUserId
+    });
+}
+
+/**
+ * Get a profile by Supabase user ID (deprecated - for migration only)
+ * @deprecated Use getProfileByClerkUserId instead
  */
 export async function getProfileBySupabaseUserId(
     supabaseUserId: string
@@ -103,20 +116,20 @@ export async function updateProfile(
 }
 
 /**
- * Get or create a profile for a Supabase user
+ * Get or create a profile for a Clerk user
  */
 export async function getOrCreateProfile(
-    supabaseUserId: string,
+    clerkUserId: string,
     lumaEmail: string,
     defaults?: Partial<ProfileInsert>
 ): Promise<Profile> {
-    const existing = await getProfileBySupabaseUserId(supabaseUserId);
+    const existing = await getProfileByClerkUserId(clerkUserId);
     if (existing) {
         return existing;
     }
 
     return createProfile({
-        supabaseUserId,
+        clerkUserId,
         lumaEmail,
         verificationStatus: 'verified',
         ...defaults

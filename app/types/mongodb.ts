@@ -6,13 +6,13 @@ import type { ObjectId } from 'mongodb';
  */
 
 // ============================================================================
-// Profile - Links to Supabase auth.users
+// Profile - Links to Clerk auth users
 // ============================================================================
 
 export interface Profile {
     _id: ObjectId;
-    /** Supabase auth user ID - may be null before first login */
-    supabaseUserId: string | null;
+    /** Clerk auth user ID - may be null before first login */
+    clerkUserId: string | null;
     /** Email used in Luma registration */
     lumaEmail: string;
     /** Verification status */
@@ -43,7 +43,7 @@ export interface Profile {
 }
 
 export interface ProfileInsert {
-    supabaseUserId: string | null;
+    clerkUserId: string | null;
     lumaEmail: string;
     verificationStatus?: 'pending' | 'verified';
     isAppAdmin?: boolean;
@@ -65,7 +65,7 @@ export interface ProfileUpdate {
     verificationStatus?: 'pending' | 'verified';
     isAppAdmin?: boolean;
     lumaAttendeeId?: string | null;
-    supabaseUserId?: string | null;
+    clerkUserId?: string | null;
     bio?: string | null;
     skills?: string[];
     githubUsername?: string | null;
@@ -239,7 +239,7 @@ export interface LumaWebhookInsert {
 // ============================================================================
 
 export interface ProjectWithMember extends Omit<Project, 'memberId'> {
-    member: Pick<Profile, '_id' | 'supabaseUserId' | 'bio' | 'lumaEmail'>;
+    member: Pick<Profile, '_id' | 'clerkUserId' | 'bio' | 'lumaEmail'>;
 }
 
 export interface ProfileWithBadges extends Profile {
