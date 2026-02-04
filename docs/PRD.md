@@ -127,7 +127,7 @@ While Miami has many tech events, it is rare to find deeply technical spaces ded
 
 ### Information Architecture / Sitemap
 
-```
+```plain
 /                       → Landing Page (public)
 /ethos                  → Philosophy & Manifesto (public)
 /events                 → Events Calendar (public, RSVP requires login)
@@ -460,7 +460,7 @@ Top requested features/events:
 
 ### C. Hack Night Schedule
 
-```
+```plain
 6:30 PM  — Doors open
 8:30 PM  — Lightning demo, intros, then building
 1:00 AM  — Lights out
