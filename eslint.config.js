@@ -17,7 +17,7 @@ export default defineConfig([
         '.react-router',
         'build',
         'dist',
-        'scripts/ralph',
+        'scripts/**',
         'server/**'
     ]),
     {
