@@ -16,6 +16,7 @@
         "seed:survey": "tsx scripts/seed-survey.ts"
     },
     "dependencies": {
+        "@clerk/react-router": "^2.4.2",
         "@fontsource/inter": "^5.2.8",
         "@hookform/resolvers": "^5.2.2",
         "@radix-ui/react-accordion": "^1.2.12",
@@ -45,8 +46,8 @@
         "@radix-ui/react-toggle-group": "^1.1.11",
         "@radix-ui/react-tooltip": "^1.2.8",
         "@react-router/node": "^7.13.0",
-        "@supabase/supabase-js": "^2.91.1",
         "class-variance-authority": "^0.7.1",
+        "cloudinary": "^2.9.0",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "d3-geo": "^3.1.1",
@@ -58,6 +59,7 @@
         "lucide-react": "^0.562.0",
         "maplibre-gl": "^5.15.0",
         "mongodb": "^7.0.0",
+        "mongoose": "^9.1.5",
         "next-themes": "^0.4.6",
         "react": "^19.2.0",
         "react-day-picker": "^9.13.0",
@@ -79,7 +81,6 @@
     "devDependencies": {
         "@eslint/js": "^9.39.1",
         "@react-router/dev": "^7.13.0",
-        "@supabase/mcp-server-supabase": "^0.6.1",
         "@tailwindcss/vite": "^4.1.18",
         "@types/d3-geo": "^3.1.0",
         "@types/node": "^24.10.1",
