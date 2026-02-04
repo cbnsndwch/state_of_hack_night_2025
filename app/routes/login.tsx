@@ -1,12 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, type MetaFunction } from 'react-router';
-import { useClerk } from '@clerk/react-router';
+import { SignIn, useUser } from '@clerk/react-router';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { useAuth } from '@/hooks/use-auth';
-import { GithubIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { NeoCard } from '@/components/ui/NeoCard';
 
 export const meta: MetaFunction = () => {
     return [
@@ -19,30 +15,17 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Login() {
-    const { user, loading } = useAuth();
-    const { openSignIn } = useClerk();
+    const { user, isLoaded } = useUser();
     const navigate = useNavigate();
 
     useEffect(() => {
         // Redirect to dashboard if already logged in
-        if (!loading && user) {
+        if (isLoaded && user) {
             navigate('/dashboard');
         }
-    }, [user, loading, navigate]);
+    }, [user, isLoaded, navigate]);
 
-    const handleGitHubLogin = () => {
-        openSignIn({
-            redirectUrl: '/dashboard',
-            appearance: {
-                elements: {
-                    rootBox: 'mx-auto',
-                    card: 'bg-black border border-primary'
-                }
-            }
-        });
-    };
-
-    if (loading) {
+    if (!isLoaded) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="font-sans text-primary animate-pulse">
@@ -69,17 +52,33 @@ export default function Login() {
                         </p>
                     </div>
 
-                    {/* Login Options */}
-                    <NeoCard className="p-8 space-y-4">
-                        {/* GitHub OAuth via Clerk */}
-                        <Button
-                            onClick={handleGitHubLogin}
-                            className="w-full bg-white text-black hover:bg-zinc-200 font-sans flex items-center justify-center gap-2 py-6"
-                        >
-                            <GithubIcon className="w-5 h-5" />
-                            continue_with_clerk
-                        </Button>
-                    </NeoCard>
+                    {/* Clerk Sign-In Component */}
+                    <div className="flex justify-center">
+                        <SignIn
+                            routing="path"
+                            path="/login"
+                            signUpUrl="/signup"
+                            afterSignInUrl="/dashboard"
+                            appearance={{
+                                elements: {
+                                    rootBox: 'mx-auto',
+                                    card: 'bg-zinc-900 border border-zinc-800 shadow-lg',
+                                    headerTitle: 'text-primary font-sans',
+                                    headerSubtitle: 'text-zinc-400 font-sans',
+                                    socialButtonsBlockButton:
+                                        'bg-white text-black hover:bg-zinc-200 font-sans',
+                                    formButtonPrimary:
+                                        'bg-primary hover:bg-primary/90 font-sans',
+                                    footerActionLink:
+                                        'text-primary hover:text-primary/90',
+                                    identityPreviewText: 'text-zinc-300',
+                                    formFieldInput:
+                                        'bg-zinc-800 border-zinc-700 text-white font-sans',
+                                    formFieldLabel: 'text-zinc-300 font-sans'
+                                }
+                            }}
+                        />
+                    </div>
 
                     {/* Info */}
                     <div className="text-center text-sm text-zinc-500">
