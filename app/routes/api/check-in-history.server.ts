@@ -1,19 +1,30 @@
 /**
  * API endpoint to fetch a member's check-in history with event details
- * GET /api/check-in-history?memberId={id}
+ * GET /api/check-in-history
+ *
+ * Requires authentication. Returns check-in history for the authenticated user.
  */
 
 import { data, type LoaderFunctionArgs } from 'react-router';
+import { getAuth } from '@clerk/react-router/server';
 import { getAttendanceByMemberId } from '@/lib/db/attendance.server';
 import { getEventByLumaId } from '@/lib/db/events.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
 export async function loader({ request }: LoaderFunctionArgs) {
-    const url = new URL(request.url);
-    const memberId = url.searchParams.get('memberId');
-
-    if (!memberId) {
-        return data({ error: 'memberId is required' }, { status: 400 });
+    // Verify user is authenticated with Clerk
+    const auth = await getAuth({ request } as any);
+    if (!auth.userId) {
+        return data({ error: 'Authentication required' }, { status: 401 });
     }
+
+    // Get the authenticated user's profile
+    const userProfile = await getProfileByClerkUserId(auth.userId);
+    if (!userProfile) {
+        return data({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    const memberId = userProfile._id.toString();
 
     try {
         // Get all attendance records for this member

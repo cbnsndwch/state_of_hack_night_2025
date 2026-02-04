@@ -9,6 +9,7 @@
 
 import { data, type ActionFunctionArgs } from 'react-router';
 import { ObjectId } from 'mongodb';
+import { getAuth } from '@clerk/react-router/server';
 import {
     getAttendance,
     createAttendance,
@@ -17,6 +18,7 @@ import {
 import { getEventByLumaId } from '@/lib/db/events.server';
 import { updateMemberStreak } from '@/lib/db/streaks.server';
 import { awardCheckInBadges } from '@/lib/db/badge-assignment.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
 /**
  * Update guest check-in status in Luma.
@@ -92,22 +94,36 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     try {
-        const formData = await request.formData();
-        const memberId = formData.get('memberId')?.toString();
-        const lumaEventId = formData.get('lumaEventId')?.toString();
-        const lumaAttendeeId = formData.get('lumaAttendeeId')?.toString();
+        // Verify user is authenticated with Clerk
+        const auth = await getAuth({ request } as any);
+        if (!auth.userId) {
+            return data({ error: 'Authentication required' }, { status: 401 });
+        }
 
-        // Validate required fields
-        if (!memberId || !lumaEventId) {
+        // Get the authenticated user's profile
+        const userProfile = await getProfileByClerkUserId(auth.userId);
+        if (!userProfile) {
             return data(
-                { error: 'Missing required fields: memberId and lumaEventId' },
-                { status: 400 }
+                {
+                    error: 'Profile not found. Please complete onboarding first.'
+                },
+                { status: 404 }
             );
         }
 
-        // Validate memberId is a valid ObjectId
-        if (!ObjectId.isValid(memberId)) {
-            return data({ error: 'Invalid member ID' }, { status: 400 });
+        const formData = await request.formData();
+        const lumaEventId = formData.get('lumaEventId')?.toString();
+        const lumaAttendeeId = formData.get('lumaAttendeeId')?.toString();
+
+        // Use the authenticated user's memberId (profile ID)
+        const memberId = userProfile._id.toString();
+
+        // Validate required fields
+        if (!lumaEventId) {
+            return data(
+                { error: 'Missing required field: lumaEventId' },
+                { status: 400 }
+            );
         }
 
         // Check if event exists in our database

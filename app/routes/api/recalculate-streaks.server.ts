@@ -9,7 +9,7 @@
  */
 
 import { data, type ActionFunctionArgs } from 'react-router';
-import { getAuth } from '@clerk/react-router/ssr.server';
+import { getAuth } from '@clerk/react-router/server';
 import { recalculateAllStreaks } from '@/lib/db/streaks.server';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 

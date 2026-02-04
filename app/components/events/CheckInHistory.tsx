@@ -19,21 +19,16 @@ interface CheckInHistoryItem {
 }
 
 interface CheckInHistoryProps {
-    memberId: string | undefined;
+    // No props needed - uses authenticated user
 }
 
-export function CheckInHistory({ memberId }: CheckInHistoryProps) {
+export function CheckInHistory(_props: CheckInHistoryProps) {
     const [history, setHistory] = useState<CheckInHistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!memberId) {
-            setLoading(false);
-            return;
-        }
-
-        fetch(`/api/check-in-history?memberId=${memberId}`)
+        fetch('/api/check-in-history')
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -48,7 +43,7 @@ export function CheckInHistory({ memberId }: CheckInHistoryProps) {
                 setError('Failed to load check-in history');
                 setLoading(false);
             });
-    }, [memberId]);
+    }, []);
 
     if (loading) {
         return (
@@ -68,19 +63,6 @@ export function CheckInHistory({ memberId }: CheckInHistoryProps) {
                 <div className="text-center py-8">
                     <div className="text-red-400 font-sans mb-2">
                         error loading history
-                    </div>
-                    <div className="text-sm text-zinc-400">{error}</div>
-                </div>
-            </NeoCard>
-        );
-    }
-
-    if (!memberId) {
-        return (
-            <NeoCard>
-                <div className="text-center py-8">
-                    <div className="text-zinc-500 font-sans">
-                        profile not loaded
                     </div>
                 </div>
             </NeoCard>

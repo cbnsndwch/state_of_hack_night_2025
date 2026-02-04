@@ -266,7 +266,6 @@ export default function Dashboard() {
                         )}
 
                         <ImHereButton
-                            memberId={profile?.id}
                             lumaAttendeeId={profile?.lumaAttendeeId}
                         />
 
@@ -318,7 +317,7 @@ export default function Dashboard() {
                     <h2 className="text-2xl font-sans text-primary mb-6">
                         check-in_history
                     </h2>
-                    <CheckInHistory memberId={profile?.id} />
+                    <CheckInHistory />
                 </div>
 
                 {/* Completed Surveys Section */}

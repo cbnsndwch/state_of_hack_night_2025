@@ -22,13 +22,11 @@ interface Event {
 }
 
 interface ImHereButtonProps {
-    /** The member's profile ID */
-    memberId?: string;
     /** The member's Luma Attendee ID (required for check-in) */
     lumaAttendeeId?: string | null;
 }
 
-export function ImHereButton({ memberId, lumaAttendeeId }: ImHereButtonProps) {
+export function ImHereButton({ lumaAttendeeId }: ImHereButtonProps) {
     const [nextEvent, setNextEvent] = useState<Event | null>(null);
     const [loading, setLoading] = useState(true);
     const [checking, setChecking] = useState(false);
@@ -101,7 +99,7 @@ export function ImHereButton({ memberId, lumaAttendeeId }: ImHereButtonProps) {
     }, [nextEvent]);
 
     async function handleCheckIn() {
-        if (!memberId || !nextEvent) {
+        if (!nextEvent) {
             return;
         }
 
@@ -110,8 +108,6 @@ export function ImHereButton({ memberId, lumaAttendeeId }: ImHereButtonProps) {
 
         try {
             const formData = new FormData();
-            formData.append('memberId', memberId);
-            formData.append('eventId', nextEvent.id);
             formData.append('lumaEventId', nextEvent.lumaEventId);
             if (lumaAttendeeId) {
                 formData.append('lumaAttendeeId', lumaAttendeeId);
