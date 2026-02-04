@@ -110,7 +110,7 @@ export async function deletePendingUser(email: string): Promise<boolean> {
  */
 export async function promotePendingUserToProfile(
     email: string,
-    supabaseUserId: string
+    clerkUserId: string
 ): Promise<{ success: boolean; profile?: Profile; error?: string }> {
     const db = await getMongoDb();
 
@@ -127,7 +127,7 @@ export async function promotePendingUserToProfile(
         return await session.withTransaction(async () => {
             // Create the profile
             const profile = {
-                supabaseUserId,
+                clerkUserId,
                 lumaEmail: email,
                 verificationStatus: 'verified' as const,
                 lumaAttendeeId: pendingUser.lumaAttendeeId,
