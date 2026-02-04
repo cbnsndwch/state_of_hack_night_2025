@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { Button } from '@/components/ui/button';
 
@@ -131,6 +132,16 @@ export function ImHereButton({ lumaAttendeeId }: ImHereButtonProps) {
                 // Update streak count from response
                 if (result.streakCount !== undefined) {
                     setStreakCount(result.streakCount);
+                }
+
+                // Show toast notifications for newly awarded badges
+                if (result.awardedBadges && result.awardedBadges.length > 0) {
+                    result.awardedBadges.forEach((badge: any) => {
+                        toast.success(`🏆 New Badge Unlocked!`, {
+                            description: `${badge.iconAscii} ${badge.name} - ${badge.criteria}`,
+                            duration: 5000
+                        });
+                    });
                 }
             }
         } catch (error) {
