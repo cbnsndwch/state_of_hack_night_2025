@@ -13,7 +13,10 @@
         "lint": "eslint .",
         "preview": "vite preview",
         "ralph": "tsx scripts/ralph/ralph.ts",
-        "seed:survey": "tsx scripts/seed-survey.ts"
+        "seed:survey": "tsx --env-file=.env scripts/seed-survey.ts",
+        "seed:badges": "tsx --env-file=.env scripts/seed-badges.ts",
+        "migrate:profiles": "tsx --env-file=.env scripts/migrate-profiles.ts",
+        "migrate:clerk-userid": "tsx --env-file=.env scripts/migrate-supabase-to-clerk-userid.ts"
     },
     "dependencies": {
         "@clerk/react-router": "^2.4.2",
