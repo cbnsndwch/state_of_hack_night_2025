@@ -10,6 +10,7 @@ import {
 import { ClerkProvider } from '@clerk/react-router';
 import { rootAuthLoader } from '@clerk/react-router/ssr.server';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import type { Route } from './+types/root';
 import './index.css';
 
@@ -45,6 +46,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </head>
             <body className="font-sans antialiased bg-[#0a0a0a] text-white h-full overflow-x-hidden">
                 <TooltipProvider>{children}</TooltipProvider>
+                <Toaster />
                 <ScrollRestoration />
                 <Scripts />
             </body>
