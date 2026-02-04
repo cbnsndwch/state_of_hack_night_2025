@@ -20,6 +20,7 @@ import {
 } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as readline from 'node:readline';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -176,6 +177,70 @@ function escapeRegex(str: string): string {
 
 function stripAnsi(input: string): string {
     return input.replace(/\x1B\[[0-9;]*m/g, '');
+}
+
+// ============================================================================
+// User Prompt
+// ============================================================================
+
+async function promptUser(question: string): Promise<string> {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    return new Promise(resolve => {
+        rl.question(question, answer => {
+            rl.close();
+            resolve(answer.trim().toLowerCase());
+        });
+    });
+}
+
+type ActiveLoopChoice = 'new' | 'continue' | 'cancel';
+
+async function promptActiveLoopChoice(
+    existingState: RalphState
+): Promise<ActiveLoopChoice> {
+    const elapsed = Date.now() - new Date(existingState.startedAt).getTime();
+    const agentName = AGENTS[existingState.agent]?.name ?? existingState.agent;
+
+    console.log(`
+╔══════════════════════════════════════════════════════════════════╗
+║                 Active Ralph Loop Detected                       ║
+╚══════════════════════════════════════════════════════════════════╝
+
+🔄 An active loop already exists:
+   Iteration:   ${existingState.iteration}
+   Started:     ${existingState.startedAt}
+   Elapsed:     ${formatDuration(elapsed)}
+   Agent:       ${agentName}
+   Task:        ${existingState.task.substring(0, 50)}${existingState.task.length > 50 ? '...' : ''}
+
+What would you like to do?
+  [n] Start a NEW loop (discards current loop state)
+  [c] CONTINUE the current loop
+  [q] Cancel and exit
+`);
+
+    const answer = await promptUser('Your choice (n/c/q): ');
+
+    switch (answer) {
+        case 'n':
+        case 'new':
+            return 'new';
+        case 'c':
+        case 'continue':
+            return 'continue';
+        case 'q':
+        case 'quit':
+        case 'cancel':
+        case '':
+            return 'cancel';
+        default:
+            console.log(`Invalid choice: "${answer}". Cancelling.`);
+            return 'cancel';
+    }
 }
 
 // ============================================================================
@@ -502,18 +567,20 @@ async function runAgent(
             process.stderr.write(text);
         });
 
+        const sigintHandler = (): void => {
+            child.kill('SIGINT');
+        };
+        process.on('SIGINT', sigintHandler);
+
         child.on('close', code => {
+            process.off('SIGINT', sigintHandler);
             resolve({ output, exitCode: code ?? 0 });
         });
 
         child.on('error', err => {
+            process.off('SIGINT', sigintHandler);
             console.error(`Failed to spawn ${agent.command}:`, err.message);
             resolve({ output, exitCode: 1 });
-        });
-
-        // Handle SIGINT
-        process.on('SIGINT', () => {
-            child.kill('SIGINT');
         });
     });
 }
@@ -589,6 +656,12 @@ Commands:
   --clear-context     Clear any pending context
   --list-tasks        Display the current task list
   --add-task "desc"   Add a new task to the list
+
+Active Loop Behavior:
+  If a loop is already active, you will be prompted to:
+  - Start a NEW loop (discards current state)
+  - CONTINUE the current loop
+  - Cancel and exit
 
 Examples:
   pnpm ralph "Add dark mode support to the dashboard"
@@ -760,25 +833,114 @@ interface CliOptions {
     allowAll: boolean;
 }
 
-async function runLoop(options: CliOptions): Promise<void> {
-    const existingState = loadState();
-    if (existingState?.active) {
-        console.error(
-            `Error: A Ralph loop is already active (iteration ${existingState.iteration})`
-        );
-        console.error(`Started at: ${existingState.startedAt}`);
-        console.error(
-            `To cancel, press Ctrl+C in its terminal or delete ${STATE_PATH}`
-        );
-        process.exit(1);
+async function handleAutoCommit(
+    state: RalphState,
+    options: CliOptions
+): Promise<void> {
+    const commitPromptPath = join(
+        ROOT_DIR,
+        '.github',
+        'prompts',
+        'do-commits.prompt.md'
+    );
+
+    if (existsSync(commitPromptPath)) {
+        console.log('🤖 Generating semantic commits...');
+        const instructions = readFileSync(commitPromptPath, 'utf-8');
+        const task = `${instructions}\n\nReview the current 'git status' and 'git diff'. Commit the changes based on the convention above. If there are multiple logical changes, make multiple commits.`;
+
+        const agentConfig = AGENTS[state.agent];
+
+        try {
+            const { exitCode } = await runAgent(agentConfig, task, {
+                model: state.model,
+                allowAll: options.allowAll
+            });
+            if (exitCode !== 0) {
+                console.warn(
+                    `⚠️ Semantic commit agent exited with code ${exitCode}`
+                );
+            }
+        } catch (err) {
+            console.error('Failed to run semantic commit agent:', err);
+        }
+    } else {
+        console.log('ℹ️ No semantic commit prompt found, using fallback.');
     }
 
-    const agentConfig = AGENTS[options.agent];
+    // Safety check: if changes remain (agent failed or didn't commit everything), force commit
+    if (await hasGitChanges()) {
+        const remaining = existsSync(commitPromptPath) ? 'remaining ' : '';
+        console.log(`⚠️ Changes ${remaining}detected. Forcing cleanup commit.`);
+        await gitCommit(`Ralph iteration ${state.iteration}: work in progress`);
+        console.log(`📝 Auto-committed ${remaining}changes`);
+    } else {
+        console.log(`✅ Changes committed successfully.`);
+    }
+}
+
+async function runLoop(options: CliOptions): Promise<void> {
+    const existingState = loadState();
+    let state: RalphState;
+
+    if (existingState?.active) {
+        const choice = await promptActiveLoopChoice(existingState);
+
+        switch (choice) {
+            case 'cancel':
+                console.log('Cancelled.');
+                process.exit(0);
+                break;
+            case 'continue':
+                console.log('\n▶️  Continuing existing loop...\n');
+                state = existingState;
+                break;
+            case 'new':
+                console.log(
+                    '\n🔄 Starting new loop (discarding previous state)...\n'
+                );
+                clearState();
+                clearHistory();
+                clearContext();
+                state = {
+                    active: true,
+                    iteration: 1,
+                    minIterations: options.minIterations,
+                    maxIterations: options.maxIterations,
+                    completionPromise: options.completionPromise,
+                    tasksMode: options.tasksMode,
+                    taskPromise: options.taskPromise,
+                    task: options.task,
+                    startedAt: new Date().toISOString(),
+                    model: options.model,
+                    agent: options.agent
+                };
+                break;
+        }
+    } else {
+        state = {
+            active: true,
+            iteration: 1,
+            minIterations: options.minIterations,
+            maxIterations: options.maxIterations,
+            completionPromise: options.completionPromise,
+            tasksMode: options.tasksMode,
+            taskPromise: options.taskPromise,
+            task: options.task,
+            startedAt: new Date().toISOString(),
+            model: options.model,
+            agent: options.agent
+        };
+    }
+
+    const agentConfig = AGENTS[state.agent];
     if (!agentConfig) {
-        console.error(`Unknown agent: ${options.agent}`);
+        console.error(`Unknown agent: ${state.agent}`);
         console.error(`Available agents: ${Object.keys(AGENTS).join(', ')}`);
         process.exit(1);
     }
+
+    saveState(state);
 
     console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
@@ -787,24 +949,8 @@ async function runLoop(options: CliOptions): Promise<void> {
 ╚══════════════════════════════════════════════════════════════════╝
 `);
 
-    const state: RalphState = {
-        active: true,
-        iteration: 1,
-        minIterations: options.minIterations,
-        maxIterations: options.maxIterations,
-        completionPromise: options.completionPromise,
-        tasksMode: options.tasksMode,
-        taskPromise: options.taskPromise,
-        task: options.task,
-        startedAt: new Date().toISOString(),
-        model: options.model,
-        agent: options.agent
-    };
-
-    saveState(state);
-
     // Initialize tasks file if needed
-    if (options.tasksMode && !existsSync(TASKS_PATH)) {
+    if (state.tasksMode && !existsSync(TASKS_PATH)) {
         ensureDir(STATE_DIR);
         writeFileSync(
             TASKS_PATH,
@@ -817,20 +963,23 @@ async function runLoop(options: CliOptions): Promise<void> {
     const history = loadHistory();
 
     const taskPreview =
-        options.task.substring(0, 80) + (options.task.length > 80 ? '...' : '');
+        state.task.substring(0, 80) + (state.task.length > 80 ? '...' : '');
     console.log(`Task: ${taskPreview}`);
-    console.log(`Completion promise: ${options.completionPromise}`);
-    if (options.tasksMode) {
+    console.log(`Completion promise: ${state.completionPromise}`);
+    if (state.tasksMode) {
         console.log(`Tasks mode: ENABLED`);
-        console.log(`Task promise: ${options.taskPromise}`);
+        console.log(`Task promise: ${state.taskPromise}`);
     }
-    console.log(`Min iterations: ${options.minIterations}`);
+    console.log(`Min iterations: ${state.minIterations}`);
     console.log(
-        `Max iterations: ${options.maxIterations > 0 ? options.maxIterations : 'unlimited'}`
+        `Max iterations: ${state.maxIterations > 0 ? state.maxIterations : 'unlimited'}`
     );
     console.log(`Agent: ${agentConfig.name}`);
-    if (options.model) console.log(`Model: ${options.model}`);
+    if (state.model) console.log(`Model: ${state.model}`);
     if (options.allowAll) console.log('Permissions: auto-approve all tools');
+    if (state.iteration > 1) {
+        console.log(`Resuming at iteration: ${state.iteration}`);
+    }
     console.log('');
     console.log('Starting loop... (Ctrl+C to stop)');
     console.log('═'.repeat(68));
@@ -843,9 +992,9 @@ async function runLoop(options: CliOptions): Promise<void> {
             process.exit(1);
         }
         stopping = true;
-        console.log('\nGracefully stopping Ralph loop...');
-        clearState();
-        console.log('Loop cancelled.');
+        console.log('\n⏸️  Pausing Ralph loop...');
+        console.log('   State preserved. Run again to resume.');
+        // clearState(); // Don't clear state on SIGINT to allow resuming
         process.exit(0);
     });
 
@@ -853,15 +1002,12 @@ async function runLoop(options: CliOptions): Promise<void> {
     while (true) {
         if (stopping) break;
 
-        if (
-            options.maxIterations > 0 &&
-            state.iteration > options.maxIterations
-        ) {
+        if (state.maxIterations > 0 && state.iteration > state.maxIterations) {
             console.log(
                 `\n╔══════════════════════════════════════════════════════════════════╗`
             );
             console.log(
-                `║  Max iterations (${options.maxIterations}) reached. Loop stopped.`
+                `║  Max iterations (${state.maxIterations}) reached. Loop stopped.`
             );
             console.log(
                 `║  Total time: ${formatDuration(history.totalDurationMs)}`
@@ -874,10 +1020,10 @@ async function runLoop(options: CliOptions): Promise<void> {
         }
 
         const iterInfo =
-            options.maxIterations > 0 ? ` / ${options.maxIterations}` : '';
+            state.maxIterations > 0 ? ` / ${state.maxIterations}` : '';
         const minInfo =
-            state.iteration < options.minIterations
-                ? ` (min: ${options.minIterations})`
+            state.iteration < state.minIterations
+                ? ` (min: ${state.minIterations})`
                 : '';
         console.log(`\n🔄 Iteration ${state.iteration}${iterInfo}${minInfo}`);
         console.log('─'.repeat(68));
@@ -892,17 +1038,17 @@ async function runLoop(options: CliOptions): Promise<void> {
                 agentConfig,
                 fullPrompt,
                 {
-                    model: options.model,
+                    model: state.model,
                     allowAll: options.allowAll
                 }
             );
 
             const completionDetected = checkCompletion(
                 output,
-                options.completionPromise
+                state.completionPromise
             );
-            const taskCompletionDetected = options.tasksMode
-                ? checkCompletion(output, options.taskPromise)
+            const taskCompletionDetected = state.tasksMode
+                ? checkCompletion(output, state.taskPromise)
                 : false;
 
             const iterationDuration = Date.now() - iterationStart;
@@ -986,9 +1132,9 @@ async function runLoop(options: CliOptions): Promise<void> {
 
             // Full completion
             if (completionDetected) {
-                if (state.iteration < options.minIterations) {
+                if (state.iteration < state.minIterations) {
                     console.log(
-                        `\n⏳ Completion detected, but minimum iterations (${options.minIterations}) not reached.`
+                        `\n⏳ Completion detected, but minimum iterations (${state.minIterations}) not reached.`
                     );
                     console.log(
                         `   Continuing to iteration ${state.iteration + 1}...`
@@ -1022,10 +1168,7 @@ async function runLoop(options: CliOptions): Promise<void> {
 
             // Auto-commit
             if (options.autoCommit && (await hasGitChanges())) {
-                await gitCommit(
-                    `Ralph iteration ${state.iteration}: work in progress`
-                );
-                console.log(`📝 Auto-committed changes`);
+                await handleAutoCommit(state, options);
             }
 
             // Next iteration
