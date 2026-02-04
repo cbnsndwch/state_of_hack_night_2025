@@ -91,7 +91,7 @@ export function DemoSlotBookingDialog({
         try {
             // Submit demo slot via API route
             const formData = new FormData();
-            formData.append('supabaseUserId', user.id);
+            formData.append('clerkUserId', user.id);
             formData.append('eventId', selectedEventId);
             formData.append('title', title);
             formData.append('description', description);
