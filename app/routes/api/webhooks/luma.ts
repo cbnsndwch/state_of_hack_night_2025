@@ -175,9 +175,9 @@ async function handleGuestUpdated(data: GuestUpdatedData) {
             const existingProfile = await getProfileByLumaEmail(email);
             if (!existingProfile) {
                 // Create the profile with pending verification status
-                // supabaseUserId is null until they complete the OTP flow
+                // clerkUserId is null until they complete the auth flow
                 await createProfile({
-                    supabaseUserId: null,
+                    clerkUserId: null,
                     lumaEmail: email,
                     lumaAttendeeId: api_id, // Store their Luma ID
                     verificationStatus: 'pending',
