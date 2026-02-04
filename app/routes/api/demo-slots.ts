@@ -12,7 +12,7 @@ import {
     type ActionFunctionArgs
 } from 'react-router';
 import { ObjectId } from 'mongodb';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import {
     createDemoSlot,
     getDemoSlotsWithMembers,
@@ -107,7 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (method === 'POST') {
         try {
             const formData = await request.formData();
-            const supabaseUserId = formData.get('supabaseUserId')?.toString();
+            const clerkUserId = formData.get('clerkUserId')?.toString();
             const eventId = formData.get('eventId')?.toString();
             const title = formData.get('title')?.toString();
             const description = formData.get('description')?.toString() || null;
@@ -119,7 +119,7 @@ export async function action({ request }: ActionFunctionArgs) {
             );
 
             // Validate required fields
-            if (!supabaseUserId || !eventId || !title) {
+            if (!clerkUserId || !eventId || !title) {
                 return data(
                     { error: 'Missing required fields' },
                     { status: 400 }
@@ -127,7 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
             }
 
             // Get the profile for this user
-            const profile = await getProfileBySupabaseUserId(supabaseUserId);
+            const profile = await getProfileByClerkUserId(clerkUserId);
             if (!profile) {
                 return data({ error: 'Profile not found' }, { status: 404 });
             }
@@ -195,7 +195,7 @@ export async function action({ request }: ActionFunctionArgs) {
         try {
             const formData = await request.formData();
             const demoSlotId = formData.get('demoSlotId')?.toString();
-            const supabaseUserId = formData.get('supabaseUserId')?.toString();
+            const clerkUserId = formData.get('clerkUserId')?.toString();
             const title = formData.get('title')?.toString();
             const description = formData.get('description')?.toString();
             const requestedTime = formData.get('requestedTime')?.toString();
@@ -212,7 +212,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 ?.toString();
 
             // Validate required fields
-            if (!demoSlotId || !supabaseUserId) {
+            if (!demoSlotId || !clerkUserId) {
                 return data(
                     { error: 'Missing required fields' },
                     { status: 400 }
@@ -225,7 +225,7 @@ export async function action({ request }: ActionFunctionArgs) {
             }
 
             // Get the profile for this user
-            const profile = await getProfileBySupabaseUserId(supabaseUserId);
+            const profile = await getProfileByClerkUserId(clerkUserId);
             if (!profile) {
                 return data({ error: 'Profile not found' }, { status: 404 });
             }
@@ -327,10 +327,10 @@ export async function action({ request }: ActionFunctionArgs) {
         try {
             const formData = await request.formData();
             const demoSlotId = formData.get('demoSlotId')?.toString();
-            const supabaseUserId = formData.get('supabaseUserId')?.toString();
+            const clerkUserId = formData.get('clerkUserId')?.toString();
 
             // Validate required fields
-            if (!demoSlotId || !supabaseUserId) {
+            if (!demoSlotId || !clerkUserId) {
                 return data(
                     { error: 'Missing required fields' },
                     { status: 400 }
@@ -343,7 +343,7 @@ export async function action({ request }: ActionFunctionArgs) {
             }
 
             // Get the profile for this user
-            const profile = await getProfileBySupabaseUserId(supabaseUserId);
+            const profile = await getProfileByClerkUserId(clerkUserId);
             if (!profile) {
                 return data({ error: 'Profile not found' }, { status: 404 });
             }
