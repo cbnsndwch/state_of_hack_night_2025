@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,8 @@ export function LoginDialog({
         }
     };
 
+    const navigate = useNavigate();
+
     const handleOtpSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -77,12 +80,11 @@ export function LoginDialog({
         try {
             await verifyOtp(email, otp);
             onOpenChange?.(false);
-            // Reset state after close
-            setTimeout(() => {
-                setStep('email');
-                setEmail('');
-                setOtp('');
-            }, 300);
+            // Reset state and redirect to dashboard
+            setStep('email');
+            setEmail('');
+            setOtp('');
+            navigate('/dashboard');
         } catch (err: unknown) {
             console.error(err);
             setError((err as Error).message || 'Invalid code. Try again.');
@@ -114,7 +116,10 @@ export function LoginDialog({
                         >
                             <div className="space-y-2">
                                 <Input
+                                    id="email"
+                                    name="email"
                                     type="email"
+                                    autoComplete="username"
                                     placeholder="your@email.com"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
@@ -191,13 +196,14 @@ export function LoginDialog({
                                 verify
                             </Button>
                             <div className="text-center">
-                                <button
+                                <Button
                                     type="button"
-                                    onClick={() => setStep('email')}
+                                    variant="link"
                                     className="text-sm text-zinc-500 hover:text-white underline"
+                                    onClick={() => setStep('email')}
                                 >
                                     wrong_email?
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     )}

@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
 import { useNavigate, type MetaFunction } from 'react-router';
+import { useClerk } from '@clerk/react-router';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { LoginDialog } from '@/components/auth/LoginDialog';
 import { useAuth } from '@/hooks/use-auth';
-import { GithubIcon, Mail } from 'lucide-react';
+import { GithubIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NeoCard } from '@/components/ui/NeoCard';
-import { useState } from 'react';
 
 export const meta: MetaFunction = () => {
     return [
@@ -21,8 +20,8 @@ export const meta: MetaFunction = () => {
 
 export default function Login() {
     const { user, loading } = useAuth();
+    const { openSignIn } = useClerk();
     const navigate = useNavigate();
-    const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
     useEffect(() => {
         // Redirect to dashboard if already logged in
@@ -31,18 +30,16 @@ export default function Login() {
         }
     }, [user, loading, navigate]);
 
-    const handleGitHubLogin = async () => {
-        const { supabase } = await import('@/utils/supabase');
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback`
+    const handleGitHubLogin = () => {
+        openSignIn({
+            redirectUrl: '/dashboard',
+            appearance: {
+                elements: {
+                    rootBox: 'mx-auto',
+                    card: 'bg-black border border-primary'
+                }
             }
         });
-
-        if (error) {
-            console.error('GitHub OAuth error:', error);
-        }
     };
 
     if (loading) {
@@ -74,35 +71,13 @@ export default function Login() {
 
                     {/* Login Options */}
                     <NeoCard className="p-8 space-y-4">
-                        {/* GitHub OAuth */}
+                        {/* GitHub OAuth via Clerk */}
                         <Button
                             onClick={handleGitHubLogin}
                             className="w-full bg-white text-black hover:bg-zinc-200 font-sans flex items-center justify-center gap-2 py-6"
                         >
                             <GithubIcon className="w-5 h-5" />
-                            continue_with_github
-                        </Button>
-
-                        {/* Divider */}
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-zinc-800"></div>
-                            </div>
-                            <div className="relative flex justify-center text-xs">
-                                <span className="bg-black px-2 text-zinc-500 font-sans">
-                                    or
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Email OTP */}
-                        <Button
-                            onClick={() => setEmailDialogOpen(true)}
-                            variant="outline"
-                            className="w-full border-zinc-700 text-white hover:bg-zinc-900 font-sans flex items-center justify-center gap-2 py-6"
-                        >
-                            <Mail className="w-5 h-5" />
-                            continue_with_email
+                            continue_with_clerk
                         </Button>
                     </NeoCard>
 
@@ -123,12 +98,6 @@ export default function Login() {
                     </div>
                 </div>
             </main>
-
-            {/* Email Login Dialog */}
-            <LoginDialog
-                open={emailDialogOpen}
-                onOpenChange={setEmailDialogOpen}
-            />
 
             <Footer />
         </div>
