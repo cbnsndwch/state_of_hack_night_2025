@@ -5,7 +5,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { SurveyForm } from '@/components/SurveyForm';
 import { getSurveyBySlug } from '@/lib/db/surveys.server';
-import { getProfileBySupabaseUserId } from '@/lib/db/profiles.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { getMemberSurveyResponse } from '@/lib/db/survey-responses.server';
 import type { Survey, SurveyResponse } from '@/types/mongodb';
 import { useEffect } from 'react';
@@ -62,16 +62,16 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     }
 
     // Get user from request (if available)
-    // For now, we'll get the supabaseUserId from the query string
+    // For now, we'll get the clerkUserId from the query string
     // In a real implementation, this would come from session/cookie
     const url = new URL(request.url);
-    const supabaseUserId = url.searchParams.get('supabaseUserId');
+    const clerkUserId = url.searchParams.get('clerkUserId');
 
     let existingResponse: SurveyResponse | null = null;
 
-    if (supabaseUserId) {
+    if (clerkUserId) {
         // Get user profile
-        const profile = await getProfileBySupabaseUserId(supabaseUserId);
+        const profile = await getProfileByClerkUserId(clerkUserId);
 
         if (profile) {
             // Check if user has already responded
@@ -153,7 +153,7 @@ export default function SurveyPage() {
     const handleSubmitSuccess = () => {
         // Navigate to results page on successful submission
         navigate(
-            `/dashboard/survey/${loaderData.survey.slug}/results?supabaseUserId=${user.id}`
+            `/dashboard/survey/${loaderData.survey.slug}/results?clerkUserId=${user.id}`
         );
     };
 
@@ -174,7 +174,7 @@ export default function SurveyPage() {
 
                         <SurveyForm
                             survey={loaderData.survey}
-                            supabaseUserId={user.id}
+                            clerkUserId={user.id}
                             existingResponse={loaderData.existingResponse}
                             onSubmit={handleSubmitSuccess}
                         />

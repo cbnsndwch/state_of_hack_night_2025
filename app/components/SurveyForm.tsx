@@ -37,7 +37,7 @@ type FlexibleSurveyResponse = Omit<
 
 interface SurveyFormProps {
     survey: FlexibleSurvey;
-    supabaseUserId: string;
+    clerkUserId: string;
     existingResponse?: FlexibleSurveyResponse | null;
     onSubmit?: () => void;
 }
@@ -48,7 +48,7 @@ interface ValidationErrors {
 
 export function SurveyForm({
     survey,
-    supabaseUserId,
+    clerkUserId,
     existingResponse,
     onSubmit
 }: SurveyFormProps) {
@@ -373,7 +373,7 @@ export function SurveyForm({
                         : survey._id.toString()
                 }
             />
-            <input type="hidden" name="supabaseUserId" value={supabaseUserId} />
+            <input type="hidden" name="clerkUserId" value={clerkUserId} />
             <input type="hidden" name="isComplete" value="true" />
 
             {/* Questions */}

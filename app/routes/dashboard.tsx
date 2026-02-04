@@ -13,7 +13,7 @@ import { CheckInHistory } from '@/components/events/CheckInHistory';
 
 interface Profile {
     id: string;
-    supabaseUserId: string;
+    clerkUserId: string;
     lumaAttendeeId: string | null;
     bio: string | null;
     skills: string[];
@@ -59,7 +59,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (user) {
             // Fetch profile and project count from API
-            fetch(`/api/profile?supabaseUserId=${user.id}`)
+            fetch(`/api/profile?clerkUserId=${user.id}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.profile) {
@@ -126,7 +126,7 @@ export default function Dashboard() {
 
         try {
             const formData = new FormData();
-            formData.append('supabaseUserId', user.id);
+            formData.append('clerkUserId', user.id);
             formData.append('dismissed', 'true');
 
             await fetch('/api/onboarding', {
@@ -149,9 +149,7 @@ export default function Dashboard() {
                         builder_dashboard
                     </h1>
                     <p className="text-zinc-400 font-sans">
-                        welcome back,{' '}
-                        {user.user_metadata.full_name ||
-                            user.email?.split('@')[0]}
+                        welcome back, {user.email?.split('@')[0]}
                     </p>
                 </header>
 
@@ -202,21 +200,13 @@ export default function Dashboard() {
                         <div className="space-y-6">
                             <div className="flex items-center gap-6">
                                 <div className="w-20 h-20 bg-zinc-900 border-2 border-zinc-800 flex items-center justify-center">
-                                    {user.user_metadata.avatar_url ? (
-                                        <img
-                                            src={user.user_metadata.avatar_url}
-                                            alt="profile"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="text-3xl font-bold">
-                                            ?
-                                        </div>
-                                    )}
+                                    <div className="text-3xl font-bold">
+                                        {user.email?.charAt(0).toUpperCase()}
+                                    </div>
                                 </div>
                                 <div>
                                     <div className="text-lg font-sans">
-                                        {user.user_metadata.full_name ||
+                                        {user.email?.split('@')[0] ||
                                             'anonymous builder'}
                                     </div>
                                     <div className="text-zinc-500 font-sans text-sm">

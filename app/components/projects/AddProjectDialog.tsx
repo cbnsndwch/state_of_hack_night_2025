@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,26 +45,27 @@ export function AddProjectDialog({
         try {
             const imageUrls: string[] = [];
 
-            // Upload image to Supabase Storage (keeping Supabase for file storage)
+            // Upload image to Cloudinary via API endpoint
             if (file) {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${user.id}/${Math.random()}.${fileExt}`;
-                const { error: uploadError } = await supabase.storage
-                    .from('projects')
-                    .upload(fileName, file);
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', file);
 
-                if (uploadError) throw uploadError;
+                const uploadResponse = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: uploadFormData
+                });
 
-                const {
-                    data: { publicUrl: imagePublicUrl }
-                } = supabase.storage.from('projects').getPublicUrl(fileName);
+                if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload image');
+                }
 
-                imageUrls.push(imagePublicUrl);
+                const { imageUrl } = await uploadResponse.json();
+                imageUrls.push(imageUrl);
             }
 
             // Submit project data via API route (MongoDB)
             const formData = new FormData();
-            formData.append('supabaseUserId', user.id);
+            formData.append('clerkUserId', user.id);
             formData.append('title', title);
             formData.append('description', description);
             formData.append('githubUrl', githubUrl);
