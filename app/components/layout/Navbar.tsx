@@ -16,6 +16,7 @@ export function Navbar() {
     const navLinks = [
         { href: '/', label: 'home' },
         { href: '/ethos', label: 'ethos' },
+        { href: '/events', label: 'events' },
         { href: '/reports/2025', label: '2025 report' }
     ];
 
