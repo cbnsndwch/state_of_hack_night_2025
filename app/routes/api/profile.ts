@@ -3,6 +3,7 @@ import { data, type LoaderFunctionArgs } from 'react-router';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { getProjectsByMemberId } from '@/lib/db/projects.server';
 import { getMemberCompletedSurveysWithDetails } from '@/lib/db/survey-responses.server';
+import { getMemberBadges } from '@/lib/db/badges.server';
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const url = new URL(request.url);
@@ -29,6 +30,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const completedSurveys = await getMemberCompletedSurveysWithDetails(
         profile._id.toString()
     );
+
+    // Get member badges
+    const badges = await getMemberBadges(profile._id.toString());
 
     return data({
         profile: {
@@ -58,6 +62,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
             surveyTitle: s.surveyTitle,
             surveyDescription: s.surveyDescription,
             submittedAt: s.submittedAt.toISOString()
+        })),
+        badges: badges.map(b => ({
+            id: b._id.toString(),
+            name: b.name,
+            iconAscii: b.iconAscii,
+            criteria: b.criteria,
+            createdAt: b.createdAt.toISOString()
         }))
     });
 }
