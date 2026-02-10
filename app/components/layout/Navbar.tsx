@@ -17,6 +17,7 @@ export function Navbar() {
         { href: '/', label: 'home' },
         { href: '/ethos', label: 'ethos' },
         { href: '/events', label: 'events' },
+        { href: '/showcase', label: 'showcase' },
         { href: '/reports/2025', label: '2025 report' }
     ];
 
