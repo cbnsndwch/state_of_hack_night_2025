@@ -38,6 +38,14 @@ interface CompletedSurvey {
     submittedAt: string;
 }
 
+interface Badge {
+    id: string;
+    name: string;
+    iconAscii: string;
+    criteria: string;
+    createdAt: string;
+}
+
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
@@ -46,6 +54,7 @@ export default function Dashboard() {
     const [completedSurveys, setCompletedSurveys] = useState<CompletedSurvey[]>(
         []
     );
+    const [badges, setBadges] = useState<Badge[]>([]);
     const [refreshKey, setRefreshKey] = useState(0);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
@@ -66,6 +75,7 @@ export default function Dashboard() {
                         setProfile(data.profile);
                         setProjectCount(data.projectCount);
                         setCompletedSurveys(data.completedSurveys || []);
+                        setBadges(data.badges || []);
                         // Show onboarding if not dismissed
                         setShowOnboarding(!data.profile.onboardingDismissed);
                     }
@@ -311,6 +321,38 @@ export default function Dashboard() {
                     </h2>
                     <DemoSlotsList memberId={profile?.id} />
                 </div>
+
+                {/* Badges Section */}
+                {badges.length > 0 && (
+                    <div className="mt-12">
+                        <h2 className="text-2xl font-sans text-primary mb-6">
+                            badges_earned
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {badges.map(badge => (
+                                <NeoCard key={badge.id} className="p-6">
+                                    <div className="text-center mb-3">
+                                        <div
+                                            className="text-4xl mb-2 font-mono"
+                                            style={{
+                                                whiteSpace: 'pre-wrap',
+                                                lineHeight: 1.2
+                                            }}
+                                        >
+                                            {badge.iconAscii}
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-sans text-primary mb-2 text-center">
+                                        {badge.name}
+                                    </h3>
+                                    <p className="text-sm text-zinc-400 text-center">
+                                        {badge.criteria}
+                                    </p>
+                                </NeoCard>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Check-In History Section */}
                 <div className="mt-12">
