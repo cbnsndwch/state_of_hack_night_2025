@@ -846,8 +846,8 @@ services:
 
 **Tools**:
 
-- [ ] Zero Inspector (`http://localhost:4848/inspector`)
-- [ ] PostgreSQL query monitoring
+- [x] Zero Inspector (`http://localhost:4848/inspector`) ✅
+- [x] PostgreSQL query monitoring ✅ (See `docs/POSTGRES_MONITORING.md`)
 - [ ] Application performance monitoring (APM)
 - [ ] Error tracking (Sentry)
 
