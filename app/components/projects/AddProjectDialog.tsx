@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { useQuery } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
+import { useCreateProject } from '@/hooks/use-zero-mutate';
+import { profileQueries } from '@/zero/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,12 +27,13 @@ export function AddProjectDialog({
     onOpenChange?: (open: boolean) => void;
 }) {
     const { user } = useAuth();
+    const { createProject, isLoading: submitting } = useCreateProject();
     const [internalOpen, setInternalOpen] = useState(false);
 
     // Use external state if provided, otherwise use internal state
     const open = externalOpen !== undefined ? externalOpen : internalOpen;
     const setOpen = externalOnOpenChange || setInternalOpen;
-    const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [githubUrl, setGithubUrl] = useState('');
@@ -37,16 +41,23 @@ export function AddProjectDialog({
     const [tags, setTags] = useState('');
     const [file, setFile] = useState<File | null>(null);
 
+    // Get user's profile for memberId
+    const [profile] = useQuery(
+        user?.id ? profileQueries.byClerkUserId(user.id) : null
+    );
+
+    const loading = uploading || submitting;
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) return;
-        setLoading(true);
+        if (!user || !profile) return;
 
         try {
             const imageUrls: string[] = [];
 
             // Upload image to Cloudinary via API endpoint
             if (file) {
+                setUploading(true);
                 const uploadFormData = new FormData();
                 uploadFormData.append('file', file);
 
@@ -61,28 +72,31 @@ export function AddProjectDialog({
 
                 const { imageUrl } = await uploadResponse.json();
                 imageUrls.push(imageUrl);
+                setUploading(false);
             }
 
-            // Submit project data via API route (MongoDB)
-            const formData = new FormData();
-            formData.append('clerkUserId', user.id);
-            formData.append('title', title);
-            formData.append('description', description);
-            formData.append('githubUrl', githubUrl);
-            formData.append('publicUrl', publicUrl);
-            formData.append('tags', tags);
-            formData.append('imageUrls', JSON.stringify(imageUrls));
+            // Parse tags from comma-separated string
+            const tagsList = tags
+                .split(',')
+                .map(t => t.trim())
+                .filter(Boolean);
 
-            const response = await fetch('/api/projects', {
-                method: 'POST',
-                body: formData
+            // Submit project data via Zero mutation
+            const result = await createProject({
+                memberId: profile.id,
+                title: title.trim(),
+                description: description.trim() || undefined,
+                tags: tagsList.length > 0 ? tagsList : undefined,
+                imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+                githubUrl: githubUrl.trim() || undefined,
+                publicUrl: publicUrl.trim() || undefined
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to create project');
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to create project');
             }
 
+            // Reset form and close dialog
             setOpen(false);
             setTitle('');
             setDescription('');
@@ -96,8 +110,6 @@ export function AddProjectDialog({
             const message =
                 err instanceof Error ? err.message : 'Unknown error';
             alert('Failed to add project: ' + message);
-        } finally {
-            setLoading(false);
         }
     };
 
