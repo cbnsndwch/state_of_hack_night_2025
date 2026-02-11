@@ -1,0 +1,67 @@
+# Node modules
+node_modules
+npm-debug.log
+pnpm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Build output
+build
+dist
+.cache
+
+# Environment files (will be provided via environment variables)
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Documentation
+*.md
+docs/
+.ralph/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+__mocks__
+
+# Local development
+.local
+.temp
+.tmp
+
+# Logs
+logs
+*.log
+
+# Coverage
+coverage
+.nyc_output
+
+# TypeScript
+*.tsbuildinfo
