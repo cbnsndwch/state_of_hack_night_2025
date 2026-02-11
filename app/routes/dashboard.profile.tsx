@@ -1,33 +1,17 @@
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
+import { profileQueries } from '@/zero/queries';
 import { Navbar } from '@/components/layout/Navbar';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoInput } from '@/components/ui/NeoInput';
 import { NeoTextarea } from '@/components/ui/NeoTextarea';
 
-interface ProfileData {
-    id: string;
-    clerkUserId: string;
-    lumaEmail: string;
-    lumaAttendeeId: string | null;
-    bio: string | null;
-    skills: string[];
-    githubUsername: string | null;
-    twitterHandle: string | null;
-    websiteUrl: string | null;
-    role: string | null;
-    seekingFunding: boolean;
-    openToMentoring: boolean;
-    streakCount: number;
-    onboardingDismissed: boolean;
-}
-
 export default function ProfileEdit() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
-    const [profile, setProfile] = useState<ProfileData | null>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -43,36 +27,31 @@ export default function ProfileEdit() {
     const [seekingFunding, setSeekingFunding] = useState(false);
     const [openToMentoring, setOpenToMentoring] = useState(false);
 
+    // Use Zero to query profile reactively
+    const [profile] = useQuery(
+        user?.id ? profileQueries.byClerkUserId(user.id) : null
+    );
+
     useEffect(() => {
         if (!loading && !user) {
             navigate('/');
         }
     }, [user, loading, navigate]);
 
+    // Populate form when profile loads
     useEffect(() => {
-        if (user) {
-            fetch(`/api/profile?clerkUserId=${user.id}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.profile) {
-                        setProfile(data.profile);
-                        // Populate form with existing data
-                        setBio(data.profile.bio || '');
-                        setLumaAttendeeId(data.profile.lumaAttendeeId || '');
-                        setSkillsInput(data.profile.skills?.join(', ') || '');
-                        setGithubUsername(data.profile.githubUsername || '');
-                        setTwitterHandle(data.profile.twitterHandle || '');
-                        setWebsiteUrl(data.profile.websiteUrl || '');
-                        setRole(data.profile.role || '');
-                        setSeekingFunding(data.profile.seekingFunding || false);
-                        setOpenToMentoring(
-                            data.profile.openToMentoring || false
-                        );
-                    }
-                })
-                .catch(err => console.error('Error fetching profile:', err));
+        if (profile) {
+            setBio(profile.bio || '');
+            setLumaAttendeeId(profile.lumaAttendeeId || '');
+            setSkillsInput((profile.skills as string[])?.join(', ') || '');
+            setGithubUsername(profile.githubUsername || '');
+            setTwitterHandle(profile.twitterHandle || '');
+            setWebsiteUrl(profile.websiteUrl || '');
+            setRole(profile.role || '');
+            setSeekingFunding(profile.seekingFunding || false);
+            setOpenToMentoring(profile.openToMentoring || false);
         }
-    }, [user]);
+    }, [profile]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
