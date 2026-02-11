@@ -1,3 +1,12 @@
+/**
+ * Onboarding API Route
+ *
+ * DEPRECATED: This route is being migrated to use Zero mutations.
+ * Frontend components should use the useDismissOnboarding hook instead.
+ *
+ * TODO: Remove this file once all components are migrated to Zero.
+ */
+
 import { data, type ActionFunctionArgs } from 'react-router';
 import {
     getProfileByClerkUserId,
