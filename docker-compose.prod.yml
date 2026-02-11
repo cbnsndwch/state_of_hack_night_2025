@@ -1,0 +1,163 @@
+# Production Docker Compose Configuration for Hello Miami
+#
+# This configuration is designed for production deployment.
+# Make sure to:
+# 1. Set all environment variables in .env.production
+# 2. Enable PostgreSQL logical replication
+# 3. Configure SSL/TLS certificates if needed
+# 4. Set strong passwords for all services
+
+services:
+  # PostgreSQL Database (optional - use managed service like Neon or Supabase instead)
+  postgres:
+    image: postgres:16-alpine
+    container_name: hello_miami_postgres_prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hello_miami}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    command: |
+      postgres
+      -c wal_level=logical
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=2621kB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+      -c max_worker_processes=4
+      -c max_parallel_workers_per_gather=2
+      -c max_parallel_workers=4
+    volumes:
+      - postgres-data-prod:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-hello_miami}'
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - hello_miami_network
+
+  # Zero Cache (Sync Engine)
+  zero-cache:
+    image: rocicorp/zero:latest
+    container_name: hello_miami_zero_cache_prod
+    restart: unless-stopped
+    ports:
+      - '${ZERO_CACHE_PORT:-4848}:4848'
+    environment:
+      # PostgreSQL connection (with logical replication enabled)
+      ZERO_UPSTREAM_DB: ${ZERO_UPSTREAM_DB:?ZERO_UPSTREAM_DB is required}
+
+      # Replica storage path
+      ZERO_REPLICA_FILE: /data/zero.db
+
+      # Admin password for Zero Inspector (use strong password)
+      ZERO_ADMIN_PASSWORD: ${ZERO_ADMIN_PASSWORD:?ZERO_ADMIN_PASSWORD is required}
+
+      # API endpoints (your application's production URLs)
+      ZERO_QUERY_URL: ${ZERO_QUERY_URL:?ZERO_QUERY_URL is required}
+      ZERO_MUTATE_URL: ${ZERO_MUTATE_URL:?ZERO_MUTATE_URL is required}
+
+      # Cookie forwarding for authentication
+      ZERO_QUERY_FORWARD_COOKIES: 'true'
+      ZERO_MUTATE_FORWARD_COOKIES: 'true'
+
+      # Performance tuning
+      ZERO_NUM_SYNC_WORKERS: ${ZERO_NUM_SYNC_WORKERS:-4}
+      ZERO_UPSTREAM_MAX_CONNS: ${ZERO_UPSTREAM_MAX_CONNS:-100}
+      ZERO_UPSTREAM_MIN_CONNS: ${ZERO_UPSTREAM_MIN_CONNS:-10}
+
+      # Logging
+      ZERO_LOG_LEVEL: ${ZERO_LOG_LEVEL:-INFO}
+      ZERO_LOG_FORMAT: ${ZERO_LOG_FORMAT:-json}
+
+      # Optional: TLS configuration
+      # ZERO_TLS_CERT_FILE: /certs/fullchain.pem
+      # ZERO_TLS_KEY_FILE: /certs/privkey.pem
+
+      # Optional: Custom configuration
+      # ZERO_REPLICA_CACHE_SIZE_MB: 512
+      # ZERO_UPSTREAM_QUERY_TIMEOUT_MS: 30000
+    volumes:
+      - zero-cache-data-prod:/data
+      # Uncomment for SSL/TLS:
+      # - /path/to/ssl/certs:/certs:ro
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:4848/']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hello_miami_network
+    # Resource limits (adjust based on your infrastructure)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Application Server (optional - can be deployed separately)
+  # Uncomment to deploy the application alongside zero-cache
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: hello_miami_app_prod
+  #   restart: unless-stopped
+  #   ports:
+  #     - '${APP_PORT:-3000}:3000'
+  #   environment:
+  #     NODE_ENV: production
+  #     DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  #     VITE_ZERO_CACHE_URL: ${VITE_ZERO_CACHE_URL:?VITE_ZERO_CACHE_URL is required}
+  #     VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:?VITE_CLERK_PUBLISHABLE_KEY is required}
+  #     CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?CLERK_SECRET_KEY is required}
+  #     VITE_CLOUDINARY_CLOUD_NAME: ${VITE_CLOUDINARY_CLOUD_NAME:?VITE_CLOUDINARY_CLOUD_NAME is required}
+  #     VITE_CLOUDINARY_UPLOAD_PRESET: ${VITE_CLOUDINARY_UPLOAD_PRESET:?VITE_CLOUDINARY_UPLOAD_PRESET is required}
+  #     LUMA_API_KEY: ${LUMA_API_KEY:?LUMA_API_KEY is required}
+  #     LUMA_WEBHOOK_SECRET: ${LUMA_WEBHOOK_SECRET}
+  #     RESEND_API_KEY: ${RESEND_API_KEY}
+  #   depends_on:
+  #     - zero-cache
+  #   networks:
+  #     - hello_miami_network
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 1G
+  #         cpus: '1.0'
+  #       reservations:
+  #         memory: 512M
+  #         cpus: '0.5'
+
+volumes:
+  postgres-data-prod:
+    driver: local
+  zero-cache-data-prod:
+    driver: local
+
+networks:
+  hello_miami_network:
+    driver: bridge
