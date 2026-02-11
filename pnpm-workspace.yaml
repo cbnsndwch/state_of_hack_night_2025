@@ -4,7 +4,10 @@ packages:
 
 ignoredBuiltDependencies:
   - '@nestjs/core'
+  - '@rocicorp/zero-sqlite3'
+  - protobufjs
   - unrs-resolver
 
 onlyBuiltDependencies:
+  - '@clerk/shared'
   - esbuild
