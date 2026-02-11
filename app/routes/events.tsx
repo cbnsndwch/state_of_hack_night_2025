@@ -5,6 +5,7 @@ import { useQuery } from '@rocicorp/zero/react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
+import { LiveIndicator } from '@/components/connection-status';
 import { eventQueries } from '@/zero/queries';
 
 export const meta: MetaFunction = () => {
@@ -78,9 +79,12 @@ export default function Events() {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="mb-12">
-                        <h1 className="text-5xl font-sans text-primary mb-4 drop-shadow-[4px_4px_0px_color-mix(in_srgb,var(--primary),transparent_80%)]">
-                            upcoming events
-                        </h1>
+                        <div className="flex items-center justify-between mb-4">
+                            <h1 className="text-5xl font-sans text-primary drop-shadow-[4px_4px_0px_color-mix(in_srgb,var(--primary),transparent_80%)]">
+                                upcoming events
+                            </h1>
+                            <LiveIndicator />
+                        </div>
                         <p className="text-xl text-zinc-400 max-w-2xl">
                             Join us every Tuesday and Thursday. No fluff, all
                             building.

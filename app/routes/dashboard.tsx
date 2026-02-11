@@ -11,6 +11,7 @@ import {
 } from '@/zero/queries';
 import { Navbar } from '@/components/layout/Navbar';
 import { NeoCard } from '@/components/ui/NeoCard';
+import { LiveIndicator } from '@/components/connection-status';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
 import { ProjectGallery } from '@/components/projects/ProjectGallery';
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
@@ -129,9 +130,12 @@ export default function Dashboard() {
             <Navbar />
             <main className="max-w-7xl mx-auto px-4 py-12">
                 <header className="mb-12">
-                    <h1 className="text-4xl font-sans text-primary mb-2">
-                        builder_dashboard
-                    </h1>
+                    <div className="flex items-center justify-between mb-2">
+                        <h1 className="text-4xl font-sans text-primary">
+                            builder_dashboard
+                        </h1>
+                        <LiveIndicator />
+                    </div>
                     <p className="text-zinc-400 font-sans">
                         welcome back, {user.email?.split('@')[0]}
                     </p>

@@ -6,6 +6,7 @@ import { useQuery } from '@rocicorp/zero/react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
+import { LiveIndicator } from '@/components/connection-status';
 import { projectQueries } from '@/zero/queries';
 
 export const meta: MetaFunction = () => {
@@ -130,9 +131,12 @@ export default function Showcase() {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-5xl font-sans text-primary mb-4 drop-shadow-[4px_4px_0px_color-mix(in_srgb,var(--primary),transparent_80%)]">
-                            project showcase
-                        </h1>
+                        <div className="flex items-center justify-between mb-4">
+                            <h1 className="text-5xl font-sans text-primary drop-shadow-[4px_4px_0px_color-mix(in_srgb,var(--primary),transparent_80%)]">
+                                project showcase
+                            </h1>
+                            <LiveIndicator />
+                        </div>
                         <p className="text-xl text-zinc-400 max-w-2xl">
                             Check out what our community is building. Hardware,
                             software, art, and everything in between.
