@@ -14,11 +14,13 @@ import type { Schema } from '@/zero/schema';
 type ZeroContextValue = {
     zero: Zero<Schema> | null;
     isConnected: boolean;
+    error: Error | null;
 };
 
 const ZeroContext = createContext<ZeroContextValue>({
     zero: null,
-    isConnected: false
+    isConnected: false,
+    error: null
 });
 
 export function useZero() {
@@ -37,6 +39,7 @@ export function ZeroProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
     const [zero, setZero] = useState<Zero<Schema> | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
         // Only initialize Zero if we have environment variables set
@@ -48,26 +51,47 @@ export function ZeroProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        // Create Zero instance
-        const zeroInstance = new Zero({
-            userID: user?.id || 'anonymous',
-            schema,
-            server: cacheUrl,
-            // Enable dev mode logging if in development
-            logLevel: import.meta.env.DEV ? 'info' : 'error'
-        });
+        let zeroInstance: Zero<Schema> | null = null;
 
-        setZero(zeroInstance);
-        setIsConnected(true); // Assume connected once Zero is initialized
+        try {
+            // Create Zero instance with proper configuration
+            zeroInstance = new Zero({
+                userID: user?.id || 'anonymous',
+                schema,
+                server: cacheUrl,
+                // Enable dev mode logging if in development
+                logLevel: import.meta.env.DEV ? 'info' : 'error'
+                // Optional: Configure auth token if using authenticated endpoints
+                // auth: () => user?.getToken().then(token => token || '')
+            });
 
-        // Cleanup on unmount
+            setZero(zeroInstance);
+            setIsConnected(true);
+            setError(null);
+
+            console.log('[Zero] Client initialized', {
+                userID: user?.id || 'anonymous',
+                server: cacheUrl
+            });
+        } catch (err) {
+            console.error('[Zero] Failed to initialize client:', err);
+            setError(err instanceof Error ? err : new Error('Unknown error'));
+            setIsConnected(false);
+        }
+
+        // Cleanup on unmount or when user changes
         return () => {
-            // Zero handles cleanup automatically
+            if (zeroInstance) {
+                console.log('[Zero] Cleaning up client');
+                // Zero doesn't expose a cleanup method, but the instance will be GC'd
+                setZero(null);
+                setIsConnected(false);
+            }
         };
     }, [user?.id]);
 
     return (
-        <ZeroContext.Provider value={{ zero, isConnected }}>
+        <ZeroContext.Provider value={{ zero, isConnected, error }}>
             {children}
         </ZeroContext.Provider>
     );
