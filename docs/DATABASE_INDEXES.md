@@ -2,6 +2,13 @@
 
 This document explains the database indexes implemented for optimal query performance in the Hello Miami platform.
 
+## Index Sources (Reconciled)
+
+Indexes are defined in two places:
+
+- Base indexes and unique constraints are defined in [drizzle/schema.ts](drizzle/schema.ts).
+- Performance indexes are added by migration in [drizzle/migrations/0001_add_performance_indexes.sql](drizzle/migrations/0001_add_performance_indexes.sql).
+
 ## Index Categories
 
 ### 1. Text Search Indexes (Case-Insensitive)
