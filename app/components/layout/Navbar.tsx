@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { useAuth } from '@/hooks/use-auth';
 import { LoginDialog } from '@/components/auth/LoginDialog';
+import { ConnectionStatus } from '@/components/connection-status';
 
 import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 import { Button } from '../ui/button';
@@ -57,6 +58,8 @@ export function Navbar() {
                     ))}
 
                     <div className="h-4 w-px bg-zinc-800" />
+
+                    <ConnectionStatus variant="compact" />
 
                     {user ? (
                         <div className="flex items-center gap-4">
