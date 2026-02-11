@@ -11,6 +11,54 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { projectQueries } from '@/zero/queries';
+// import { useUpdateProject, useDeleteProject } from '@/hooks/use-zero-mutate';
+// import { useAuth } from '@/hooks/use-auth';
+
+/**
+ * Example: How to add edit/delete functionality using Zero mutations
+ *
+ * 1. Import the hooks:
+ *    import { useUpdateProject, useDeleteProject } from '@/hooks/use-zero-mutate';
+ *    import { useAuth } from '@/hooks/use-auth';
+ *
+ * 2. In your component:
+ *    const { user } = useAuth();
+ *    const { updateProject } = useUpdateProject();
+ *    const { deleteProject } = useDeleteProject();
+ *
+ * 3. Check if current user owns the project:
+ *    const isOwner = user && member && member.clerkUserId === user.id;
+ *
+ * 4. Update a project:
+ *    const handleUpdate = async () => {
+ *      const result = await updateProject({
+ *        id: project.id,
+ *        title: 'Updated Title',
+ *        description: 'Updated description',
+ *        tags: ['new', 'tags'],
+ *      });
+ *      if (result.success) {
+ *        // Zero will automatically sync the changes
+ *      }
+ *    };
+ *
+ * 5. Delete a project:
+ *    const handleDelete = async () => {
+ *      if (!confirm('Delete this project?')) return;
+ *      const result = await deleteProject(project.id);
+ *      if (result.success) {
+ *        navigate('/showcase');
+ *      }
+ *    };
+ *
+ * 6. Add buttons to the UI:
+ *    {isOwner && (
+ *      <div className="flex gap-2">
+ *        <button onClick={handleUpdate}>Edit</button>
+ *        <button onClick={handleDelete}>Delete</button>
+ *      </div>
+ *    )}
+ */
 
 export const meta: MetaFunction = () => {
     return [
