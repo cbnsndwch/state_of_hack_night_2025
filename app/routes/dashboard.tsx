@@ -1,6 +1,13 @@
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
+import {
+    profileQueries,
+    projectQueries,
+    badgeQueries,
+    surveyResponseQueries
+} from '@/zero/queries';
 import { Navbar } from '@/components/layout/Navbar';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
@@ -11,78 +18,31 @@ import { DemoSlotsList } from '@/components/events/DemoSlotsList';
 import { ImHereButton } from '@/components/events/ImHereButton';
 import { CheckInHistory } from '@/components/events/CheckInHistory';
 
-interface Profile {
-    id: string;
-    clerkUserId: string;
-    lumaAttendeeId: string | null;
-    bio: string | null;
-    skills: string[];
-    githubUsername: string | null;
-    twitterHandle: string | null;
-    websiteUrl: string | null;
-    role: string | null;
-    seekingFunding: boolean;
-    openToMentoring: boolean;
-    streakCount: number;
-    onboardingDismissed: boolean;
-    isAppAdmin: boolean;
-    createdAt: string;
-}
-
-interface CompletedSurvey {
-    id: string;
-    surveyId: string;
-    surveySlug: string;
-    surveyTitle: string;
-    surveyDescription: string;
-    submittedAt: string;
-}
-
-interface Badge {
-    id: string;
-    name: string;
-    iconAscii: string;
-    criteria: string;
-    createdAt: string;
-}
-
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [projectCount, setProjectCount] = useState(0);
-    const [completedSurveys, setCompletedSurveys] = useState<CompletedSurvey[]>(
-        []
-    );
-    const [badges, setBadges] = useState<Badge[]>([]);
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [showOnboarding, setShowOnboarding] = useState(false);
     const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
 
+    // Use Zero queries for reactive data
+    const [profile] = useQuery(
+        user?.id ? profileQueries.byClerkUserId(user.id) : null
+    );
+    const [projects] = useQuery(
+        profile?.id ? projectQueries.byMemberId(profile.id) : null
+    );
+    const [memberBadges] = useQuery(
+        profile?.id ? badgeQueries.byMemberId(profile.id) : null
+    );
+    const [surveyResponses] = useQuery(
+        profile?.id ? surveyResponseQueries.byMemberId(profile.id) : null
+    );
+
+    // Redirect to home if not authenticated
     useEffect(() => {
         if (!loading && !user) {
             navigate('/');
         }
     }, [user, loading, navigate]);
-
-    useEffect(() => {
-        if (user) {
-            // Fetch profile and project count from API
-            fetch(`/api/profile?clerkUserId=${user.id}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.profile) {
-                        setProfile(data.profile);
-                        setProjectCount(data.projectCount);
-                        setCompletedSurveys(data.completedSurveys || []);
-                        setBadges(data.badges || []);
-                        // Show onboarding if not dismissed
-                        setShowOnboarding(!data.profile.onboardingDismissed);
-                    }
-                })
-                .catch(err => console.error('Error fetching profile:', err));
-        }
-    }, [user, refreshKey]);
 
     if (loading) {
         return (
@@ -95,6 +55,25 @@ export default function Dashboard() {
     }
 
     if (!user) return null;
+
+    // Compute derived values from Zero queries
+    const projectCount = projects?.length || 0;
+    const badges =
+        memberBadges
+            ?.map(mb => mb.badge)
+            .filter((b): b is NonNullable<typeof b> => b != null) || [];
+    const completedSurveys =
+        surveyResponses?.map(sr => ({
+            id: sr.id,
+            surveyId: sr.surveyId,
+            surveySlug: sr.survey?.slug || '',
+            surveyTitle: sr.survey?.title || '',
+            surveyDescription: sr.survey?.description || '',
+            submittedAt: sr.submittedAt
+                ? new Date(sr.submittedAt).toISOString()
+                : new Date().toISOString()
+        })) || [];
+    const showOnboarding = profile && !profile.onboardingDismissed;
 
     // Define onboarding checklist items
     const onboardingItems = [
@@ -144,7 +123,7 @@ export default function Dashboard() {
                 body: formData
             });
 
-            setShowOnboarding(false);
+            // Note: No need to manually update state - Zero will sync automatically
         } catch (err) {
             console.error('Error dismissing onboarding:', err);
         }
@@ -290,8 +269,7 @@ export default function Dashboard() {
                                 open={addProjectDialogOpen}
                                 onOpenChange={setAddProjectDialogOpen}
                                 onProjectAdded={() => {
-                                    // Trigger refresh of profile data
-                                    setRefreshKey(k => k + 1);
+                                    // Zero will automatically sync the new project
                                 }}
                             />
                         </NeoCard>
@@ -306,8 +284,7 @@ export default function Dashboard() {
                             </p>
                             <DemoSlotBookingDialog
                                 onDemoBooked={() => {
-                                    // Trigger refresh of profile data
-                                    setRefreshKey(k => k + 1);
+                                    // Zero will automatically sync the new demo slot
                                 }}
                             />
                         </NeoCard>
