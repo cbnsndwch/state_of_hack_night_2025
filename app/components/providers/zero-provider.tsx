@@ -69,9 +69,22 @@ export function ZeroProvider({ children }: { children: React.ReactNode }) {
             setIsConnected(true);
             setError(null);
 
+            // Expose Zero instance globally for Inspector access (browser console)
+            // This enables debugging via __zero.inspector in the browser console
+            // Also expose the ZQL builder for advanced query analysis
+            if (typeof window !== 'undefined') {
+                (window as any).__zero = zeroInstance;
+
+                // Lazy-load builder to avoid circular dependencies
+                import('@/zero/schema').then(({ builder }) => {
+                    (window as any).__builder = builder;
+                });
+            }
+
             console.log('[Zero] Client initialized', {
                 userID: user?.id || 'anonymous',
-                server: cacheUrl
+                server: cacheUrl,
+                inspectorAvailable: typeof window !== 'undefined'
             });
         } catch (err) {
             console.error('[Zero] Failed to initialize client:', err);
