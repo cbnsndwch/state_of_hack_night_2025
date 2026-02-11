@@ -21,13 +21,15 @@ export const mutators = defineMutators({
             z.object({
                 id: z.string(),
                 bio: z.string().optional(),
+                lumaAttendeeId: z.string().optional(),
                 skills: z.array(z.string()).optional(),
                 githubUsername: z.string().optional(),
                 twitterHandle: z.string().optional(),
                 websiteUrl: z.string().url().optional(),
                 role: z.string().optional(),
                 seekingFunding: z.boolean().optional(),
-                openToMentoring: z.boolean().optional()
+                openToMentoring: z.boolean().optional(),
+                onboardingDismissed: z.boolean().optional()
             }),
             async ({ args, tx, ctx }) => {
                 // Authorization: users can only update their own profile
