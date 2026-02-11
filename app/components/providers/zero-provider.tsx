@@ -5,8 +5,9 @@
  * This provider manages the Zero client connection and makes queries available throughout the app.
  */
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Zero } from '@rocicorp/zero';
+import { ZeroProvider as ZeroReactProvider } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
 import { schema } from '@/zero/schema';
 import type { Schema } from '@/zero/schema';
@@ -37,75 +38,74 @@ export function useZeroConnection() {
 
 export function ZeroProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
-    const [zero, setZero] = useState<Zero<Schema> | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        // Only initialize Zero if we have environment variables set
-        const cacheUrl = import.meta.env.VITE_ZERO_CACHE_URL;
+    const cacheUrl = import.meta.env.VITE_ZERO_CACHE_URL as string | undefined;
+    const zero = useMemo(() => {
         if (!cacheUrl) {
-            console.warn(
-                'VITE_ZERO_CACHE_URL not configured, Zero Sync disabled'
-            );
-            return;
+            return null;
         }
 
-        let zeroInstance: Zero<Schema> | null = null;
-
         try {
-            // Create Zero instance with proper configuration
-            zeroInstance = new Zero({
+            return new Zero<Schema>({
                 userID: user?.id || 'anonymous',
                 schema,
                 server: cacheUrl,
-                // Enable dev mode logging if in development
                 logLevel: import.meta.env.DEV ? 'info' : 'error'
                 // Optional: Configure auth token if using authenticated endpoints
                 // auth: () => user?.getToken().then(token => token || '')
             });
-
-            setZero(zeroInstance);
-            setIsConnected(true);
-            setError(null);
-
-            // Expose Zero instance globally for Inspector access (browser console)
-            // This enables debugging via __zero.inspector in the browser console
-            // Also expose the ZQL builder for advanced query analysis
-            if (typeof window !== 'undefined') {
-                (window as any).__zero = zeroInstance;
-
-                // Lazy-load builder to avoid circular dependencies
-                import('@/zero/schema').then(({ builder }) => {
-                    (window as any).__builder = builder;
-                });
-            }
-
-            console.log('[Zero] Client initialized', {
-                userID: user?.id || 'anonymous',
-                server: cacheUrl,
-                inspectorAvailable: typeof window !== 'undefined'
-            });
         } catch (err) {
             console.error('[Zero] Failed to initialize client:', err);
-            setError(err instanceof Error ? err : new Error('Unknown error'));
+            return null;
+        }
+    }, [cacheUrl, user?.id]);
+
+    useEffect(() => {
+        if (!cacheUrl) {
+            setError(
+                new Error('VITE_ZERO_CACHE_URL not configured, Zero Sync disabled')
+            );
             setIsConnected(false);
+            return;
         }
 
-        // Cleanup on unmount or when user changes
+        if (!zero) {
+            setError(new Error('Zero client failed to initialize'));
+            setIsConnected(false);
+            return;
+        }
+
+        setIsConnected(true);
+        setError(null);
+
+        if (typeof window !== 'undefined') {
+            (window as any).__zero = zero;
+
+            import('@/zero/schema').then(({ builder }) => {
+                (window as any).__builder = builder;
+            });
+        }
+
+        console.log('[Zero] Client initialized', {
+            userID: user?.id || 'anonymous',
+            server: cacheUrl,
+            inspectorAvailable: typeof window !== 'undefined'
+        });
+
         return () => {
-            if (zeroInstance) {
-                console.log('[Zero] Cleaning up client');
-                // Zero doesn't expose a cleanup method, but the instance will be GC'd
-                setZero(null);
-                setIsConnected(false);
-            }
+            console.log('[Zero] Cleaning up client');
+            void zero.close();
+            setIsConnected(false);
         };
-    }, [user?.id]);
+    }, [cacheUrl, zero, user?.id]);
 
     return (
         <ZeroContext.Provider value={{ zero, isConnected, error }}>
-            {children}
+            {zero ? (
+                <ZeroReactProvider zero={zero}>{children}</ZeroReactProvider>
+            ) : null}
         </ZeroContext.Provider>
     );
 }
