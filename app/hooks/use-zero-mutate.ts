@@ -151,3 +151,82 @@ export function useDismissOnboarding() {
         clearError
     };
 }
+
+/**
+ * Hook for creating a project via Zero
+ */
+export function useCreateProject() {
+    const { mutate, isLoading, error, clearError } = useZeroMutate();
+
+    const createProject = useCallback(
+        async (args: {
+            memberId: string;
+            title: string;
+            description?: string;
+            tags?: string[];
+            imageUrls?: string[];
+            githubUrl?: string;
+            publicUrl?: string;
+        }) => {
+            return mutate('projects.create', args);
+        },
+        [mutate]
+    );
+
+    return {
+        createProject,
+        isLoading,
+        error,
+        clearError
+    };
+}
+
+/**
+ * Hook for updating a project via Zero
+ */
+export function useUpdateProject() {
+    const { mutate, isLoading, error, clearError } = useZeroMutate();
+
+    const updateProject = useCallback(
+        async (args: {
+            id: string;
+            title?: string;
+            description?: string;
+            tags?: string[];
+            imageUrls?: string[];
+            githubUrl?: string;
+            publicUrl?: string;
+        }) => {
+            return mutate('projects.update', args);
+        },
+        [mutate]
+    );
+
+    return {
+        updateProject,
+        isLoading,
+        error,
+        clearError
+    };
+}
+
+/**
+ * Hook for deleting a project via Zero
+ */
+export function useDeleteProject() {
+    const { mutate, isLoading, error, clearError } = useZeroMutate();
+
+    const deleteProject = useCallback(
+        async (projectId: string) => {
+            return mutate('projects.delete', { id: projectId });
+        },
+        [mutate]
+    );
+
+    return {
+        deleteProject,
+        isLoading,
+        error,
+        clearError
+    };
+}
