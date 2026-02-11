@@ -7,6 +7,8 @@ import { data, type LoaderFunctionArgs } from 'react-router';
 import { getAuth } from '@clerk/react-router/server';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { MonitoringDashboard } from '@/components/monitoring-dashboard';
+import { PostgresMonitoringDashboard } from '@/components/postgres-monitoring-dashboard';
+import { useState } from 'react';
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const auth = await getAuth({ request } as any);
@@ -28,9 +30,42 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AdminMonitoringPage() {
+    const [activeTab, setActiveTab] = useState<'system' | 'postgres'>('system');
+
     return (
         <div className="min-h-screen bg-gray-50">
-            <MonitoringDashboard />
+            <div className="max-w-7xl mx-auto p-8">
+                {/* Tab Navigation */}
+                <div className="mb-8 flex gap-4">
+                    <button
+                        onClick={() => setActiveTab('system')}
+                        className={`px-6 py-3 font-bold border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
+                            activeTab === 'system'
+                                ? 'bg-yellow-300'
+                                : 'bg-white'
+                        }`}
+                    >
+                        System Health
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('postgres')}
+                        className={`px-6 py-3 font-bold border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
+                            activeTab === 'postgres'
+                                ? 'bg-yellow-300'
+                                : 'bg-white'
+                        }`}
+                    >
+                        PostgreSQL Stats
+                    </button>
+                </div>
+
+                {/* Tab Content */}
+                {activeTab === 'system' ? (
+                    <MonitoringDashboard />
+                ) : (
+                    <PostgresMonitoringDashboard />
+                )}
+            </div>
         </div>
     );
 }
