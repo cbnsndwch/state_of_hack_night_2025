@@ -13,50 +13,9 @@
 import type { ActionFunctionArgs } from 'react-router';
 import { getAuth } from '@clerk/react-router/ssr.server';
 import { handleMutateRequest } from '@rocicorp/zero/server';
-import { mustGetMutator, defineMutators, defineMutator } from '@rocicorp/zero';
-import { z } from 'zod';
+import { mustGetMutator } from '@rocicorp/zero';
 import { dbProvider } from '@/lib/db/provider.server';
-
-/**
- * Define mutators using Zero's mutation system
- *
- * These are example mutators that demonstrate the correct pattern.
- * As we migrate components, we'll add more mutators here.
- *
- * NOTE: The mutator signature and transaction API need to be properly implemented
- * based on Zero's current API. This is a placeholder implementation.
- */
-const mutators = defineMutators({
-    profiles: {
-        // Example: Update profile
-        update: defineMutator(
-            z.object({
-                id: z.string(),
-                bio: z.string().optional(),
-                skills: z.array(z.string()).optional()
-            }),
-            async ({ args, ctx }) => {
-                // TODO: Implement profile update mutation using transaction API
-                console.log('Mutation: profiles.update', { args, userId: ctx });
-            }
-        )
-    },
-
-    projects: {
-        // Example: Create project
-        create: defineMutator(
-            z.object({
-                memberId: z.string(),
-                title: z.string(),
-                description: z.string().optional()
-            }),
-            async ({ args, ctx }) => {
-                // TODO: Implement project creation mutation using transaction API
-                console.log('Mutation: projects.create', { args, userId: ctx });
-            }
-        )
-    }
-});
+import { mutators } from '@/zero/mutators';
 
 /**
  * Handle POST requests for Zero mutations
