@@ -15,6 +15,7 @@
         "ralph": "tsx scripts/ralph/ralph.ts",
         "test:queries": "tsx --env-file=.env scripts/test-zero-queries.ts",
         "test:queries:data": "tsx --env-file=.env scripts/test-zero-queries-with-data.ts",
+        "test:mutators": "tsx --env-file=.env scripts/test-zero-mutators.ts",
         "seed:survey": "tsx --env-file=.env scripts/seed-survey.ts",
         "seed:badges": "tsx --env-file=.env scripts/seed-badges.ts",
         "migrate:profiles": "tsx --env-file=.env scripts/migrate-profiles.ts",
