@@ -123,6 +123,21 @@ pnpm build
 pnpm start   # Preview production build
 ```
 
+## Deployment
+
+For production deployment with Docker and Zero Sync:
+
+```bash
+# Quick deployment (recommended)
+./scripts/deploy-production.sh production
+```
+
+See the complete deployment guides:
+
+- **[Quick Deploy Guide](docs/QUICK_DEPLOY.md)** - Get started in minutes
+- **[Full Deployment Guide](docs/DEPLOYMENT.md)** - Comprehensive production setup
+- **[Deployment Checklist](docs/DEPLOYMENT_CHECKLIST.md)** - Pre/post deployment verification
+
 ## Project Structure
 
 ```text
