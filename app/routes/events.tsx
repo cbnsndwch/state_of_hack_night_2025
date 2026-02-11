@@ -1,10 +1,11 @@
 import { type MetaFunction } from 'react-router';
-import { useLoaderData } from 'react-router';
 import { CalendarIcon, MapPinIcon, UsersIcon } from 'lucide-react';
+import { useMemo } from 'react';
+import { useQuery } from '@rocicorp/zero/react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
-import { getEvents } from '@/lib/db/events.server';
+import { eventQueries } from '@/zero/queries';
 
 export const meta: MetaFunction = () => {
     return [
@@ -17,8 +18,8 @@ export const meta: MetaFunction = () => {
     ];
 };
 
-// Serialized event type for client-side rendering
-interface SerializedEvent {
+// Event type for client-side rendering
+interface EventData {
     id: string;
     lumaEventId: string;
     name: string;
@@ -42,34 +43,33 @@ interface SerializedEvent {
     isCanceled: boolean;
 }
 
-export async function loader() {
-    // Get upcoming events, sorted by start date
-    const events = await getEvents({
-        upcomingOnly: true,
-        sortOrder: 1
-    });
-
-    // Serialize events for JSON transfer
-    const serializedEvents: SerializedEvent[] = events.map(event => ({
-        id: event._id.toString(),
-        lumaEventId: event.lumaEventId,
-        name: event.name,
-        description: event.description,
-        coverUrl: event.coverUrl,
-        url: event.url,
-        startAt: event.startAt.toISOString(),
-        endAt: event.endAt ? event.endAt.toISOString() : null,
-        timezone: event.timezone,
-        location: event.location,
-        stats: event.stats,
-        isCanceled: event.isCanceled
-    }));
-
-    return { events: serializedEvents };
-}
-
 export default function Events() {
-    const { events } = useLoaderData<typeof loader>();
+    // Use Zero query for realtime event data
+    const [eventsData] = useQuery(eventQueries.upcoming());
+
+    // Transform Zero query results to match expected format
+    const events = useMemo(() => {
+        if (!eventsData) return [];
+        return eventsData.map(event => ({
+            id: event.id,
+            lumaEventId: event.lumaEventId || '',
+            name: event.name || '',
+            description: event.description,
+            coverUrl: event.coverUrl,
+            url: event.url || '',
+            startAt: event.startAt
+                ? new Date(event.startAt).toISOString()
+                : new Date().toISOString(),
+            endAt: event.endAt ? new Date(event.endAt).toISOString() : null,
+            timezone: event.timezone || 'UTC',
+            location: event.location,
+            stats:
+                typeof event.stats === 'object' && event.stats !== null
+                    ? (event.stats as { registered: number; checkedIn: number })
+                    : { registered: 0, checkedIn: 0 },
+            isCanceled: event.isCanceled ?? false
+        }));
+    }, [eventsData]);
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -110,7 +110,7 @@ export default function Events() {
 }
 
 interface EventCardProps {
-    event: SerializedEvent;
+    event: EventData;
 }
 
 function EventCard({ event }: EventCardProps) {
