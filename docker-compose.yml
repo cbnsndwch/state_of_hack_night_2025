@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hello_miami_postgres
+    environment:
+      POSTGRES_DB: hello_miami
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - '5433:5432'
+    command: postgres -c wal_level=logical -c max_connections=200
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zero-cache:
+    image: rocicorp/zero:latest
+    container_name: hello_miami_zero_cache
+    ports:
+      - '4848:4848'
+    environment:
+      ZERO_UPSTREAM_DB: postgresql://postgres:password@postgres:5432/hello_miami
+      ZERO_REPLICA_FILE: /data/zero.db
+      ZERO_ADMIN_PASSWORD: dev-password
+      ZERO_QUERY_URL: http://host.docker.internal:5173/api/zero/query
+      ZERO_MUTATE_URL: http://host.docker.internal:5173/api/zero/mutate
+      ZERO_QUERY_FORWARD_COOKIES: 'true'
+      ZERO_MUTATE_FORWARD_COOKIES: 'true'
+      ZERO_NUM_SYNC_WORKERS: '4'
+      ZERO_UPSTREAM_MAX_CONNS: '100'
+    volumes:
+      - zero-cache-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  zero-cache-data:
