@@ -7,7 +7,9 @@
 
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import { zeroDrizzle } from '@rocicorp/zero/server/adapters/drizzle';
 import * as schema from '../../../drizzle/schema';
+import { schema as zeroSchema } from '@/zero/schema';
 
 // Create PostgreSQL connection pool
 const pool = new Pool({
@@ -19,6 +21,12 @@ const pool = new Pool({
 
 // Create Drizzle ORM instance with schema
 export const db = drizzle(pool, { schema });
+
+/**
+ * Zero Drizzle provider for mutations
+ * This is used by the /api/zero/mutate endpoint
+ */
+export const dbProvider = zeroDrizzle(zeroSchema, db);
 
 /**
  * Type-safe database client with full schema awareness
