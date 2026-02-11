@@ -1,11 +1,12 @@
 import { type MetaFunction } from 'react-router';
-import { useLoaderData, Link } from 'react-router';
+import { Link } from 'react-router';
 import { GithubIcon, ExternalLinkIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { useQuery } from '@rocicorp/zero/react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
-import { getProjectsWithMembers } from '@/lib/db/projects.server';
+import { projectQueries } from '@/zero/queries';
 
 export const meta: MetaFunction = () => {
     return [
@@ -18,8 +19,8 @@ export const meta: MetaFunction = () => {
     ];
 };
 
-// Serialized project type for client-side rendering
-interface SerializedProject {
+// Project type for client-side rendering
+interface ProjectWithMember {
     id: string;
     title: string;
     description: string | null;
@@ -32,37 +33,48 @@ interface SerializedProject {
         id: string;
         email: string;
         clerkUserId: string | null;
-    };
-}
-
-export async function loader() {
-    // Get all projects with member info
-    const projects = await getProjectsWithMembers();
-
-    // Serialize projects for JSON transfer
-    const serializedProjects: SerializedProject[] = projects.map(project => ({
-        id: project._id.toString(),
-        title: project.title,
-        description: project.description,
-        tags: project.tags,
-        imageUrls: project.imageUrls,
-        githubUrl: project.githubUrl,
-        publicUrl: project.publicUrl,
-        createdAt: project.createdAt.toISOString(),
-        member: {
-            id: project.member._id.toString(),
-            email: project.member.lumaEmail,
-            clerkUserId: project.member.clerkUserId
-        }
-    }));
-
-    return { projects: serializedProjects };
+    } | null;
 }
 
 export default function Showcase() {
-    const { projects } = useLoaderData<typeof loader>();
+    // Use Zero query for realtime project data
+    const [projectsData] = useQuery(projectQueries.all());
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+    // Transform Zero query results to match expected format
+    const projects = useMemo(() => {
+        if (!projectsData) return [];
+        return projectsData
+            .map(project => ({
+                id: project.id,
+                title: project.title || '',
+                description: project.description,
+                tags: Array.isArray(project.tags) ? project.tags : [],
+                imageUrls: Array.isArray(project.imageUrls)
+                    ? project.imageUrls
+                    : [],
+                githubUrl: project.githubUrl,
+                publicUrl: project.publicUrl,
+                createdAt: project.createdAt
+                    ? new Date(project.createdAt).toISOString()
+                    : new Date().toISOString(),
+                member: project.member
+                    ? {
+                          id: project.member.id,
+                          email: project.member.lumaEmail || '',
+                          clerkUserId: project.member.clerkUserId
+                      }
+                    : null
+            }))
+            .filter(
+                (
+                    p
+                ): p is ProjectWithMember & {
+                    member: NonNullable<ProjectWithMember['member']>;
+                } => p.member !== null
+            );
+    }, [projectsData]);
 
     // Extract all unique tags from projects
     const allTags = useMemo(() => {
@@ -226,7 +238,9 @@ export default function Showcase() {
 }
 
 interface ProjectCardProps {
-    project: SerializedProject;
+    project: ProjectWithMember & {
+        member: NonNullable<ProjectWithMember['member']>;
+    };
 }
 
 function ProjectCard({ project }: ProjectCardProps) {
@@ -271,14 +285,16 @@ function ProjectCard({ project }: ProjectCardProps) {
             {/* Tags */}
             {project.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {project.tags.slice(0, 4).map((tag, index) => (
-                        <span
-                            key={index}
-                            className="text-xs px-2 py-1 bg-zinc-900 border border-primary/30 text-primary"
-                        >
-                            {tag}
-                        </span>
-                    ))}
+                    {project.tags
+                        .slice(0, 4)
+                        .map((tag: string, index: number) => (
+                            <span
+                                key={index}
+                                className="text-xs px-2 py-1 bg-zinc-900 border border-primary/30 text-primary"
+                            >
+                                {tag}
+                            </span>
+                        ))}
                     {project.tags.length > 4 && (
                         <span className="text-xs px-2 py-1 text-zinc-500">
                             +{project.tags.length - 4} more

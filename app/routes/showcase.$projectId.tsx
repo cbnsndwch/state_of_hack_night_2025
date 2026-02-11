@@ -1,78 +1,107 @@
-import { type MetaFunction, data } from 'react-router';
-import { useLoaderData, Link } from 'react-router';
+import { type MetaFunction } from 'react-router';
+import { Link, useParams } from 'react-router';
 import {
     GithubIcon,
     ExternalLinkIcon,
     ArrowLeftIcon,
     CalendarIcon
 } from 'lucide-react';
+import { useQuery } from '@rocicorp/zero/react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
-import { getProjectById } from '@/lib/db/projects.server';
-import { getProfileById } from '@/lib/db/profiles.server';
+import { projectQueries } from '@/zero/queries';
 
-export const meta: MetaFunction = ({ data }) => {
-    const loaderData = data as Awaited<ReturnType<typeof loader>> | undefined;
-
-    if (!loaderData || !loaderData.project) {
-        return [{ title: 'Project Not Found | hello_miami' }];
-    }
-
+export const meta: MetaFunction = () => {
     return [
-        { title: `${loaderData.project.title} | hello_miami` },
+        { title: 'Project Detail | hello_miami' },
         {
             name: 'description',
-            content:
-                loaderData.project.description ||
-                'Project built by the Hello Miami community'
+            content: 'Project built by the Hello Miami community'
         }
     ];
 };
 
-export async function loader({ params }: { params: { projectId: string } }) {
-    const { projectId } = params;
-
-    if (!projectId) {
-        throw data({ message: 'Project ID is required' }, { status: 400 });
-    }
-
-    const project = await getProjectById(projectId);
-
-    if (!project) {
-        throw data({ message: 'Project not found' }, { status: 404 });
-    }
-
-    // Get member info
-    const member = await getProfileById(project.memberId.toString());
-
-    return {
-        project: {
-            id: project._id.toString(),
-            title: project.title,
-            description: project.description,
-            tags: project.tags,
-            imageUrls: project.imageUrls,
-            githubUrl: project.githubUrl,
-            publicUrl: project.publicUrl,
-            createdAt: project.createdAt.toISOString(),
-            updatedAt: project.updatedAt.toISOString()
-        },
-        member: member
-            ? {
-                  id: member._id.toString(),
-                  email: member.lumaEmail,
-                  bio: member.bio,
-                  githubUsername: member.githubUsername,
-                  twitterHandle: member.twitterHandle,
-                  websiteUrl: member.websiteUrl
-              }
-            : null
-    };
-}
-
 export default function ProjectDetail() {
-    const { project, member } = useLoaderData<typeof loader>();
+    const params = useParams();
+    const projectId = params.projectId;
+
+    // Use Zero query for realtime project data with member relation
+    const [projectData] = useQuery(
+        projectId ? projectQueries.byId(projectId) : null
+    );
+
+    // Transform data
+    const project = projectData
+        ? {
+              id: projectData.id,
+              title: projectData.title || '',
+              description: projectData.description,
+              tags: Array.isArray(projectData.tags) ? projectData.tags : [],
+              imageUrls: Array.isArray(projectData.imageUrls)
+                  ? projectData.imageUrls
+                  : [],
+              githubUrl: projectData.githubUrl,
+              publicUrl: projectData.publicUrl,
+              createdAt: projectData.createdAt
+                  ? new Date(projectData.createdAt).toISOString()
+                  : new Date().toISOString(),
+              updatedAt: projectData.updatedAt
+                  ? new Date(projectData.updatedAt).toISOString()
+                  : new Date().toISOString()
+          }
+        : null;
+
+    const member = projectData?.member
+        ? {
+              id: projectData.member.id,
+              email: projectData.member.lumaEmail || '',
+              bio: projectData.member.bio,
+              githubUsername: projectData.member.githubUsername,
+              twitterHandle: projectData.member.twitterHandle,
+              websiteUrl: projectData.member.websiteUrl
+          }
+        : null;
+
+    // Loading state
+    if (!projectData) {
+        return (
+            <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <main className="grow py-20 px-4 flex items-center justify-center">
+                    <div className="font-sans text-primary animate-pulse">
+                        loading_project...
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
+    // Project not found
+    if (!project) {
+        return (
+            <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <main className="grow py-20 px-4">
+                    <div className="max-w-4xl mx-auto">
+                        <NeoCard className="p-12 text-center">
+                            <p className="text-zinc-400 text-lg mb-4">
+                                Project not found
+                            </p>
+                            <Link
+                                to="/showcase"
+                                className="text-primary hover:underline"
+                            >
+                                Back to showcase
+                            </Link>
+                        </NeoCard>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
 
     const createdDate = new Date(project.createdAt);
     const formattedDate = createdDate.toLocaleDateString('en-US', {
