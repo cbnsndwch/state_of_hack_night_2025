@@ -20,7 +20,9 @@
         "seed:survey": "tsx --env-file=.env scripts/seed-survey.ts",
         "seed:badges": "tsx --env-file=.env scripts/seed-badges.ts",
         "migrate:profiles": "tsx --env-file=.env scripts/migrate-profiles.ts",
-        "migrate:clerk-userid": "tsx --env-file=.env scripts/migrate-supabase-to-clerk-userid.ts"
+        "migrate:clerk-userid": "tsx --env-file=.env scripts/migrate-supabase-to-clerk-userid.ts",
+        "deploy:zero-cache": "bash scripts/deploy-zero-cache.sh production",
+        "deploy:zero-cache:staging": "bash scripts/deploy-zero-cache.sh staging"
     },
     "dependencies": {
         "@clerk/react-router": "^2.4.2",
