@@ -184,7 +184,7 @@ Verify all required environment variables are set in your production environment
 
 ### 2. PostgreSQL Database Setup
 
-Set up PostgreSQL 16+ with logical replication enabled. See [docs/PRODUCTION_DEPLOYMENT.md](docs/PRODUCTION_DEPLOYMENT.md) for detailed instructions.
+Set up PostgreSQL 16+ with logical replication enabled. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed instructions.
 
 **Quick setup**:
 
@@ -215,7 +215,18 @@ Set up PostgreSQL 16+ with logical replication enabled. See [docs/PRODUCTION_DEP
 
 ### 3. Deploy zero-cache
 
-Deploy the zero-cache sync engine. See [docs/PRODUCTION_DEPLOYMENT.md](docs/PRODUCTION_DEPLOYMENT.md) for platform-specific instructions (Docker, Kubernetes, Fly.io).
+Deploy the zero-cache sync engine. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for platform-specific instructions.
+
+**Quick deployment** (using the provided script):
+
+```bash
+# Configure production environment
+cp .env.production.example .env.production
+# Edit .env.production with your values
+
+# Deploy zero-cache
+./scripts/deploy-zero-cache.sh production
+```
 
 ### 4. Clerk Configuration
 
@@ -257,7 +268,7 @@ pnpm build
 
 Deploy the contents of the `build/` directory to your hosting provider. The application requires Node.js runtime for SSR.
 
-**For detailed production deployment instructions with PostgreSQL + Zero Sync**, see [docs/PRODUCTION_DEPLOYMENT.md](docs/PRODUCTION_DEPLOYMENT.md).
+**For detailed production deployment instructions with PostgreSQL + Zero Sync**, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### 8. Post-Deployment Verification
 
