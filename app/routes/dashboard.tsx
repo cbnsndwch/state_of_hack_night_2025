@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
+import { useDismissOnboarding } from '@/hooks/use-zero-mutate';
 import {
     profileQueries,
     projectQueries,
@@ -21,6 +22,7 @@ import { CheckInHistory } from '@/components/events/CheckInHistory';
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
+    const { dismissOnboarding } = useDismissOnboarding();
     const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
 
     // Use Zero queries for reactive data
@@ -111,18 +113,11 @@ export default function Dashboard() {
     ];
 
     const handleDismissOnboarding = async () => {
-        if (!user) return;
+        if (!profile) return;
 
         try {
-            const formData = new FormData();
-            formData.append('clerkUserId', user.id);
-            formData.append('dismissed', 'true');
-
-            await fetch('/api/onboarding', {
-                method: 'POST',
-                body: formData
-            });
-
+            // Use Zero mutation to dismiss onboarding
+            await dismissOnboarding(profile.id);
             // Note: No need to manually update state - Zero will sync automatically
         } catch (err) {
             console.error('Error dismissing onboarding:', err);

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
 import { profileQueries } from '@/zero/queries';
+import { useUpdateProfile } from '@/hooks/use-zero-mutate';
 import { Navbar } from '@/components/layout/Navbar';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { NeoButton } from '@/components/ui/NeoButton';
@@ -12,7 +13,7 @@ import { NeoTextarea } from '@/components/ui/NeoTextarea';
 export default function ProfileEdit() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
-    const [saving, setSaving] = useState(false);
+    const { updateProfile, isLoading: saving } = useUpdateProfile();
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
@@ -57,7 +58,6 @@ export default function ProfileEdit() {
         e.preventDefault();
         if (!user || !profile) return;
 
-        setSaving(true);
         setError(null);
         setSuccess(false);
 
@@ -68,26 +68,22 @@ export default function ProfileEdit() {
                 .map(s => s.trim())
                 .filter(s => s.length > 0);
 
-            const formData = new FormData();
-            formData.append('profileId', profile.id);
-            formData.append('bio', bio);
-            formData.append('lumaAttendeeId', lumaAttendeeId);
-            formData.append('skills', JSON.stringify(skills));
-            formData.append('githubUsername', githubUsername);
-            formData.append('twitterHandle', twitterHandle);
-            formData.append('websiteUrl', websiteUrl);
-            formData.append('role', role);
-            formData.append('seekingFunding', seekingFunding.toString());
-            formData.append('openToMentoring', openToMentoring.toString());
-
-            const response = await fetch('/api/profile-update', {
-                method: 'POST',
-                body: formData
+            // Call Zero mutation to update profile
+            const result = await updateProfile({
+                id: profile.id,
+                bio: bio.trim() || undefined,
+                lumaAttendeeId: lumaAttendeeId.trim() || undefined,
+                skills: skills.length > 0 ? skills : undefined,
+                githubUsername: githubUsername.trim() || undefined,
+                twitterHandle: twitterHandle.trim() || undefined,
+                websiteUrl: websiteUrl.trim() || undefined,
+                role: role.trim() || undefined,
+                seekingFunding,
+                openToMentoring
             });
 
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || 'Failed to update profile');
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to update profile');
             }
 
             setSuccess(true);
@@ -98,8 +94,6 @@ export default function ProfileEdit() {
             setError(
                 err instanceof Error ? err.message : 'Failed to update profile'
             );
-        } finally {
-            setSaving(false);
         }
     };
 
