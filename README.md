@@ -33,7 +33,7 @@ This project serves as:
 - **UI Components**: [Shadcn/ui](https://ui.shadcn.com/) (Radix UI primitives)
 - **Maps**: [MapLibre GL JS](https://maplibre.org/) + D3 Geo
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **Database**: MongoDB (profiles, projects, badges, attendance)
+- **Database**: PostgreSQL 16+ with [Zero Sync](https://zero.rocicorp.dev/) (realtime sync engine)
 - **Authentication**: Clerk (user authentication with GitHub OAuth)
 - **File Storage**: Cloudinary (project images, member avatars)
 - **Event Integration**: Luma (calendar subscriptions, webhooks)
@@ -44,15 +44,20 @@ This project serves as:
 
 - Node.js >= v20
 - pnpm
-- MongoDB instance (local or Atlas)
+- PostgreSQL 16+ instance (local via Docker or managed service)
 - Clerk account (for authentication)
 - Cloudinary account (for file storage)
 
 ### Environment Variables
 
 ```env
-# Database
-MONGODB_URI=mongodb://...
+# Database (PostgreSQL)
+DATABASE_URL=postgresql://user:password@localhost:5433/hello_miami
+
+# Zero Sync
+VITE_ZERO_CACHE_URL=http://localhost:4848
+ZERO_UPSTREAM_DB=postgresql://user:password@localhost:5433/hello_miami
+ZERO_ADMIN_PASSWORD=dev-password
 
 # Authentication (Clerk)
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
@@ -80,11 +85,36 @@ pnpm install
 
 ### Development
 
+1. **Start PostgreSQL and zero-cache** (via Docker):
+
+```bash
+docker-compose up -d
+```
+
+This starts:
+
+- PostgreSQL on port 5433
+- zero-cache on port 4848
+
+2. **Run database migrations**:
+
+```bash
+pnpm drizzle-kit push
+```
+
+3. **Start the development server**:
+
 ```bash
 pnpm dev
 ```
 
 The application will be available at `http://localhost:5173`.
+
+To stop the Docker services:
+
+```bash
+docker-compose down
+```
 
 ### Building for Production
 
@@ -100,13 +130,19 @@ app/
 ├── components/   # Reusable UI (buttons, charts, maps, projects)
 ├── data/         # JSON data files and precomputed stats
 ├── hooks/        # Custom hooks (use-auth, use-mobile)
-├── lib/db/       # Server-side MongoDB data access layer
+├── lib/db/       # Server-side database providers and utilities
 ├── routes/       # React Router 7 routes with loaders/actions
 │   ├── api/      # API endpoints (projects, profile)
 │   └── reports/  # Annual report pages
 ├── sections/     # Major page sections (Hero, Impact, etc.)
 ├── types/        # TypeScript interfaces
-└── utils/        # Helpers (MongoDB connection, Supabase client)
+└── utils/        # Helpers and utilities
+drizzle/
+└── schema.ts     # PostgreSQL schema definitions (Drizzle ORM)
+app/zero/
+├── queries.ts    # Zero Sync query definitions
+├── mutators.ts   # Zero Sync mutation definitions
+└── schema.ts     # Auto-generated Zero schema (from Drizzle)
 ```
 
 ## Scripts
@@ -125,9 +161,11 @@ Before deploying to production, ensure the following steps are completed:
 
 Verify all required environment variables are set in your production environment:
 
-- **Database**
-    - `MONGODB_URI` — MongoDB connection string
-    - `MONGODB_DB_NAME` — Database name (default: `hello_miami`)
+- **Database (PostgreSQL + Zero Sync)**
+    - `DATABASE_URL` — PostgreSQL connection string
+    - `VITE_ZERO_CACHE_URL` — Zero cache URL (e.g., `https://sync.hellomiami.co`)
+    - `ZERO_UPSTREAM_DB` — PostgreSQL connection string (for zero-cache)
+    - `ZERO_ADMIN_PASSWORD` — Admin password for Zero Inspector
 
 - **Authentication (Clerk)**
     - `VITE_CLERK_PUBLISHABLE_KEY` — Clerk publishable key
@@ -144,87 +182,40 @@ Verify all required environment variables are set in your production environment
 - **Email Notifications (Resend)**
     - `RESEND_API_KEY` — Optional for demo slot and badge notifications
 
-### 2. MongoDB Indexes
+### 2. PostgreSQL Database Setup
 
-Create all required indexes for optimal performance. Connect to your MongoDB instance and run:
+Set up PostgreSQL 16+ with logical replication enabled. See [docs/PRODUCTION_DEPLOYMENT.md](docs/PRODUCTION_DEPLOYMENT.md) for detailed instructions.
 
-```javascript
-use hello_miami
+**Quick setup**:
 
-// profiles
-db.profiles.createIndex({ clerkUserId: 1 }, { unique: true, sparse: true })
-db.profiles.createIndex({ lumaEmail: 1 }, { unique: true })
-db.profiles.createIndex({ lumaAttendeeId: 1 }, { sparse: true })
+1. Run database migrations:
 
-// projects
-db.projects.createIndex({ memberId: 1 })
-db.projects.createIndex({ createdAt: -1 })
-db.projects.createIndex({ tags: 1 })
+    ```bash
+    pnpm drizzle-kit migrate
+    ```
 
-// member_badges
-db.member_badges.createIndex({ memberId: 1, badgeId: 1 }, { unique: true })
+2. Verify tables were created:
 
-// attendance
-db.attendance.createIndex({ memberId: 1, lumaEventId: 1 }, { unique: true })
-db.attendance.createIndex({ lumaEventId: 1 })
+    ```bash
+    psql $DATABASE_URL -c "\dt"
+    ```
 
-// events
-db.events.createIndex({ lumaEventId: 1 }, { unique: true })
-db.events.createIndex({ startAt: -1 })
+    ```
 
-// surveys
-db.surveys.createIndex({ slug: 1 }, { unique: true })
-db.surveys.createIndex({ type: 1 })
+    ```
 
-// survey_responses
-db.survey_responses.createIndex({ surveyId: 1, memberId: 1 }, { unique: true })
-db.survey_responses.createIndex({ surveyId: 1 })
+3. Seed initial badges (optional):
+    ```sql
+    INSERT INTO badges (name, description, icon, category) VALUES
+    ('First Check-In', 'Attended your first hack night', '⭐', 'attendance'),
+    ('Streak Starter', 'Maintained a 2-week attendance streak', '🔥', 'streak'),
+    ('Consistent Builder', 'Maintained a 4-week attendance streak', '⚡', 'streak'),
+    ('Dedicated Member', 'Maintained an 8-week attendance streak', '💎', 'streak');
+    ```
 
-// demo_slots
-db.demo_slots.createIndex({ memberId: 1 })
-db.demo_slots.createIndex({ eventId: 1 })
+### 3. Deploy zero-cache
 
-// pending_users
-db.pending_users.createIndex({ email: 1 }, { unique: true })
-db.pending_users.createIndex({ lumaAttendeeId: 1 })
-
-// luma_webhooks
-db.luma_webhooks.createIndex({ type: 1 })
-db.luma_webhooks.createIndex({ receivedAt: -1 })
-```
-
-### 3. Badge Seeding
-
-Seed the initial set of badges by inserting them into the `badges` collection:
-
-```javascript
-db.badges.insertMany([
-    {
-        name: 'First Check-In',
-        iconAscii: '⭐\n★',
-        criteria: 'Attended your first hack night',
-        createdAt: new Date()
-    },
-    {
-        name: 'Streak Starter',
-        iconAscii: '🔥\n↑',
-        criteria: 'Maintained a 2-week attendance streak',
-        createdAt: new Date()
-    },
-    {
-        name: 'Consistent Builder',
-        iconAscii: '⚡\n██',
-        criteria: 'Maintained a 4-week attendance streak',
-        createdAt: new Date()
-    },
-    {
-        name: 'Dedicated Member',
-        iconAscii: '💎\n◆',
-        criteria: 'Maintained an 8-week attendance streak',
-        createdAt: new Date()
-    }
-]);
-```
+Deploy the zero-cache sync engine. See [docs/PRODUCTION_DEPLOYMENT.md](docs/PRODUCTION_DEPLOYMENT.md) for platform-specific instructions (Docker, Kubernetes, Fly.io).
 
 ### 4. Clerk Configuration
 
@@ -265,6 +256,8 @@ pnpm build
 ```
 
 Deploy the contents of the `build/` directory to your hosting provider. The application requires Node.js runtime for SSR.
+
+**For detailed production deployment instructions with PostgreSQL + Zero Sync**, see [docs/PRODUCTION_DEPLOYMENT.md](docs/PRODUCTION_DEPLOYMENT.md).
 
 ### 8. Post-Deployment Verification
 
