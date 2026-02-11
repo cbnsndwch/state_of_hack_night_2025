@@ -350,9 +350,54 @@ Configure a cron job or service to regularly check health:
 - Configure log aggregation (CloudWatch, Papertrail)
 - Monitor from external services (UptimeRobot)
 
+## Zero Inspector Integration
+
+### Query Performance Monitoring
+
+Zero includes a powerful browser-based inspector for monitoring query performance. See [ZERO_INSPECTOR.md](./ZERO_INSPECTOR.md) for detailed usage guide.
+
+**Quick Start:**
+
+Open browser console and run:
+
+```javascript
+// View active queries
+let queries = await __zero.inspector.client.queries();
+console.table(queries);
+
+// Analyze query performance
+let analysis = await queries[0].analyze();
+console.log(analysis);
+
+// Check server version
+console.log(await __zero.inspector.serverVersion());
+```
+
+**Key Metrics to Monitor:**
+
+- `hydrateTotal`: Total time to load query (should be < 1000ms)
+- `readRowCount / syncedRowCount`: Query efficiency ratio (should be < 10)
+- Query plans: Look for "TEMP B-TREE" warnings (indicates missing indexes)
+
+**Environment Configuration:**
+
+The inspector is already configured via `.env`:
+
+```bash
+ZERO_ADMIN_PASSWORD='dev-password'  # Protects production access
+VITE_ZERO_CACHE_URL='http://localhost:4848'  # Zero cache server
+```
+
+**Access:**
+
+- **Development**: Open console, use `__zero.inspector`
+- **Production**: Same, but requires `ZERO_ADMIN_PASSWORD` authentication
+
+For comprehensive guide, see [docs/ZERO_INSPECTOR.md](./ZERO_INSPECTOR.md).
+
 ## Future Enhancements
 
-- [ ] Zero Inspector integration for query analysis
+- [x] Zero Inspector integration for query analysis ✅
 - [ ] Custom dashboard with real-time charts
 - [ ] Slack/Discord webhook notifications for alerts
 - [ ] Performance budget tracking
