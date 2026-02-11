@@ -11,6 +11,7 @@ import { ClerkProvider } from '@clerk/react-router';
 import { rootAuthLoader } from '@clerk/react-router/ssr.server';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
+import { ZeroProvider } from '@/components/providers/zero-provider';
 import type { Route } from './+types/root';
 import './index.css';
 
@@ -57,7 +58,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App({ loaderData }: Route.ComponentProps) {
     return (
         <ClerkProvider loaderData={loaderData}>
-            <Outlet />
+            <ZeroProvider>
+                <Outlet />
+            </ZeroProvider>
         </ClerkProvider>
     );
 }
