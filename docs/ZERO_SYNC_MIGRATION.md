@@ -771,12 +771,19 @@ function ConnectionIndicator() {
 
 **Tasks**:
 
-- [ ] Test queries in isolation
-- [ ] Test mutators with authorization
-- [ ] Test realtime sync across multiple clients
-- [ ] Test offline behavior
+- [x] Test queries in isolation ✅ (Passed - see `pnpm test:queries`)
+- [x] Test mutators with authorization ✅ (Passed - see `pnpm test:mutators`)
+- [x] Test realtime sync across multiple clients ✅ (Verified in browser)
+- [x] Test offline behavior ✅ (Passed - see `pnpm test:offline` and `docs/OFFLINE_TESTING.md`)
 - [ ] Load test with multiple concurrent users
 - [ ] Test schema migrations
+
+**Offline Testing Documentation**: See [`docs/OFFLINE_TESTING.md`](./OFFLINE_TESTING.md) for comprehensive offline testing guide including:
+
+- Automated test script (`pnpm test:offline`)
+- Manual browser testing procedures
+- Common offline scenarios
+- Troubleshooting tips
 
 ### 6.2 Deployment
 
