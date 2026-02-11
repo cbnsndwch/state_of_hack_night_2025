@@ -16,53 +16,128 @@ import { handleQueryRequest } from '@rocicorp/zero/server';
 import { mustGetQuery, defineQueries, defineQuery } from '@rocicorp/zero';
 import { z } from 'zod';
 import { schema } from '@/zero/schema';
-import { zql } from '@/zero/schema';
+import {
+    profileQueries,
+    projectQueries,
+    badgeQueries,
+    eventQueries,
+    attendanceQueries,
+    surveyQueries,
+    surveyResponseQueries,
+    demoSlotQueries
+} from '@/zero/queries';
 
 /**
  * Define queries using Zero's query system
  *
- * These are example queries that demonstrate the correct pattern.
- * As we migrate components, we'll add more queries here.
+ * Import all queries from the centralized queries file and expose them
+ * through Zero's query registry system.
  */
 const queries = defineQueries({
     profiles: {
-        // Example: Get profile by Clerk user ID
         byClerkUserId: defineQuery(
             z.object({ clerkUserId: z.string() }),
-            ({ args: { clerkUserId } }) => {
-                return zql.profiles.where('clerkUserId', clerkUserId).one();
-            }
+            ({ args: { clerkUserId } }) =>
+                profileQueries.byClerkUserId(clerkUserId)
         ),
-        // Example: Get all profiles
-        all: defineQuery(() => {
-            return zql.profiles.orderBy('createdAt', 'desc');
-        })
+        byId: defineQuery(z.object({ id: z.string() }), ({ args: { id } }) =>
+            profileQueries.byId(id)
+        ),
+        all: defineQuery(() => profileQueries.all()),
+        search: defineQuery(
+            z.object({ query: z.string() }),
+            ({ args: { query } }) => profileQueries.search(query)
+        )
     },
     projects: {
-        // Example: Get all projects
-        all: defineQuery(() => {
-            return zql.projects
-                .orderBy('createdAt', 'desc')
-                .related('member', q => q.one());
-        }),
-        // Example: Get projects by member ID
+        all: defineQuery(() => projectQueries.all()),
         byMemberId: defineQuery(
             z.object({ memberId: z.string() }),
-            ({ args: { memberId } }) => {
-                return zql.projects
-                    .where('memberId', memberId)
-                    .orderBy('createdAt', 'desc');
-            }
+            ({ args: { memberId } }) => projectQueries.byMemberId(memberId)
+        ),
+        byId: defineQuery(z.object({ id: z.string() }), ({ args: { id } }) =>
+            projectQueries.byId(id)
+        ),
+        search: defineQuery(
+            z.object({ query: z.string() }),
+            ({ args: { query } }) => projectQueries.search(query)
+        )
+    },
+    badges: {
+        all: defineQuery(() => badgeQueries.all()),
+        byMemberId: defineQuery(
+            z.object({ memberId: z.string() }),
+            ({ args: { memberId } }) => badgeQueries.byMemberId(memberId)
         )
     },
     events: {
-        // Example: Get upcoming events
-        upcoming: defineQuery(() => {
-            const now = new Date();
-            return zql.events
-                .where(q => q.cmp('startAt', '>', now.getTime()))
-                .orderBy('startAt', 'asc');
-        })
+        upcoming: defineQuery(() => eventQueries.upcoming()),
+        past: defineQuery(() => eventQueries.past()),
+        byId: defineQuery(z.object({ id: z.string() }), ({ args: { id } }) =>
+            eventQueries.byId(id)
+        ),
+        byLumaEventId: defineQuery(
+            z.object({ lumaEventId: z.string() }),
+            ({ args: { lumaEventId } }) =>
+                eventQueries.byLumaEventId(lumaEventId)
+        )
+    },
+    attendance: {
+        byMemberId: defineQuery(
+            z.object({ memberId: z.string() }),
+            ({ args: { memberId } }) => attendanceQueries.byMemberId(memberId)
+        ),
+        byLumaEventId: defineQuery(
+            z.object({ lumaEventId: z.string() }),
+            ({ args: { lumaEventId } }) =>
+                attendanceQueries.byLumaEventId(lumaEventId)
+        ),
+        memberAtEvent: defineQuery(
+            z.object({ memberId: z.string(), lumaEventId: z.string() }),
+            ({ args: { memberId, lumaEventId } }) =>
+                attendanceQueries.memberAtEvent(memberId, lumaEventId)
+        )
+    },
+    surveys: {
+        active: defineQuery(() => surveyQueries.active()),
+        bySlug: defineQuery(
+            z.object({ slug: z.string() }),
+            ({ args: { slug } }) => surveyQueries.bySlug(slug)
+        ),
+        byId: defineQuery(z.object({ id: z.string() }), ({ args: { id } }) =>
+            surveyQueries.byId(id)
+        )
+    },
+    surveyResponses: {
+        bySurveyId: defineQuery(
+            z.object({ surveyId: z.string() }),
+            ({ args: { surveyId } }) =>
+                surveyResponseQueries.bySurveyId(surveyId)
+        ),
+        byMemberAndSurvey: defineQuery(
+            z.object({ memberId: z.string(), surveyId: z.string() }),
+            ({ args: { memberId, surveyId } }) =>
+                surveyResponseQueries.byMemberAndSurvey(memberId, surveyId)
+        ),
+        byMemberId: defineQuery(
+            z.object({ memberId: z.string() }),
+            ({ args: { memberId } }) =>
+                surveyResponseQueries.byMemberId(memberId)
+        )
+    },
+    demoSlots: {
+        byEventId: defineQuery(
+            z.object({ eventId: z.string() }),
+            ({ args: { eventId } }) => demoSlotQueries.byEventId(eventId)
+        ),
+        byMemberId: defineQuery(
+            z.object({ memberId: z.string() }),
+            ({ args: { memberId } }) => demoSlotQueries.byMemberId(memberId)
+        ),
+        pendingByEventId: defineQuery(
+            z.object({ eventId: z.string() }),
+            ({ args: { eventId } }) => demoSlotQueries.pendingByEventId(eventId)
+        )
     }
 });
 
