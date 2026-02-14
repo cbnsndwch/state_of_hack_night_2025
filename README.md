@@ -167,6 +167,7 @@ app/zero/
 - `pnpm start` — Preview production build
 - `pnpm lint` — Run ESLint
 - `pnpm format` — Format code with Prettier
+- `pnpm tsx scripts/performance-test.ts` — Run database performance analysis
 
 ## Deployment Checklist
 

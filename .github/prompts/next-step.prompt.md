@@ -1,178 +1,58 @@
-# Next Step: Implement Luma Webhook + Email OTP Authentication
+Session Summary - MongoDB→PostgreSQL Migration - Feb 11, 2026
 
-## Context
+Current state (repo)
+- Zero Sync code is wired in: Zero client provider, query/mutate endpoints, and Drizzle adapter are present.
+  - Zero provider: app/components/providers/zero-provider.tsx
+  - Query endpoint: app/routes/api/zero.query.tsx
+  - Mutate endpoint: app/routes/api/zero.mutate.tsx
+  - DB adapter: app/lib/db/provider.server.ts
+- Zero queries and mutators exist in app/zero/queries.ts and app/zero/mutators.ts.
+- Performance index migration exists: drizzle/migrations/0001_add_performance_indexes.sql.
+- Index documentation exists: docs/DATABASE_INDEXES.md and docs/PERFORMANCE_OPTIMIZATION.md.
+- .ralph summaries exist; corrected one count and added index source notes in docs.
 
-This is the **hello_miami** project — the community site and member portal for Hello Miami, a "no-ego" builder community for Miami hackers. We're implementing user authentication via Luma calendar integration + Supabase email OTP.
+Key findings
+1) Zero Sync is integrated at the code level, but the data layer is split:
+	- Luma event sync uses MongoDB, not Postgres/Zero: app/lib/services/event-sync.server.ts and app/lib/db/events.server.ts.
+	- Auth flow ensures profiles in MongoDB (not Postgres): app/hooks/use-auth.tsx calls /api/auth/complete-login.
+	=> Postgres likely has little or no data unless manually seeded, so Zero queries can return empty.
 
-## Current Stack
+2) Mutate endpoint has a TODO about API changes:
+	- app/routes/api/zero.mutate.tsx notes the API changed and needs updates.
+	- Role context is hard-coded to 'user' in query/mutate handlers.
 
-- React 19 + React Router 7 (SSR framework mode)
-- Vite + TypeScript + Tailwind CSS
-- MongoDB for data (profiles, projects, badges, attendance)
-- Supabase for **auth only** (NOT for data storage) + file uploads
-- Luma for event management (external service)
+3) Legacy Mongo routes still exist (deprecated but active):
+	- app/routes/api/onboarding.ts
+	- app/routes/api/profile-update.ts
 
-## What We're Building
+4) Indexes are in two sources:
+	- Base indexes/uniques in drizzle/schema.ts
+	- Performance indexes in the migration 0001_add_performance_indexes.sql
+	Added explicit reconciliation notes in docs.
 
-### Authentication Flow (Email OTP Only - NO GitHub/Social Login)
+Answers to user questions
+- Do we have Zero Sync integrated? Yes, in code. Real-time hooks and endpoints are present, but some flows still use Mongo.
+- Does the DB have enough data to evaluate? Not necessarily; Luma sync and profile creation go to Mongo, so Postgres likely lacks data.
+- How to test Zero Sync with auth? Use Clerk login in two browsers, but first ensure Postgres has a profile + data (seed or mutate).
+- What areas are not implemented? Remaining Mongo routes, Luma sync to Postgres, and role-based auth in Zero endpoints.
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. CALENDAR SUBSCRIPTION (Luma webhook: calendar.person.subscribed)         │
-│    → User subscribes to Hello Miami calendar on Luma                        │
-│    → Webhook fires → Create record in `pending_users` collection            │
-│    → User CANNOT log in yet                                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 2. ADMIN APPROVAL (Luma webhook: guest.updated with approval_status change) │
-│    → Calendar admin approves user in Luma                                   │
-│    → Webhook fires → Move user from `pending_users` to `users`              │
-│    → Set status: "pending_verification"                                     │
-│    → User CAN now log in                                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 3. FIRST LOGIN (Email OTP via Supabase)                                     │
-│    → User enters email on login page                                        │
-│    → We check email exists in `users` collection                            │
-│    → Send OTP via Supabase auth.signInWithOtp({ email })                    │
-│    → User enters OTP code                                                   │
-│    → On success: mark user "verified", create Supabase session              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 4. SUBSEQUENT LOGINS                                                        │
-│    → Same email OTP flow (no special first-time handling needed)            │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+Recent edits made in this session
+- docs/PERFORMANCE_OPTIMIZATION.md: added “Index Sources (Reconciled)” note.
+- docs/DATABASE_INDEXES.md: added “Index Sources (Reconciled)” note.
+- .ralph/INDEX_OPTIMIZATION_SUMMARY.md: fixed composite index count to 4.
 
-### Webhook Storage Strategy
+Next steps (recommended)
+1) Decide on data source alignment:
+	- Move Luma event sync from Mongo to Postgres OR add a Postgres sync path.
+	- Update auth profile creation to write to Postgres (or dual-write) so Zero queries work.
+2) Validate Zero Sync end-to-end:
+	- Seed Postgres with minimal profiles/events/projects, or build a seed script.
+	- Test two-browser realtime updates using Zero queries/mutators.
+3) Clean up legacy routes:
+	- Remove or fully migrate deprecated Mongo endpoints (onboarding/profile-update).
+4) Zero mutate handler:
+	- Reconcile handleMutateRequest API changes and add role resolution if needed.
 
-**Catch ALL Luma webhooks** and store them in a `luma_webhooks` collection for audit/debugging. Special handling for:
-
-- `calendar.person.subscribed` → Create pending user
-- `guest.updated` (approval_status changed) → Promote to verified user
-
-### Available Luma Webhook Types (from their docs)
-
-- `calendar.event.added`
-- `calendar.person.subscribed`
-- `event.created`
-- `event.updated`
-- `event.canceled`
-- `guest.registered`
-- `guest.updated`
-- `ticket.registered`
-
-## Existing Code Assets
-
-### Luma Types (`.local/types/luma.ts`)
-
-```typescript
-export interface Guest {
-    api_id: string;
-    user_api_id: string;
-    event_api_id: string;
-    approval_status:
-        | 'approved'
-        | 'declined'
-        | 'pending_approval'
-        | 'invited'
-        | 'waitlist'
-        | 'session';
-    email: string;
-    name: string;
-    avatar_url?: string;
-    created_at: string;
-    check_in_status?: 'checked_in' | 'not_checked_in';
-    check_in_at?: string;
-    registration_answers?: RegistrationAnswer[];
-}
-```
-
-### Current MongoDB Profile Schema (`app/types/mongodb.ts`)
-
-```typescript
-export interface Profile {
-    _id: ObjectId;
-    supabaseUserId: string;
-    githubUid: string | null; // REMOVE - no longer using GitHub
-    lumaAttendeeId: string | null;
-    bio: string | null;
-    streakCount: number;
-    createdAt: Date;
-    updatedAt: Date;
-}
-```
-
-### Current Auth Hook (`app/hooks/use-auth.tsx`)
-
-- Currently uses GitHub OAuth via Supabase
-- **Needs to be replaced** with email OTP flow
-
-## Implementation Tasks
-
-### 1. Database Schema Changes
-
-- [ ] Create `pending_users` collection schema
-- [ ] Create `luma_webhooks` collection for raw webhook storage
-- [ ] Update `Profile` type: remove `githubUid`, add `verificationStatus: 'pending' | 'verified'`
-- [ ] Add `lumaEmail` field to Profile (email used in Luma registration)
-
-### 2. Webhook Endpoint
-
-- [ ] Create `app/routes/api/webhooks/luma.tsx` with action handler
-- [ ] Implement webhook signature verification (if Luma provides it)
-- [ ] Store ALL webhooks in `luma_webhooks` collection
-- [ ] Handle `calendar.person.subscribed` → create pending user
-- [ ] Handle `guest.updated` → check for approval status change, promote user
-
-### 3. Auth Flow Updates
-
-- [ ] Replace `use-auth.tsx` to use email OTP instead of GitHub
-- [ ] Add `signInWithEmail(email)` → sends OTP
-- [ ] Add `verifyOtp(email, token)` → verifies and creates session
-- [ ] Update login UI components for email input + OTP entry
-
-### 4. Server-Side Auth Utilities
-
-- [ ] Create `app/lib/db/pending-users.server.ts`
-- [ ] Update `app/lib/db/profiles.server.ts` for new flow
-- [ ] Add email lookup functions
-
-### 5. API Routes
-
-- [ ] Create login route that checks user exists before sending OTP
-- [ ] Create route to handle OTP verification and profile creation
-
-## Luma API Reference
-
-- **Base URL**: `https://public-api.luma.com`
-- **Auth Header**: `x-luma-api-key: <API_KEY>`
-- **Get Guests**: `GET /v1/event/get-guests?event_api_id=<id>`
-- **Webhooks**: Configured in Luma dashboard → Settings → Developer
-
-## Environment Variables Needed
-
-```env
-VITE_SUPABASE_URL=...
-VITE_SUPABASE_ANON_KEY=...
-LUMA_API_KEY=...           # For server-side Luma API calls
-LUMA_WEBHOOK_SECRET=...    # For webhook signature verification (if available)
-```
-
-## Key Files to Modify/Create
-
-- `app/hooks/use-auth.tsx` - Replace GitHub with email OTP
-- `app/routes/api/webhooks/luma.tsx` - NEW: Webhook handler
-- `app/lib/db/pending-users.server.ts` - NEW: Pending users data layer
-- `app/lib/db/luma-webhooks.server.ts` - NEW: Webhook storage
-- `app/types/mongodb.ts` - Update Profile, add new types
-- `app/utils/mongodb.server.ts` - Add new collection constants
-
-## Source of Truth
-
-- **Architecture:** `.github/instructions/copilot.instructions.md`
-- **Database Schema:** `docs/DATABASE.md`
-- **PRD:** `.local/projects/community-site/hello_miami_community_site_prd.md`
-
-## Notes
-
-- Luma does NOT support OAuth for third-party apps - their API is admin-only with API keys
-- Email matching is the only way to link Luma users to our app
-- Supabase email OTP handles the actual authentication; we just gate it behind Luma approval
+Open questions for next session
+- Should Luma sync be fully migrated to Postgres now, or keep Mongo as temporary?
+- Do we want a seed script for Postgres test data, or use real Luma + webhook flows?
