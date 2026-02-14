@@ -16,6 +16,7 @@ import { handleMutateRequest } from '@rocicorp/zero/server';
 import { mustGetMutator } from '@rocicorp/zero';
 import { dbProvider } from '@/lib/db/provider.server';
 import { mutators } from '@/zero/mutators';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.postgres.server';
 
 /**
  * Handle POST requests for Zero mutations
@@ -28,13 +29,26 @@ export async function action(actionArgs: ActionFunctionArgs) {
     try {
         // Get the authenticated user from Clerk
         const auth = await getAuth(actionArgs);
-        const userId = auth.userId || 'anon';
+        const userId = auth.userId;
+
+        if (!userId) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Look up user's profile to determine role
+        let userRole = 'user';
+        try {
+            const profile = await getProfileByClerkUserId(userId);
+            if (profile?.isAppAdmin) {
+                userRole = 'admin';
+            }
+        } catch (error) {
+            console.warn('Failed to fetch profile for role resolution:', error);
+            // Fall back to 'user' role if profile lookup fails
+        }
 
         // Handle the mutation request using Zero's handleMutateRequest helper
         // This parses the request, executes mutations in a transaction, and returns results
-        //
-        // NOTE: The API has changed - handleMutateRequest now processes mutations differently
-        // We'll need to update this once we have proper mutator implementations
         const result = await handleMutateRequest(
             dbProvider,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,7 +69,7 @@ export async function action(actionArgs: ActionFunctionArgs) {
                         args: mutationArgs,
                         ctx: {
                             userId,
-                            role: 'user' // TODO: Determine role from profile
+                            role: userRole
                         }
                     });
 

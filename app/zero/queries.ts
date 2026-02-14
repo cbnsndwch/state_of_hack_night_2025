@@ -301,9 +301,12 @@ export const pendingUserQueries = {
      * Get all pending users (not yet approved)
      */
     pending() {
-        return zql.pendingUsers
-            .where(q => q.cmp('approvedAt', 'IS', null as any))
-            .orderBy('subscribedAt', 'desc');
+        return (
+            zql.pendingUsers
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .where(q => q.cmp('approvedAt', 'IS', null as any))
+                .orderBy('subscribedAt', 'desc')
+        );
     },
 
     /**

@@ -31,7 +31,15 @@ export const mutators = defineMutators({
                 openToMentoring: z.boolean().optional(),
                 onboardingDismissed: z.boolean().optional()
             }),
-            async ({ args, tx, ctx }) => {
+            async ({
+                args,
+                tx,
+                ctx
+            }: {
+                args: { memberId: string };
+                tx: unknown;
+                ctx: unknown;
+            }) => {
                 // Authorization: users can only update their own profile
                 const profile = await tx.run(
                     zql.profiles.where('id', args.id).one()
@@ -47,7 +55,7 @@ export const mutators = defineMutators({
                     );
                 }
 
-                const { id, ...updates } = args;
+                const { ...updates } = args;
 
                 await tx.mutate.profiles.update({
                     where: { id: args.id },
@@ -138,7 +146,7 @@ export const mutators = defineMutators({
                     );
                 }
 
-                const { id, ...updates } = args;
+                const { ...updates } = args;
 
                 await tx.mutate.projects.update({
                     where: { id: args.id },
@@ -449,7 +457,7 @@ export type CheckInInput = {
 export type SubmitSurveyResponseInput = {
     surveyId: string;
     memberId: string;
-    responses: Record<string, any>;
+    responses: Record<string, unknown>;
     isComplete: boolean;
 };
 
@@ -474,7 +482,7 @@ export type UpdateDemoSlotStatusInput = {
 /**
  * Mutation Result Types
  */
-export type MutationSuccess<T = any> = {
+export type MutationSuccess<T = Record<string, unknown>> = {
     success: true;
     data?: T;
 };
@@ -484,4 +492,6 @@ export type MutationError = {
     error: string;
 };
 
-export type MutationResult<T = any> = MutationSuccess<T> | MutationError;
+export type MutationResult<T = Record<string, unknown>> =
+    | MutationSuccess<T>
+    | MutationError;
