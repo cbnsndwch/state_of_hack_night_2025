@@ -26,6 +26,7 @@ import {
     surveyResponseQueries,
     demoSlotQueries
 } from '@/zero/queries';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
 /**
  * Define queries using Zero's query system
@@ -154,6 +155,15 @@ export async function action(args: ActionFunctionArgs) {
         const auth = await getAuth(args);
         const userId = auth.userId || 'anon';
 
+        // Resolve the user's role from their profile
+        let role: 'admin' | 'user' = 'user';
+        if (userId && userId !== 'anon') {
+            const profile = await getProfileByClerkUserId(userId);
+            if (profile?.isAppAdmin) {
+                role = 'admin';
+            }
+        }
+
         // Handle the query request using Zero's handleQueryRequest helper
         // This parses the request, looks up queries by name, and returns ZQL
         const result = await handleQueryRequest(
@@ -167,7 +177,7 @@ export async function action(args: ActionFunctionArgs) {
                     args: queryArgs,
                     ctx: {
                         userId,
-                        role: 'user' // TODO: Determine role from profile
+                        role
                     }
                 });
             },
