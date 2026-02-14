@@ -1,6 +1,6 @@
 /**
  * Seed script to create the initial onboarding survey.
- * Run this once to populate the surveys collection with the onboarding survey.
+ * Run this once to populate the surveys table with the onboarding survey.
  */
 
 import type { SurveyInsert, SurveyQuestion } from '@/types/adapters';

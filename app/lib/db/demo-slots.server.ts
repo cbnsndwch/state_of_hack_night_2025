@@ -70,6 +70,7 @@ export async function getDemoSlotsWithMembers(options?: {
     });
 
     return results.map(slot => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { memberId, ...rest } = slot;
         return {
             ...rest,
@@ -110,6 +111,7 @@ export async function getDemoSlotsWithMembersAndEvents(options?: {
     });
 
     const mapped = results.map(slot => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { memberId, ...rest } = slot;
         return {
             ...rest,
@@ -205,6 +207,7 @@ export async function getMemberDemoSlotsWithEvents(
     });
 
     return results.map(slot => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { eventId, ...rest } = slot;
         return {
             ...rest,

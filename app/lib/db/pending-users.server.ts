@@ -113,7 +113,7 @@ export async function deletePendingUser(email: string): Promise<boolean> {
 
 /**
  * Promote a pending user to a verified profile
- * This moves them from pending_users to profiles collection
+ * This moves them from pending_users to profiles table
  */
 export async function promotePendingUserToProfile(
     email: string,

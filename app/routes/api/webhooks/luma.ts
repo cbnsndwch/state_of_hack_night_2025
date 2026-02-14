@@ -5,10 +5,7 @@ import {
     getPendingUserByEmail,
     updatePendingUser
 } from '@/lib/db/pending-users.server';
-import {
-    createProfile,
-    getProfileByLumaEmail
-} from '@/lib/db/profiles.server';
+import { createProfile, getProfileByLumaEmail } from '@/lib/db/profiles.server';
 
 // Luma webhook types from their documentation
 interface LumaWebhookPayload {
