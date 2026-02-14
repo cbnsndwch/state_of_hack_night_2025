@@ -3,17 +3,14 @@
  * POST /api/check-in - Check in a member to an event
  *
  * This route handles self check-ins by:
- * 1. Recording check-in in our MongoDB database
- * 2. Optionally updating guest status in Luma via API proxy
+ * 1. Recording check-in via Zero sync (for real-time updates)
+ * 2. Updating streaks and awarding badges (server-side)
+ * 3. Optionally updating guest status in Luma via API proxy (server-side with secret key)
  */
 
 import { data, type ActionFunctionArgs } from 'react-router';
 import { getAuth } from '@clerk/react-router/server';
-import {
-    getAttendance,
-    createAttendance,
-    checkInToEvent
-} from '@/lib/db/attendance.server';
+import { getAttendance } from '@/lib/db/attendance.server';
 import { getEventByLumaId } from '@/lib/db/events.server';
 import { updateMemberStreak } from '@/lib/db/streaks.server';
 import { awardCheckInBadges } from '@/lib/db/badge-assignment.server';
@@ -137,7 +134,7 @@ export async function action(args: ActionFunctionArgs) {
         // Check if member is already checked in
         const existingAttendance = await getAttendance(memberId, lumaEventId);
 
-        if (existingAttendance?.status === 'checked-in') {
+        if (existingAttendance) {
             return data(
                 {
                     error: 'Already checked in',
@@ -147,24 +144,66 @@ export async function action(args: ActionFunctionArgs) {
             );
         }
 
-        // Create or update attendance record in MongoDB
-        let attendance;
-        if (existingAttendance) {
-            // Update existing record to checked-in
-            attendance = await checkInToEvent(memberId, lumaEventId);
-        } else {
-            // Create new attendance record with checked-in status
-            attendance = await createAttendance({
-                memberId: memberId,
-                lumaEventId,
-                status: 'checked-in',
-                checkedInAt: new Date()
-            });
+        // Create attendance record via Zero mutator for real-time sync
+        // Note: We call the Zero mutator endpoint internally to ensure the attendance
+        // record syncs to all connected clients in real-time
+        const mutateResponse = await fetch(
+            new URL('/api/zero/mutate', args.request.url),
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Forward the original authorization header
+                    Cookie: args.request.headers.get('Cookie') || ''
+                },
+                body: JSON.stringify({
+                    mutations: [
+                        {
+                            id: Math.random(),
+                            clientID: 'server-check-in',
+                            name: 'attendance.checkIn',
+                            args: {
+                                memberId,
+                                lumaEventId
+                            }
+                        }
+                    ]
+                })
+            }
+        );
+
+        if (!mutateResponse.ok) {
+            const errorData = await mutateResponse.json();
+            return data(
+                {
+                    error: 'Failed to record check-in',
+                    message: errorData.error || 'Unknown error'
+                },
+                { status: 500 }
+            );
         }
+
+        const mutateResult = await mutateResponse.json();
+
+        // Check if the mutation returned an error
+        if (mutateResult[0]?.result?.error) {
+            return data(
+                {
+                    error: 'Failed to record check-in',
+                    message:
+                        mutateResult[0].result.message ||
+                        'Check-in mutation failed'
+                },
+                { status: 500 }
+            );
+        }
+
+        // Fetch the created attendance record
+        const attendance = await getAttendance(memberId, lumaEventId);
 
         if (!attendance) {
             return data(
-                { error: 'Failed to record check-in' },
+                { error: 'Failed to retrieve check-in record' },
                 { status: 500 }
             );
         }
