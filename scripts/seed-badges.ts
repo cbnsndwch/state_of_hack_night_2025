@@ -4,7 +4,7 @@
  */
 
 import { seedBadges } from '../app/lib/db/seed-badges.server';
-import { closeMongoDb } from '../app/utils/mongodb.server';
+import { closeDb } from '../app/lib/db/provider.server';
 
 async function main() {
     try {
@@ -15,7 +15,7 @@ async function main() {
         console.error('Error seeding badges:', error);
         process.exit(1);
     } finally {
-        await closeMongoDb();
+        await closeDb();
     }
 }
 
