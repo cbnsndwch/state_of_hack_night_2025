@@ -230,3 +230,102 @@ export function useDeleteProject() {
         clearError
     };
 }
+
+/**
+ * Hook for checking in to an event via Zero
+ */
+export function useCheckIn() {
+    const { mutate, isLoading, error, clearError } = useZeroMutate();
+
+    const checkIn = useCallback(
+        async (args: { memberId: string; lumaEventId: string }) => {
+            return mutate('attendance.checkIn', args);
+        },
+        [mutate]
+    );
+
+    return {
+        checkIn,
+        isLoading,
+        error,
+        clearError
+    };
+}
+
+/**
+ * Hook for submitting a survey response via Zero
+ */
+export function useSubmitSurveyResponse() {
+    const { mutate, isLoading, error, clearError } = useZeroMutate();
+
+    const submitSurveyResponse = useCallback(
+        async (args: {
+            surveyId: string;
+            memberId: string;
+            responses: Record<string, unknown>;
+            isComplete: boolean;
+        }) => {
+            return mutate('surveyResponses.submit', args);
+        },
+        [mutate]
+    );
+
+    return {
+        submitSurveyResponse,
+        isLoading,
+        error,
+        clearError
+    };
+}
+
+/**
+ * Hook for requesting a demo slot via Zero
+ */
+export function useRequestDemoSlot() {
+    const { mutate, isLoading, error, clearError } = useZeroMutate();
+
+    const requestDemoSlot = useCallback(
+        async (args: {
+            memberId: string;
+            eventId: string;
+            title: string;
+            description?: string;
+            requestedTime?: string;
+            durationMinutes?: number;
+        }) => {
+            return mutate('demoSlots.request', args);
+        },
+        [mutate]
+    );
+
+    return {
+        requestDemoSlot,
+        isLoading,
+        error,
+        clearError
+    };
+}
+
+/**
+ * Hook for updating a demo slot status via Zero
+ */
+export function useUpdateDemoSlotStatus() {
+    const { mutate, isLoading, error, clearError } = useZeroMutate();
+
+    const updateDemoSlotStatus = useCallback(
+        async (args: {
+            id: string;
+            status: 'pending' | 'confirmed' | 'canceled';
+        }) => {
+            return mutate('demoSlots.updateStatus', args);
+        },
+        [mutate]
+    );
+
+    return {
+        updateDemoSlotStatus,
+        isLoading,
+        error,
+        clearError
+    };
+}
