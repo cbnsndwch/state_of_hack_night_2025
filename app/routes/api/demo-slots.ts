@@ -1,9 +1,13 @@
 /**
  * API route for managing demo slots.
- * POST /api/demo-slots - Create a new demo slot booking
- * PUT /api/demo-slots - Update an existing demo slot
- * DELETE /api/demo-slots - Delete a demo slot
+ * POST /api/demo-slots - Create a new demo slot booking (uses Zero for write)
+ * PUT /api/demo-slots - Update an existing demo slot (uses Zero for write)
+ * DELETE /api/demo-slots - Delete a demo slot (legacy, not used)
  * GET /api/demo-slots?eventId=xxx - Get demo slots for an event
+ *
+ * Note: Write operations (POST, PUT) delegate to Zero mutators for database writes,
+ * then handle side effects (notifications) in this route. This ensures data changes
+ * go through Zero's sync system while maintaining notification functionality.
  */
 
 import {
@@ -13,7 +17,6 @@ import {
 } from 'react-router';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import {
-    createDemoSlot,
     getDemoSlotsWithMembers,
     getDemoSlots,
     updateDemoSlot,
@@ -102,16 +105,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
     const method = request.method;
 
-    // POST - Create a new demo slot
+    // POST - Create a new demo slot (delegates to Zero mutator)
     if (method === 'POST') {
         try {
             const formData = await request.formData();
             const clerkUserId = formData.get('clerkUserId')?.toString();
             const eventId = formData.get('eventId')?.toString();
             const title = formData.get('title')?.toString();
-            const description = formData.get('description')?.toString() || null;
+            const description = formData.get('description')?.toString() || '';
             const requestedTime =
-                formData.get('requestedTime')?.toString() || null;
+                formData.get('requestedTime')?.toString() || '';
             const durationMinutes = parseInt(
                 formData.get('durationMinutes')?.toString() || '5',
                 10
@@ -131,17 +134,64 @@ export async function action({ request }: ActionFunctionArgs) {
                 return data({ error: 'Profile not found' }, { status: 404 });
             }
 
-            // Create the demo slot
-            const demoSlot = await createDemoSlot({
-                memberId: profile.id,
-                eventId: eventId,
-                title,
-                description,
-                requestedTime,
-                durationMinutes,
-                status: 'pending',
-                confirmedByOrganizer: false
-            });
+            // Call Zero mutation endpoint to create the demo slot
+            // This ensures the write goes through Zero's sync system
+            const mutationResponse = await fetch(
+                new URL('/api/zero/mutate', request.url).toString(),
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Cookie: request.headers.get('Cookie') || ''
+                    },
+                    body: JSON.stringify({
+                        mutations: [
+                            {
+                                id: Math.random(),
+                                clientID: 'server-api',
+                                name: 'demoSlots.request',
+                                args: {
+                                    memberId: profile.id,
+                                    eventId: eventId,
+                                    title,
+                                    description,
+                                    requestedTime,
+                                    durationMinutes
+                                }
+                            }
+                        ]
+                    })
+                }
+            );
+
+            if (!mutationResponse.ok) {
+                const errorData = await mutationResponse.json();
+                throw new Error(
+                    errorData.error || 'Failed to create demo slot'
+                );
+            }
+
+            const mutationResult = await mutationResponse.json();
+
+            // Check if mutation returned an error
+            if (mutationResult[0]?.result?.error) {
+                throw new Error(
+                    mutationResult[0].result.message ||
+                        'Failed to create demo slot'
+                );
+            }
+
+            // Get the created demo slot ID from the mutation result
+            const createdSlotId = mutationResult[0]?.result?.data?.id;
+            if (!createdSlotId) {
+                throw new Error('Failed to get created demo slot ID');
+            }
+
+            // Fetch the full demo slot for notifications
+            const demoSlot = await getDemoSlotById(createdSlotId);
+            if (!demoSlot) {
+                throw new Error('Failed to fetch created demo slot');
+            }
 
             // Send confirmation email to member (fire and forget - don't block response)
             sendDemoBookingConfirmation(demoSlot).catch(error => {
@@ -184,26 +234,17 @@ export async function action({ request }: ActionFunctionArgs) {
         }
     }
 
-    // PUT - Update an existing demo slot
+    // PUT - Update an existing demo slot (delegates to Zero for status updates)
     if (method === 'PUT') {
         try {
             const formData = await request.formData();
             const demoSlotId = formData.get('demoSlotId')?.toString();
             const clerkUserId = formData.get('clerkUserId')?.toString();
-            const title = formData.get('title')?.toString();
-            const description = formData.get('description')?.toString();
-            const requestedTime = formData.get('requestedTime')?.toString();
-            const durationMinutesStr = formData
-                .get('durationMinutes')
-                ?.toString();
             const status = formData.get('status')?.toString() as
                 | 'pending'
                 | 'confirmed'
                 | 'canceled'
                 | undefined;
-            const confirmedByOrganizerStr = formData
-                .get('confirmedByOrganizer')
-                ?.toString();
 
             // Validate required fields
             if (!demoSlotId || !clerkUserId) {
@@ -232,13 +273,104 @@ export async function action({ request }: ActionFunctionArgs) {
                 return data({ error: 'Unauthorized' }, { status: 403 });
             }
 
-            // Build update object with only provided fields
+            // If status is being updated, use Zero mutator
+            if (status && status !== existingSlot.status) {
+                // Call Zero mutation endpoint to update the status
+                const mutationResponse = await fetch(
+                    new URL('/api/zero/mutate', request.url).toString(),
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Cookie: request.headers.get('Cookie') || ''
+                        },
+                        body: JSON.stringify({
+                            mutations: [
+                                {
+                                    id: Math.random(),
+                                    clientID: 'server-api',
+                                    name: 'demoSlots.updateStatus',
+                                    args: {
+                                        id: demoSlotId,
+                                        status
+                                    }
+                                }
+                            ]
+                        })
+                    }
+                );
+
+                if (!mutationResponse.ok) {
+                    const errorData = await mutationResponse.json();
+                    throw new Error(
+                        errorData.error || 'Failed to update demo slot'
+                    );
+                }
+
+                const mutationResult = await mutationResponse.json();
+
+                // Check if mutation returned an error
+                if (mutationResult[0]?.result?.error) {
+                    throw new Error(
+                        mutationResult[0].result.message ||
+                            'Failed to update demo slot'
+                    );
+                }
+
+                // Fetch the updated slot
+                const updatedSlot = await getDemoSlotById(demoSlotId);
+
+                // Send notification for status change
+                if (
+                    updatedSlot &&
+                    (status === 'confirmed' || status === 'canceled')
+                ) {
+                    sendDemoStatusUpdate(updatedSlot, status).catch(error => {
+                        console.error(
+                            'Failed to send demo status update:',
+                            error
+                        );
+                    });
+                }
+
+                return data({
+                    success: true,
+                    demoSlot: updatedSlot
+                        ? {
+                              id: updatedSlot.id.toString(),
+                              memberId: updatedSlot.memberId.toString(),
+                              eventId: updatedSlot.eventId.toString(),
+                              title: updatedSlot.title,
+                              description: updatedSlot.description,
+                              requestedTime: updatedSlot.requestedTime,
+                              durationMinutes: updatedSlot.durationMinutes,
+                              status: updatedSlot.status,
+                              confirmedByOrganizer:
+                                  updatedSlot.confirmedByOrganizer,
+                              createdAt: updatedSlot.createdAt.toISOString(),
+                              updatedAt: updatedSlot.updatedAt.toISOString()
+                          }
+                        : null
+                });
+            }
+
+            // For other fields, fall back to direct database update
+            // (not currently supported by Zero mutators)
+            const title = formData.get('title')?.toString();
+            const description = formData.get('description')?.toString();
+            const requestedTime = formData.get('requestedTime')?.toString();
+            const durationMinutesStr = formData
+                .get('durationMinutes')
+                ?.toString();
+            const confirmedByOrganizerStr = formData
+                .get('confirmedByOrganizer')
+                ?.toString();
+
             const updateData: {
                 title?: string;
                 description?: string | null;
                 requestedTime?: string | null;
                 durationMinutes?: number;
-                status?: 'pending' | 'confirmed' | 'canceled';
                 confirmedByOrganizer?: boolean;
             } = {};
 
@@ -252,13 +384,12 @@ export async function action({ request }: ActionFunctionArgs) {
             if (durationMinutesStr !== undefined) {
                 updateData.durationMinutes = parseInt(durationMinutesStr, 10);
             }
-            if (status !== undefined) updateData.status = status;
             if (confirmedByOrganizerStr !== undefined) {
                 updateData.confirmedByOrganizer =
                     confirmedByOrganizerStr === 'true';
             }
 
-            // Update the demo slot
+            // Update the demo slot using direct database access
             const success = await updateDemoSlot(demoSlotId, updateData);
 
             if (!success) {
@@ -270,18 +401,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
             // Fetch the updated slot
             const updatedSlot = await getDemoSlotById(demoSlotId);
-
-            // If status was updated to confirmed or canceled, send notification
-            if (updatedSlot && status && status !== existingSlot.status) {
-                if (status === 'confirmed' || status === 'canceled') {
-                    sendDemoStatusUpdate(updatedSlot, status).catch(error => {
-                        console.error(
-                            'Failed to send demo status update:',
-                            error
-                        );
-                    });
-                }
-            }
 
             return data({
                 success: true,
