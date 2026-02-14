@@ -55,13 +55,13 @@ export async function checkAndAwardBadges(
             continue;
         }
 
-        const alreadyHasBadge = await hasBadge(memberId, badge._id.toString());
+        const alreadyHasBadge = await hasBadge(memberId, badge.id);
 
         if (!alreadyHasBadge) {
             try {
                 await awardBadge({
                     memberId: memberId,
-                    badgeId: badge._id
+                    badgeId: badge.id
                 });
                 awardedBadges.push(badge);
                 console.log(

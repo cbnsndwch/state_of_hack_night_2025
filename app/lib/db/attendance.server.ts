@@ -1,142 +1,165 @@
 /**
- * PostgreSQL adapter for Attendance
- * Wraps attendance.postgres.server.ts to maintain backward compatibility with existing routes
- * Converts between Postgres UUIDs and MongoDB-compatible ObjectId interface
+ * PostgreSQL data access layer for Attendance
+ * Type-safe queries using Drizzle ORM.
  */
 
-import * as attendanceDb from './attendance.postgres.server';
 import { db } from './provider.server';
-import { attendance as attendanceTable } from '@drizzle/schema';
-import { eq, and, count } from 'drizzle-orm';
+import { attendance } from '@drizzle/schema';
+import { eq, and, desc, count } from 'drizzle-orm';
 import type {
     Attendance,
     AttendanceInsert,
-    AttendanceUpdate,
-    AttendanceStatus
+    AttendanceUpdate
 } from '@/types/adapters';
 
 /**
- * Convert Postgres attendance to MongoDB-compatible format
- */
-function toMongoAttendance(pgAttendance: {
-    id: string;
-    memberId: string;
-    lumaEventId: string;
-    status: AttendanceStatus;
-    checkedInAt: Date | null;
-    createdAt: Date;
-}): Attendance {
-    return {
-        _id: pgAttendance.id as unknown as Attendance['_id'],
-        memberId: pgAttendance.memberId,
-        lumaEventId: pgAttendance.lumaEventId,
-        status: pgAttendance.status as AttendanceStatus,
-        checkedInAt: pgAttendance.checkedInAt,
-        createdAt: pgAttendance.createdAt
-    };
-}
-
-/**
- * Get all attendance records for a member - adapter maintains MongoDB interface
+ * Get all attendance records for a member
  */
 export async function getAttendanceByMemberId(
     memberId: string
 ): Promise<Attendance[]> {
-    const records = await attendanceDb.getAttendanceByMemberId(memberId);
-    return records.map(toMongoAttendance);
+    return db
+        .select()
+        .from(attendance)
+        .where(eq(attendance.memberId, memberId))
+        .orderBy(desc(attendance.createdAt));
 }
 
 /**
- * Get all attendance records for an event - adapter maintains MongoDB interface
+ * Get all attendance records for an event
  */
 export async function getAttendanceByEventId(
     lumaEventId: string
 ): Promise<Attendance[]> {
-    const records = await attendanceDb.getAttendanceByEventId(lumaEventId);
-    return records.map(toMongoAttendance);
+    return db
+        .select()
+        .from(attendance)
+        .where(eq(attendance.lumaEventId, lumaEventId))
+        .orderBy(desc(attendance.createdAt));
 }
 
 /**
- * Get a specific attendance record - adapter maintains MongoDB interface
+ * Get a specific attendance record
  */
 export async function getAttendance(
     memberId: string,
     lumaEventId: string
 ): Promise<Attendance | null> {
-    const record = await attendanceDb.getAttendance(memberId, lumaEventId);
-    return record ? toMongoAttendance(record) : null;
+    const result = await db
+        .select()
+        .from(attendance)
+        .where(
+            and(
+                eq(attendance.memberId, memberId),
+                eq(attendance.lumaEventId, lumaEventId)
+            )
+        );
+
+    return result[0] || null;
 }
 
 /**
- * Create an attendance record (register for event) - adapter maintains MongoDB interface
+ * Get attendance by ID
+ */
+export async function getAttendanceById(
+    id: string
+): Promise<Attendance | null> {
+    const result = await db
+        .select()
+        .from(attendance)
+        .where(eq(attendance.id, id));
+
+    return result[0] || null;
+}
+
+/**
+ * Create an attendance record (register for event)
  */
 export async function createAttendance(
     data: AttendanceInsert
 ): Promise<Attendance> {
-    const created = await attendanceDb.registerAttendance({
-        memberId: data.memberId as string,
-        lumaEventId: data.lumaEventId,
-        status: data.status || 'registered'
-    });
-    return toMongoAttendance(created);
+    const existing = await getAttendance(data.memberId, data.lumaEventId);
+    if (existing) {
+        return existing;
+    }
+
+    const [record] = await db
+        .insert(attendance)
+        .values({
+            memberId: data.memberId,
+            lumaEventId: data.lumaEventId,
+            status: data.status || 'registered',
+            checkedInAt: data.checkedInAt || null,
+            createdAt: new Date()
+        })
+        .returning();
+
+    return record;
 }
 
 /**
- * Update an attendance record - adapter maintains MongoDB interface
+ * Update an attendance record
  */
 export async function updateAttendance(
     memberId: string,
     lumaEventId: string,
     data: AttendanceUpdate
 ): Promise<Attendance | null> {
-    const updated = await attendanceDb.updateAttendance(
-        memberId,
-        lumaEventId,
-        data
-    );
-    return updated ? toMongoAttendance(updated) : null;
+    const [updated] = await db
+        .update(attendance)
+        .set(data)
+        .where(
+            and(
+                eq(attendance.memberId, memberId),
+                eq(attendance.lumaEventId, lumaEventId)
+            )
+        )
+        .returning();
+
+    return updated || null;
 }
 
 /**
- * Check-in a member to an event - adapter delegates to Postgres
- */
-export async function checkInToEvent(
-    memberId: string,
-    lumaEventId: string
-): Promise<Attendance | null> {
-    const updated = await attendanceDb.checkInMember(memberId, lumaEventId);
-    return updated ? toMongoAttendance(updated) : null;
-}
-
-/**
- * Register a member for an event (upsert) - adapter maintains MongoDB interface
+ * Register a member for an event (upsert)
  */
 export async function registerForEvent(
     memberId: string,
     lumaEventId: string
 ): Promise<Attendance> {
-    const created = await attendanceDb.registerAttendance({
+    return createAttendance({
         memberId,
         lumaEventId,
         status: 'registered'
     });
-    return toMongoAttendance(created);
 }
 
 /**
- * Get attendance count for an event - adapter delegates to Postgres
+ * Check-in a member to an event
+ */
+export async function checkInToEvent(
+    memberId: string,
+    lumaEventId: string
+): Promise<Attendance | null> {
+    return updateAttendance(memberId, lumaEventId, {
+        status: 'checked-in',
+        checkedInAt: new Date()
+    });
+}
+
+/**
+ * Get attendance count for an event
  */
 export async function getEventAttendanceCount(
     lumaEventId: string
 ): Promise<{ registered: number; checkedIn: number }> {
     const result = await db
         .select({
-            status: attendanceTable.status,
+            status: attendance.status,
             count: count()
         })
-        .from(attendanceTable)
-        .where(eq(attendanceTable.lumaEventId, lumaEventId))
-        .groupBy(attendanceTable.status);
+        .from(attendance)
+        .where(eq(attendance.lumaEventId, lumaEventId))
+        .groupBy(attendance.status);
 
     const counts = {
         registered: 0,
@@ -155,20 +178,42 @@ export async function getEventAttendanceCount(
 }
 
 /**
- * Get total checked-in count for a member - adapter delegates to Postgres
+ * Get total checked-in count for a member
  */
 export async function getCheckedInCountByMember(
     memberId: string
 ): Promise<number> {
     const result = await db
         .select({ count: count() })
-        .from(attendanceTable)
+        .from(attendance)
         .where(
             and(
-                eq(attendanceTable.memberId, memberId),
-                eq(attendanceTable.status, 'checked-in')
+                eq(attendance.memberId, memberId),
+                eq(attendance.status, 'checked-in')
             )
         );
 
     return result[0]?.count || 0;
+}
+
+/**
+ * Delete an attendance record
+ */
+export async function deleteAttendance(id: string): Promise<boolean> {
+    const result = await db.delete(attendance).where(eq(attendance.id, id));
+
+    return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * Delete all attendance for an event
+ */
+export async function deleteEventAttendance(
+    lumaEventId: string
+): Promise<number> {
+    const result = await db
+        .delete(attendance)
+        .where(eq(attendance.lumaEventId, lumaEventId));
+
+    return result.rowCount ?? 0;
 }

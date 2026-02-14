@@ -1,11 +1,11 @@
 /**
- * PostgreSQL adapter for Badges and Badge Assignments
- * Wraps badges.postgres.server.ts and badge-assignment.postgres.server.ts
- * Maintains backward compatibility with existing routes
+ * PostgreSQL data access layer for Badges
+ * Type-safe queries using Drizzle ORM.
  */
 
-import * as badgesDb from './badges.postgres.server';
-import * as badgeAssignmentDb from './badge-assignment.postgres.server';
+import { db } from './provider.server';
+import { badges, memberBadges } from '@drizzle/schema';
+import { eq, and } from 'drizzle-orm';
 import type {
     Badge,
     BadgeInsert,
@@ -14,85 +14,132 @@ import type {
 } from '@/types/adapters';
 
 /**
- * Convert Postgres badge to MongoDB-compatible format
- */
-function toMongoBadge(pgBadge: {
-    id: string;
-    name: string;
-    iconAscii: string;
-    criteria: string;
-    createdAt: Date;
-}): Badge {
-    return {
-        _id: pgBadge.id as unknown as Badge['_id'],
-        name: pgBadge.name,
-        iconAscii: pgBadge.iconAscii,
-        criteria: pgBadge.criteria,
-        createdAt: pgBadge.createdAt
-    };
-}
-
-/**
- * Get all badges - adapter maintains MongoDB interface
+ * Get all badges
  */
 export async function getBadges(): Promise<Badge[]> {
-    const badges = await badgesDb.getBadges();
-    return badges.map(toMongoBadge);
+    return db.select().from(badges);
 }
 
 /**
- * Get a badge by ID - adapter maintains MongoDB interface
+ * Get a badge by ID
  */
 export async function getBadgeById(id: string): Promise<Badge | null> {
-    const badge = await badgesDb.getBadgeById(id);
-    return badge ? toMongoBadge(badge) : null;
+    const result = await db.select().from(badges).where(eq(badges.id, id));
+
+    return result[0] || null;
 }
 
 /**
- * Get a badge by name - adapter maintains MongoDB interface
+ * Get a badge by name
  */
 export async function getBadgeByName(name: string): Promise<Badge | null> {
-    const badge = await badgesDb.getBadgeByName(name);
-    return badge ? toMongoBadge(badge) : null;
+    const result = await db.select().from(badges).where(eq(badges.name, name));
+
+    return result[0] || null;
 }
 
 /**
- * Create a new badge - adapter maintains MongoDB interface
+ * Create a new badge
  */
 export async function createBadge(data: BadgeInsert): Promise<Badge> {
-    const created = await badgesDb.createBadge(data);
-    return toMongoBadge(created);
+    const [badge] = await db
+        .insert(badges)
+        .values({
+            name: data.name,
+            iconAscii: data.iconAscii,
+            criteria: data.criteria,
+            createdAt: new Date()
+        })
+        .returning();
+
+    return badge;
 }
 
 /**
- * Get all badges for a member - adapter maintains MongoDB interface
+ * Delete a badge by ID
+ */
+export async function deleteBadge(id: string): Promise<boolean> {
+    const result = await db.delete(badges).where(eq(badges.id, id));
+
+    return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * Count total badges
+ */
+export async function countBadges(): Promise<number> {
+    const result = await db.select({ count: badges.id }).from(badges);
+
+    return result[0] ? 1 : 0;
+}
+
+/**
+ * Get all badges for a member
  */
 export async function getMemberBadges(memberId: string): Promise<Badge[]> {
-    const memberBadges = await badgeAssignmentDb.getMemberBadges(memberId);
-    return memberBadges.map(
-        (mb: {
-            id: string;
-            name: string;
-            iconAscii: string;
-            criteria: string;
-            createdAt: Date;
-        }) => toMongoBadge(mb)
+    const result = await db
+        .select({
+            id: badges.id,
+            name: badges.name,
+            iconAscii: badges.iconAscii,
+            criteria: badges.criteria,
+            createdAt: badges.createdAt
+        })
+        .from(memberBadges)
+        .leftJoin(badges, eq(memberBadges.badgeId, badges.id))
+        .where(eq(memberBadges.memberId, memberId));
+
+    return result.filter(
+        (b): b is Badge =>
+            b.id !== null &&
+            b.name !== null &&
+            b.iconAscii !== null &&
+            b.criteria !== null &&
+            b.createdAt !== null
     );
 }
 
 /**
- * Award a badge to a member - adapter maintains MongoDB interface
+ * Check if a member has a specific badge
+ */
+export async function hasBadge(
+    memberId: string,
+    badgeId: string
+): Promise<boolean> {
+    const result = await db
+        .select()
+        .from(memberBadges)
+        .where(
+            and(
+                eq(memberBadges.memberId, memberId),
+                eq(memberBadges.badgeId, badgeId)
+            )
+        );
+
+    return result.length > 0;
+}
+
+/**
+ * Award a badge to a member
  */
 export async function awardBadge(
     data: MemberBadgeInsert
 ): Promise<MemberBadge> {
-    const memberId = data.memberId as string;
-    const badgeId = data.badgeId as string;
+    const memberId = data.memberId;
+    const badgeId = data.badgeId;
 
-    await badgeAssignmentDb.awardBadge(memberId, badgeId);
+    // Check if already awarded
+    const exists = await hasBadge(memberId, badgeId);
+    if (!exists) {
+        await db.insert(memberBadges).values({
+            memberId,
+            badgeId,
+            awardedAt: new Date()
+        });
+    }
 
     return {
-        _id: badgeId as unknown as BadgeInsert['_id'],
+        id: badgeId,
         memberId,
         badgeId,
         awardedAt: new Date()
@@ -100,21 +147,56 @@ export async function awardBadge(
 }
 
 /**
- * Check if a member has a badge - adapter delegates to Postgres
- */
-export async function hasBadge(
-    memberId: string,
-    badgeId: string
-): Promise<boolean> {
-    return badgeAssignmentDb.hasMemberBadge(memberId, badgeId);
-}
-
-/**
- * Remove a badge from a member - adapter delegates to Postgres
+ * Remove a badge from a member
  */
 export async function removeBadge(
     memberId: string,
     badgeId: string
 ): Promise<boolean> {
-    return badgeAssignmentDb.revokeBadge(memberId as string, badgeId as string);
+    const result = await db
+        .delete(memberBadges)
+        .where(
+            and(
+                eq(memberBadges.memberId, memberId),
+                eq(memberBadges.badgeId, badgeId)
+            )
+        );
+
+    return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * Get all members with a specific badge
+ */
+export async function getMembersWithBadge(badgeId: string) {
+    return db
+        .select({
+            memberId: memberBadges.memberId,
+            awardedAt: memberBadges.awardedAt
+        })
+        .from(memberBadges)
+        .where(eq(memberBadges.badgeId, badgeId));
+}
+
+/**
+ * Revoke all badges from a member
+ */
+export async function revokeMemberBadges(memberId: string): Promise<boolean> {
+    const result = await db
+        .delete(memberBadges)
+        .where(eq(memberBadges.memberId, memberId));
+
+    return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * Count member badges
+ */
+export async function countMemberBadges(memberId: string): Promise<number> {
+    const result = await db
+        .select({ count: memberBadges.memberId })
+        .from(memberBadges)
+        .where(eq(memberBadges.memberId, memberId));
+
+    return result.length;
 }

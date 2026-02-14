@@ -1,6 +1,6 @@
 /**
  * Database operations for demo slots (demo presentations at hack nights).
- * Adapter for Postgres/Drizzle implementation.
+ * PostgreSQL/Drizzle implementation.
  */
 
 import { db } from './provider.server';
@@ -13,26 +13,6 @@ import type {
     DemoSlotWithMember,
     DemoSlotWithEvent
 } from '@/types/adapters';
-import { toMongoProfile } from './profiles.server';
-import { toMongoEvent } from './events.server';
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-function toMongoDemoSlot(pgSlot: any): DemoSlot {
-    return {
-        _id: pgSlot.id,
-        memberId: pgSlot.memberId,
-        eventId: pgSlot.eventId,
-        title: pgSlot.title,
-        description: pgSlot.description,
-        requestedTime: pgSlot.requestedTime,
-        durationMinutes: pgSlot.durationMinutes,
-        status: pgSlot.status,
-        confirmedByOrganizer: pgSlot.confirmedByOrganizer,
-        createdAt: pgSlot.createdAt,
-        updatedAt: pgSlot.updatedAt
-    };
-}
 
 /**
  * Get all demo slots from the database.
@@ -51,9 +31,9 @@ export async function getDemoSlots(options?: {
         conditions.push(eq(demoSlots.memberId, options.memberId));
     if (options?.status) conditions.push(eq(demoSlots.status, options.status));
 
-    let finalQuery: any = db.select().from(demoSlots);
+    let finalQuery = db.select().from(demoSlots);
     if (conditions.length > 0) {
-        finalQuery = finalQuery.where(and(...conditions));
+        finalQuery = finalQuery.where(and(...conditions)) as typeof finalQuery;
     }
 
     if (options?.sortOrder === 1) {
@@ -66,8 +46,7 @@ export async function getDemoSlots(options?: {
         finalQuery = finalQuery.limit(options.limit);
     }
 
-    const results = await finalQuery;
-    return results.map(toMongoDemoSlot);
+    return finalQuery;
 }
 
 /**
@@ -90,12 +69,15 @@ export async function getDemoSlotsWithMembers(options?: {
         orderBy: [desc(demoSlots.createdAt)]
     });
 
-    return results.map((slot: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { memberId, ...rest } = toMongoDemoSlot(slot);
+    return results.map(slot => {
+        const { memberId, ...rest } = slot;
         return {
             ...rest,
-            member: toMongoProfile(slot.member)!
+            member: {
+                id: slot.member.id,
+                lumaEmail: slot.member.lumaEmail,
+                githubUsername: slot.member.githubUsername
+            }
         };
     });
 }
@@ -109,7 +91,7 @@ export async function getDemoSlotsWithMembersAndEvents(options?: {
 }): Promise<
     Array<
         DemoSlotWithMember & {
-            event: { _id: string; name: string; startAt: Date };
+            event: { id: string; name: string; startAt: Date };
         }
     >
 > {
@@ -124,17 +106,20 @@ export async function getDemoSlotsWithMembersAndEvents(options?: {
             member: true,
             event: true
         },
-        orderBy: [desc(demoSlots.createdAt)] // Sort by event start logic handled in JS or join sort?
+        orderBy: [desc(demoSlots.createdAt)]
     });
 
-    const mapped = results.map((slot: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { memberId, ...rest } = toMongoDemoSlot(slot);
+    const mapped = results.map(slot => {
+        const { memberId, ...rest } = slot;
         return {
             ...rest,
-            member: toMongoProfile(slot.member)!,
+            member: {
+                id: slot.member.id,
+                lumaEmail: slot.member.lumaEmail,
+                githubUsername: slot.member.githubUsername
+            },
             event: {
-                _id: slot.event.id,
+                id: slot.event.id,
                 name: slot.event.name,
                 startAt: slot.event.startAt
             }
@@ -153,7 +138,7 @@ export async function getDemoSlotById(id: string): Promise<DemoSlot | null> {
     const slot = await db.query.demoSlots.findFirst({
         where: eq(demoSlots.id, id)
     });
-    return slot ? toMongoDemoSlot(slot) : null;
+    return slot || null;
 }
 
 /**
@@ -163,7 +148,7 @@ export async function createDemoSlot(data: DemoSlotInsert): Promise<DemoSlot> {
     const [inserted] = await db
         .insert(demoSlots)
         .values({
-            memberId: data.memberId!,
+            memberId: data.memberId,
             eventId: data.eventId,
             title: data.title,
             description: data.description || null,
@@ -176,7 +161,7 @@ export async function createDemoSlot(data: DemoSlotInsert): Promise<DemoSlot> {
         })
         .returning();
 
-    return toMongoDemoSlot(inserted);
+    return inserted;
 }
 
 /**
@@ -219,12 +204,46 @@ export async function getMemberDemoSlotsWithEvents(
         orderBy: [desc(demoSlots.createdAt)]
     });
 
-    return results.map((slot: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { eventId, ...rest } = toMongoDemoSlot(slot);
+    return results.map(slot => {
+        const { eventId, ...rest } = slot;
         return {
             ...rest,
-            event: toMongoEvent(slot.event)!
+            event: {
+                id: slot.event.id,
+                name: slot.event.name,
+                startAt: slot.event.startAt,
+                endAt: slot.event.endAt
+            }
         };
     });
+}
+
+/**
+ * Confirm a demo slot (by organizer)
+ */
+export async function confirmDemoSlot(id: string): Promise<boolean> {
+    return updateDemoSlot(id, {
+        status: 'confirmed',
+        confirmedByOrganizer: true
+    });
+}
+
+/**
+ * Cancel a demo slot
+ */
+export async function cancelDemoSlot(id: string): Promise<boolean> {
+    return updateDemoSlot(id, {
+        status: 'canceled'
+    });
+}
+
+/**
+ * Delete all demo slots for an event
+ */
+export async function deleteEventDemoSlots(eventId: string): Promise<number> {
+    const result = await db
+        .delete(demoSlots)
+        .where(eq(demoSlots.eventId, eventId));
+
+    return result.rowCount ?? 0;
 }

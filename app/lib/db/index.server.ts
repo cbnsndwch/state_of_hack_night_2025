@@ -1,9 +1,9 @@
 /**
- * Server-side data access layer for MongoDB.
+ * Server-side data access layer for PostgreSQL.
  *
  * This module provides type-safe functions for interacting with
- * the MongoDB collections. All functions are server-only and should
- * be called from React Router loaders/actions.
+ * the PostgreSQL database using Drizzle ORM. All functions are
+ * server-only and should be called from React Router loaders/actions.
  */
 
 export * from './profiles.server';
