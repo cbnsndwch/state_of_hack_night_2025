@@ -1,18 +1,14 @@
 /**
  * Adapter interface types for Hello Miami community data.
- * These ensure backward compatibility with frontend code expecting "Mongo-like" shapes.
+ * These types represent the data layer after Postgres migration.
  */
-
-// Placeholder for ObjectId to avoid mongodb dependency
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ObjectId = any;
 
 // ============================================================================
 // Profile - Links to Clerk auth users
 // ============================================================================
 
 export interface Profile {
-    _id: ObjectId;
+    id: string;
     /** Clerk auth user ID - may be null before first login */
     clerkUserId: string | null;
     /** Email used in Luma registration */
@@ -85,9 +81,9 @@ export interface ProfileUpdate {
 // ============================================================================
 
 export interface Project {
-    _id: ObjectId;
-    /** Reference to Profile._id */
-    memberId: ObjectId;
+    id: string;
+    /** Reference to Profile.id */
+    memberId: string;
     title: string;
     description: string | null;
     tags: string[];
@@ -99,7 +95,7 @@ export interface Project {
 }
 
 export interface ProjectInsert {
-    memberId: ObjectId;
+    memberId: string;
     title: string;
     description?: string | null;
     tags?: string[];
@@ -122,7 +118,7 @@ export interface ProjectUpdate {
 // ============================================================================
 
 export interface Badge {
-    _id: ObjectId;
+    id: string;
     name: string;
     iconAscii: string;
     criteria: string;
@@ -140,17 +136,17 @@ export interface BadgeInsert {
 // ============================================================================
 
 export interface MemberBadge {
-    _id: ObjectId;
-    /** Reference to Profile._id */
-    memberId: ObjectId;
-    /** Reference to Badge._id */
-    badgeId: ObjectId;
+    id: string;
+    /** Reference to Profile.id */
+    memberId: string;
+    /** Reference to Badge.id */
+    badgeId: string;
     awardedAt: Date;
 }
 
 export interface MemberBadgeInsert {
-    memberId: ObjectId;
-    badgeId: ObjectId;
+    memberId: string;
+    badgeId: string;
 }
 
 // ============================================================================
@@ -160,9 +156,9 @@ export interface MemberBadgeInsert {
 export type AttendanceStatus = 'registered' | 'checked-in';
 
 export interface Attendance {
-    _id: ObjectId;
-    /** Reference to Profile._id */
-    memberId: ObjectId;
+    id: string;
+    /** Reference to Profile.id */
+    memberId: string;
     lumaEventId: string;
     status: AttendanceStatus;
     checkedInAt: Date | null;
@@ -170,7 +166,7 @@ export interface Attendance {
 }
 
 export interface AttendanceInsert {
-    memberId: ObjectId;
+    memberId: string;
     lumaEventId: string;
     status: AttendanceStatus;
     checkedInAt?: Date | null;
@@ -186,7 +182,7 @@ export interface AttendanceUpdate {
 // ============================================================================
 
 export interface PendingUser {
-    _id: ObjectId;
+    id: string;
     /** Email from Luma subscription */
     email: string;
     /** Name from Luma subscription */
@@ -221,7 +217,7 @@ export interface PendingUserUpdate {
 // ============================================================================
 
 export interface LumaWebhook {
-    _id: ObjectId;
+    id: string;
     /** Webhook type (e.g., 'calendar.person.subscribed') */
     type: string;
     /** Raw webhook payload */
@@ -243,7 +239,7 @@ export interface LumaWebhookInsert {
 // ============================================================================
 
 export interface ProjectWithMember extends Omit<Project, 'memberId'> {
-    member: Pick<Profile, '_id' | 'clerkUserId' | 'bio' | 'lumaEmail'>;
+    member: Pick<Profile, 'id' | 'clerkUserId' | 'bio' | 'lumaEmail'>;
 }
 
 export interface ProfileWithBadges extends Profile {
@@ -287,7 +283,7 @@ export interface SurveyQuestion {
 }
 
 export interface Survey {
-    _id: ObjectId;
+    id: string;
     /** Survey identifier (e.g., "onboarding-2026", "annual-2026") */
     slug: string;
     title: string;
@@ -333,11 +329,11 @@ export type SurveyAnswer =
     | { type: 'boolean'; value: boolean };
 
 export interface SurveyResponse {
-    _id: ObjectId;
-    /** Reference to Survey._id */
-    surveyId: ObjectId;
-    /** Reference to Profile._id */
-    memberId: ObjectId;
+    id: string;
+    /** Reference to Survey.id */
+    surveyId: string;
+    /** Reference to Profile.id */
+    memberId: string;
     /** Responses keyed by question ID */
     responses: Record<string, SurveyAnswer>;
     /** Whether response is complete */
@@ -348,8 +344,8 @@ export interface SurveyResponse {
 }
 
 export interface SurveyResponseInsert {
-    surveyId: ObjectId;
-    memberId: ObjectId;
+    surveyId: string;
+    memberId: string;
     responses?: Record<string, SurveyAnswer>;
     isComplete?: boolean;
     submittedAt?: Date;
@@ -373,7 +369,7 @@ export interface SurveyResponseWithProfile extends Omit<
     SurveyResponse,
     'memberId'
 > {
-    member: Pick<Profile, '_id' | 'lumaEmail' | 'githubUsername'>;
+    member: Pick<Profile, 'id' | 'lumaEmail' | 'githubUsername'>;
 }
 
 // ============================================================================
@@ -381,7 +377,7 @@ export interface SurveyResponseWithProfile extends Omit<
 // ============================================================================
 
 export interface Event {
-    _id: ObjectId;
+    id: string;
     /** Luma event API ID (e.g., "evt-xxxxxxxxxxxxx") */
     lumaEventId: string;
     /** Event name/title */
@@ -478,11 +474,11 @@ export interface EventUpdate {
 // ============================================================================
 
 export interface DemoSlot {
-    _id: ObjectId;
-    /** Reference to Profile._id of the presenter */
-    memberId: ObjectId;
-    /** Reference to Event._id for the hack night */
-    eventId: ObjectId;
+    id: string;
+    /** Reference to Profile.id of the presenter */
+    memberId: string;
+    /** Reference to Event.id for the hack night */
+    eventId: string;
     /** Demo title/topic */
     title: string;
     /** Demo description */
@@ -500,8 +496,8 @@ export interface DemoSlot {
 }
 
 export interface DemoSlotInsert {
-    memberId: ObjectId;
-    eventId: ObjectId;
+    memberId: string;
+    eventId: string;
     title: string;
     description?: string | null;
     requestedTime?: string | null;
@@ -524,9 +520,9 @@ export interface DemoSlotUpdate {
 // ============================================================================
 
 export interface DemoSlotWithMember extends Omit<DemoSlot, 'memberId'> {
-    member: Pick<Profile, '_id' | 'lumaEmail' | 'githubUsername'>;
+    member: Pick<Profile, 'id' | 'lumaEmail' | 'githubUsername'>;
 }
 
 export interface DemoSlotWithEvent extends Omit<DemoSlot, 'eventId'> {
-    event: Pick<Event, '_id' | 'name' | 'startAt' | 'endAt'>;
+    event: Pick<Event, 'id' | 'name' | 'startAt' | 'endAt'>;
 }
