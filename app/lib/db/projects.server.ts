@@ -1,172 +1,118 @@
-import { ObjectId } from 'mongodb';
-import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
+/**
+ * PostgreSQL adapter for Projects
+ * Wraps projects.postgres.server.ts to maintain backward compatibility with existing routes
+ * Converts between Postgres UUIDs and MongoDB-compatible ObjectId interface
+ */
+
+import * as projectsDb from './projects.postgres.server';
 import type {
     Project,
     ProjectInsert,
     ProjectUpdate,
     ProjectWithMember
-} from '@/types/mongodb';
+} from '@/types/adapters';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
- * Get all projects (with optional limit)
+ * Convert Postgres project to MongoDB-compatible format using string IDs as ObjectId substitutes
  */
-export async function getProjects(limit?: number): Promise<Project[]> {
-    const db = await getMongoDb();
-    const query = db
-        .collection<Project>(CollectionName.PROJECTS)
-        .find()
-        .sort({ createdAt: -1 });
-
-    if (limit) {
-        query.limit(limit);
-    }
-
-    return query.toArray();
+function toMongoProject(pgProject: any): Project {
+    return {
+        _id: pgProject.id as any, // UUID string as ObjectId placeholder
+        memberId: pgProject.memberId as any, // UUID string as ObjectId placeholder
+        title: pgProject.title,
+        description: pgProject.description,
+        tags: pgProject.tags || [],
+        imageUrls: pgProject.imageUrls || [],
+        githubUrl: pgProject.githubUrl,
+        publicUrl: pgProject.publicUrl,
+        createdAt: pgProject.createdAt,
+        updatedAt: pgProject.updatedAt
+    };
 }
 
 /**
- * Get all projects with member info populated
+ * Get all projects (with optional limit) - adapter maintains MongoDB interface
+ */
+export async function getProjects(limit?: number): Promise<Project[]> {
+    const projects = await projectsDb.getProjects(limit);
+    return projects.map(toMongoProject);
+}
+
+/**
+ * Get all projects with member info populated - adapter maintains MongoDB interface
  */
 export async function getProjectsWithMembers(
     limit?: number
 ): Promise<ProjectWithMember[]> {
-    const db = await getMongoDb();
-
-    const pipeline: object[] = [
-        { $sort: { createdAt: -1 } },
-        {
-            $lookup: {
-                from: CollectionName.PROFILES,
-                localField: 'memberId',
-                foreignField: '_id',
-                as: 'memberArray'
-            }
-        },
-        {
-            $addFields: {
-                member: { $arrayElemAt: ['$memberArray', 0] }
-            }
-        },
-        {
-            $project: {
-                memberArray: 0,
-                memberId: 0
-            }
-        }
-    ];
-
-    if (limit) {
-        pipeline.push({ $limit: limit });
-    }
-
-    return db
-        .collection<ProjectWithMember>(CollectionName.PROJECTS)
-        .aggregate<ProjectWithMember>(pipeline)
-        .toArray();
+    const projectsWithMembers = await projectsDb.getProjectsWithMembers(limit);
+    return projectsWithMembers.map(p => ({
+        ...toMongoProject(p),
+        member: p.member
+    }));
 }
 
 /**
- * Get a project by MongoDB _id
+ * Get a project by ID - adapter maintains MongoDB interface
  */
 export async function getProjectById(id: string): Promise<Project | null> {
-    const db = await getMongoDb();
-    return db.collection<Project>(CollectionName.PROJECTS).findOne({
-        _id: new ObjectId(id)
-    });
+    const project = await projectsDb.getProjectById(id);
+    return project ? toMongoProject(project) : null;
 }
 
 /**
- * Get all projects by a member
+ * Get all projects by a member - adapter maintains MongoDB interface
  */
 export async function getProjectsByMemberId(
     memberId: string
 ): Promise<Project[]> {
-    const db = await getMongoDb();
-    return db
-        .collection<Project>(CollectionName.PROJECTS)
-        .find({ memberId: new ObjectId(memberId) })
-        .sort({ createdAt: -1 })
-        .toArray();
+    const projects = await projectsDb.getProjectsByMemberId(memberId);
+    return projects.map(toMongoProject);
 }
 
 /**
- * Create a new project
+ * Create a new project - adapter maintains MongoDB interface
  */
 export async function createProject(data: ProjectInsert): Promise<Project> {
-    const db = await getMongoDb();
-    const now = new Date();
-
-    const doc = {
-        ...data,
-        tags: data.tags ?? [],
-        imageUrls: data.imageUrls ?? [],
-        createdAt: now,
-        updatedAt: now
-    };
-
-    const result = await db
-        .collection<Project>(CollectionName.PROJECTS)
-        .insertOne(doc as Project);
-
-    return {
-        _id: result.insertedId,
-        ...doc
-    } as Project;
+    const created = await projectsDb.createProject({
+        memberId: data.memberId as any as string, // UUID string
+        title: data.title,
+        description: data.description,
+        tags: data.tags,
+        imageUrls: data.imageUrls,
+        githubUrl: data.githubUrl,
+        publicUrl: data.publicUrl
+    });
+    return toMongoProject(created);
 }
 
 /**
- * Update a project by MongoDB _id
+ * Update a project - adapter maintains MongoDB interface
  */
 export async function updateProject(
     id: string,
     data: ProjectUpdate
 ): Promise<Project | null> {
-    const db = await getMongoDb();
-
-    const result = await db
-        .collection<Project>(CollectionName.PROJECTS)
-        .findOneAndUpdate(
-            { _id: new ObjectId(id) },
-            {
-                $set: {
-                    ...data,
-                    updatedAt: new Date()
-                }
-            },
-            { returnDocument: 'after' }
-        );
-
-    return result;
+    const updated = await projectsDb.updateProject(id, data);
+    return updated ? toMongoProject(updated) : null;
 }
 
 /**
- * Delete a project by MongoDB _id
+ * Delete a project - adapter delegates to Postgres
  */
 export async function deleteProject(id: string): Promise<boolean> {
-    const db = await getMongoDb();
-    const result = await db
-        .collection<Project>(CollectionName.PROJECTS)
-        .deleteOne({
-            _id: new ObjectId(id)
-        });
-
-    return result.deletedCount === 1;
+    return projectsDb.deleteProject(id);
 }
 
 /**
- * Check if a user owns a project
+ * Check if a user owns a project - adapter maintains MongoDB interface
  */
 export async function isProjectOwner(
     projectId: string,
     memberId: string
 ): Promise<boolean> {
-    const db = await getMongoDb();
-    const project = await db
-        .collection<Project>(CollectionName.PROJECTS)
-        .findOne({
-            _id: new ObjectId(projectId),
-            memberId: new ObjectId(memberId)
-        });
-
-    return project !== null;
+    const project = await getProjectById(projectId);
+    if (!project) return false;
+    return project.memberId === (memberId as any);
 }

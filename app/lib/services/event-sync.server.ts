@@ -1,18 +1,18 @@
 /**
- * Service for syncing events from Luma API to MongoDB.
+ * Service for syncing events from Luma API to PostgreSQL.
  */
 
 import {
     fetchAllUpcomingEvents,
     type LumaEvent
 } from '@/utils/luma-api.server';
-import { upsertEvent } from '@/lib/db/events.server';
-import type { EventInsert } from '@/types/mongodb';
+import { upsertEvent } from '@/lib/db/events.postgres.server';
+import type { EventInput } from '@/lib/db/events.postgres.server';
 
 /**
  * Convert a Luma API event to our database event format.
  */
-function convertLumaEventToDbEvent(lumaEvent: LumaEvent): EventInsert {
+function convertLumaEventToDbEvent(lumaEvent: LumaEvent): EventInput {
     return {
         lumaEventId: lumaEvent.api_id,
         name: lumaEvent.name,
@@ -35,8 +35,7 @@ function convertLumaEventToDbEvent(lumaEvent: LumaEvent): EventInsert {
             registered: lumaEvent.guest_count ?? 0,
             checkedIn: lumaEvent.approval_count ?? 0
         },
-        isCanceled: lumaEvent.is_canceled ?? false,
-        lastSyncedAt: new Date()
+        isCanceled: lumaEvent.is_canceled ?? false
     };
 }
 

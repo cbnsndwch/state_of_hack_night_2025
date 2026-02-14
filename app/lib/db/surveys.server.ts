@@ -1,145 +1,128 @@
-import { ObjectId } from 'mongodb';
-import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
+/**
+ * PostgreSQL adapter for Surveys
+ * Wraps surveys.postgres.server.ts to maintain backward compatibility with existing routes
+ * Converts between Postgres UUIDs and MongoDB-compatible ObjectId interface
+ */
+
+import * as surveysDb from './surveys.postgres.server';
+import { db } from './provider.server';
+import { surveys as surveysTable } from '@drizzle/schema';
+import { eq } from 'drizzle-orm';
 import type {
     Survey,
     SurveyInsert,
     SurveyUpdate,
     SurveyWithResponseCount,
     SurveyType
-} from '@/types/mongodb';
+} from '@/types/adapters';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
- * Get all surveys
+ * Convert Postgres survey to MongoDB-compatible format
  */
-export async function getSurveys(): Promise<Survey[]> {
-    const db = await getMongoDb();
-    return db.collection<Survey>(CollectionName.SURVEYS).find().toArray();
+function toMongoSurvey(pgSurvey: any): Survey {
+    return {
+        _id: pgSurvey.id as any, // UUID as ObjectId placeholder
+        slug: pgSurvey.slug,
+        title: pgSurvey.title,
+        description: pgSurvey.description,
+        type: pgSurvey.type as SurveyType,
+        isActive: pgSurvey.isActive,
+        questions: pgSurvey.questions || [],
+        createdAt: pgSurvey.createdAt,
+        updatedAt: pgSurvey.updatedAt
+    };
 }
 
 /**
- * Get active surveys by type
+ * Get all surveys - adapter maintains MongoDB interface
+ */
+export async function getSurveys(): Promise<Survey[]> {
+    const surveys = await surveysDb.getSurveys();
+    return surveys.map(toMongoSurvey);
+}
+
+/**
+ * Get active surveys by type - adapter maintains MongoDB interface
  */
 export async function getActiveSurveysByType(
     type: SurveyType
 ): Promise<Survey[]> {
-    const db = await getMongoDb();
-    return db
-        .collection<Survey>(CollectionName.SURVEYS)
-        .find({ type, isActive: true })
-        .toArray();
+    const surveys = await surveysDb.getActiveSurveysByType(type);
+    return surveys.map(toMongoSurvey);
 }
 
 /**
- * Get a survey by MongoDB _id
+ * Get a survey by ID - adapter maintains MongoDB interface
  */
 export async function getSurveyById(id: string): Promise<Survey | null> {
-    const db = await getMongoDb();
-    return db.collection<Survey>(CollectionName.SURVEYS).findOne({
-        _id: new ObjectId(id)
-    });
+    const survey = await surveysDb.getSurveyById(id);
+    return survey ? toMongoSurvey(survey) : null;
 }
 
 /**
- * Get a survey by slug
+ * Get a survey by slug - adapter maintains MongoDB interface
  */
 export async function getSurveyBySlug(slug: string): Promise<Survey | null> {
-    const db = await getMongoDb();
-    return db.collection<Survey>(CollectionName.SURVEYS).findOne({ slug });
+    const survey = await surveysDb.getSurveyBySlug(slug);
+    return survey ? toMongoSurvey(survey) : null;
 }
 
 /**
- * Get the active onboarding survey
+ * Get the active onboarding survey - adapter maintains MongoDB interface
  */
 export async function getActiveOnboardingSurvey(): Promise<Survey | null> {
-    const db = await getMongoDb();
-    return db.collection<Survey>(CollectionName.SURVEYS).findOne({
-        type: 'onboarding',
-        isActive: true
-    });
+    const survey = await surveysDb.getActiveOnboardingSurvey();
+    return survey ? toMongoSurvey(survey) : null;
 }
 
 /**
- * Create a new survey
+ * Create a new survey - adapter maintains MongoDB interface
  */
 export async function createSurvey(data: SurveyInsert): Promise<Survey> {
-    const db = await getMongoDb();
-    const now = new Date();
-
-    const doc = {
-        ...data,
-        isActive: data.isActive ?? true,
-        createdAt: now,
-        updatedAt: now
-    };
-
-    const result = await db
-        .collection<Survey>(CollectionName.SURVEYS)
-        .insertOne(doc as Survey);
-
-    return {
-        _id: result.insertedId,
-        ...doc
-    } as Survey;
+    const created = await surveysDb.createSurvey({
+        slug: data.slug,
+        title: data.title,
+        description: data.description,
+        type: data.type as any,
+        isActive: data.isActive,
+        questions: data.questions || []
+    });
+    return toMongoSurvey(created);
 }
 
 /**
- * Update a survey by MongoDB _id
+ * Update a survey - adapter maintains MongoDB interface
  */
 export async function updateSurvey(
     id: string,
     data: SurveyUpdate
 ): Promise<Survey | null> {
-    const db = await getMongoDb();
-
-    const result = await db
-        .collection<Survey>(CollectionName.SURVEYS)
-        .findOneAndUpdate(
-            { _id: new ObjectId(id) },
-            {
-                $set: {
-                    ...data,
-                    updatedAt: new Date()
-                }
-            },
-            { returnDocument: 'after' }
-        );
-
-    return result;
+    const updated = await surveysDb.updateSurvey(id, data);
+    return updated ? toMongoSurvey(updated) : null;
 }
 
 /**
- * Delete a survey by MongoDB _id
+ * Delete a survey - adapter delegates to Postgres
  */
 export async function deleteSurvey(id: string): Promise<boolean> {
-    const db = await getMongoDb();
-
-    const result = await db
-        .collection<Survey>(CollectionName.SURVEYS)
-        .deleteOne({ _id: new ObjectId(id) });
-
-    return result.deletedCount > 0;
+    return surveysDb.deleteSurvey(id);
 }
 
 /**
- * Get surveys with response counts
+ * Get surveys with response counts - adapter maintains MongoDB interface
  */
 export async function getSurveysWithResponseCounts(): Promise<
     SurveyWithResponseCount[]
 > {
-    const db = await getMongoDb();
+    const surveys = await getSurveys();
 
-    const surveys = await db
-        .collection<Survey>(CollectionName.SURVEYS)
-        .find()
-        .toArray();
-
-    // Get response counts for each survey
-    const surveysWithCounts = await Promise.all(
+    const surveysWithCounts: SurveyWithResponseCount[] = await Promise.all(
         surveys.map(async survey => {
-            const responseCount = await db
-                .collection(CollectionName.SURVEY_RESPONSES)
-                .countDocuments({ surveyId: survey._id });
-
+            const responseCount = await surveysDb.getSurveyResponseCount(
+                survey._id as any as string
+            );
             return {
                 ...survey,
                 responseCount
@@ -151,24 +134,26 @@ export async function getSurveysWithResponseCounts(): Promise<
 }
 
 /**
- * Deactivate all surveys of a given type
+ * Deactivate all surveys of a given type - adapter delegates to Postgres
  */
 export async function deactivateSurveysByType(
     type: SurveyType
 ): Promise<number> {
-    const db = await getMongoDb();
+    const surveysToUpdate = await db
+        .select()
+        .from(surveysTable)
+        .where(eq(surveysTable.type, type));
 
-    const result = await db
-        .collection<Survey>(CollectionName.SURVEYS)
-        .updateMany(
-            { type },
+    let count = 0;
+    for (const survey of surveysToUpdate) {
+        const updated = await surveysDb.updateSurvey(
+            survey.id as any as string,
             {
-                $set: {
-                    isActive: false,
-                    updatedAt: new Date()
-                }
+                isActive: false
             }
         );
+        if (updated) count++;
+    }
 
-    return result.modifiedCount;
+    return count;
 }

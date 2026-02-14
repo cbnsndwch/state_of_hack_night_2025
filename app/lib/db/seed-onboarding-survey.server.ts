@@ -3,7 +3,7 @@
  * Run this once to populate the surveys collection with the onboarding survey.
  */
 
-import type { SurveyInsert, SurveyQuestion } from '@/types/mongodb';
+import type { SurveyInsert, SurveyQuestion } from '@/types/adapters';
 import { createSurvey, getSurveyBySlug } from './surveys.server';
 
 const onboardingSurveyQuestions: SurveyQuestion[] = [

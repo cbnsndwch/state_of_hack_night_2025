@@ -12,7 +12,7 @@ import {
 } from '@/utils/email.server';
 import { getProfileById } from '@/lib/db/profiles.server';
 import { getEventById } from '@/lib/db/events.server';
-import type { DemoSlot } from '@/types/mongodb';
+import type { DemoSlot } from '@/types/adapters';
 
 /**
  * Get list of organizer emails from environment variable

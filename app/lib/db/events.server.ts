@@ -1,10 +1,43 @@
 /**
- * Database operations for events (synced from Luma).
+ * Event Database Adapter - Postgres Wrapper
+ *
+ * This module provides a backward-compatible adapter around the new Postgres-based
+ * event functions. It converts between Postgres schemas (with `id` field) and
+ * the MongoDB shapes (with `_id` field) for minimal code changes throughout the app.
+ *
+ * All actual Postgres operations happen in events.postgres.server.ts
  */
 
-import { ObjectId } from 'mongodb';
-import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
-import type { Event, EventInsert, EventUpdate } from '@/types/mongodb';
+import type { Event, EventInsert, EventUpdate } from '@/types/adapters';
+import * as postgresDb from './events.postgres.server';
+
+/**
+ * Convert Postgres event to MongoDB-compatible event shape
+ */
+export function toMongoEvent(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    postgresEvent: any
+): Event | null {
+    if (!postgresEvent) return null;
+
+    return {
+        _id: postgresEvent.id, // For backward compat - Postgres uses UUID id
+        lumaEventId: postgresEvent.lumaEventId,
+        name: postgresEvent.name,
+        description: postgresEvent.description,
+        coverUrl: postgresEvent.coverUrl,
+        url: postgresEvent.url,
+        startAt: postgresEvent.startAt,
+        endAt: postgresEvent.endAt,
+        timezone: postgresEvent.timezone,
+        location: postgresEvent.location,
+        stats: postgresEvent.stats,
+        isCanceled: postgresEvent.isCanceled,
+        lastSyncedAt: postgresEvent.lastSyncedAt,
+        createdAt: postgresEvent.createdAt,
+        updatedAt: postgresEvent.updatedAt
+    };
+}
 
 /**
  * Get all events from the database.
@@ -19,38 +52,40 @@ export async function getEvents(options?: {
     /** Limit number of results */
     limit?: number;
 }): Promise<Event[]> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
+    const events = await postgresDb.getAllEvents();
 
-    const filter: Record<string, unknown> = {};
+    // Apply filters
     const now = new Date();
+    let filtered = events;
 
     if (options?.upcomingOnly) {
-        filter.startAt = { $gte: now };
+        filtered = filtered.filter(e => e.startAt >= now);
     }
     if (options?.pastOnly) {
-        filter.startAt = { $lt: now };
+        filtered = filtered.filter(e => e.startAt < now);
     }
 
-    const cursor = collection
-        .find(filter)
-        .sort({ startAt: options?.sortOrder ?? 1 });
+    // Apply sort
+    const sortOrder = options?.sortOrder ?? 1;
+    filtered.sort((a, b) => {
+        const diff = a.startAt.getTime() - b.startAt.getTime();
+        return sortOrder === 1 ? diff : -diff;
+    });
 
+    // Apply limit
     if (options?.limit) {
-        cursor.limit(options.limit);
+        filtered = filtered.slice(0, options.limit);
     }
 
-    return cursor.toArray();
+    return filtered.map(toMongoEvent).filter(Boolean) as Event[];
 }
 
 /**
- * Get an event by its ID.
+ * Get an event by its UUID id.
  */
 export async function getEventById(id: string): Promise<Event | null> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
-
-    return collection.findOne({ _id: new ObjectId(id) });
+    const event = await postgresDb.getEventById(id);
+    return toMongoEvent(event);
 }
 
 /**
@@ -59,39 +94,29 @@ export async function getEventById(id: string): Promise<Event | null> {
 export async function getEventByLumaId(
     lumaEventId: string
 ): Promise<Event | null> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
-
-    return collection.findOne({ lumaEventId });
+    const event = await postgresDb.getEventByLumaId(lumaEventId);
+    return toMongoEvent(event);
 }
 
 /**
  * Create a new event.
  */
 export async function createEvent(data: EventInsert): Promise<Event> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
+    const postgresEvent = await postgresDb.upsertEvent({
+        lumaEventId: data.lumaEventId,
+        name: data.name,
+        description: data.description || null,
+        coverUrl: data.coverUrl || null,
+        url: data.url,
+        startAt: data.startAt,
+        endAt: data.endAt || null,
+        timezone: data.timezone,
+        location: data.location || null,
+        stats: data.stats || { registered: 0, checkedIn: 0 },
+        isCanceled: data.isCanceled || false
+    });
 
-    const now = new Date();
-    const event: Omit<Event, '_id'> = {
-        ...data,
-        description: data.description ?? null,
-        coverUrl: data.coverUrl ?? null,
-        endAt: data.endAt ?? null,
-        location: data.location ?? null,
-        stats: data.stats ?? { registered: 0, checkedIn: 0 },
-        isCanceled: data.isCanceled ?? false,
-        lastSyncedAt: data.lastSyncedAt ?? now,
-        createdAt: now,
-        updatedAt: now
-    };
-
-    const result = await collection.insertOne(event as Event);
-
-    return {
-        ...event,
-        _id: result.insertedId
-    } as Event;
+    return toMongoEvent(postgresEvent)!;
 }
 
 /**
@@ -101,20 +126,31 @@ export async function updateEvent(
     id: string,
     data: EventUpdate
 ): Promise<boolean> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
+    try {
+        const event = await postgresDb.getEventById(id);
+        if (!event) return false;
 
-    const result = await collection.updateOne(
-        { _id: new ObjectId(id) },
-        {
-            $set: {
-                ...data,
-                updatedAt: new Date()
-            }
-        }
-    );
+        // For ID-based updates, we need to look up and update
+        // This is a simplified version - in production you'd want bulk updates
+        await postgresDb.upsertEvent({
+            lumaEventId: event.lumaEventId,
+            name: data.name ?? event.name,
+            description: data.description ?? event.description,
+            coverUrl: data.coverUrl ?? event.coverUrl,
+            url: data.url ?? event.url,
+            startAt: data.startAt ?? event.startAt,
+            endAt: data.endAt ?? event.endAt,
+            timezone: data.timezone ?? event.timezone,
+            location: data.location ?? event.location,
+            stats: data.stats ?? event.stats,
+            isCanceled: data.isCanceled ?? event.isCanceled
+        });
 
-    return result.modifiedCount > 0;
+        return true;
+    } catch (error) {
+        console.error('Error updating event:', error);
+        return false;
+    }
 }
 
 /**
@@ -124,20 +160,29 @@ export async function updateEventByLumaId(
     lumaEventId: string,
     data: EventUpdate
 ): Promise<boolean> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
+    try {
+        const event = await postgresDb.getEventByLumaId(lumaEventId);
+        if (!event) return false;
 
-    const result = await collection.updateOne(
-        { lumaEventId },
-        {
-            $set: {
-                ...data,
-                updatedAt: new Date()
-            }
-        }
-    );
+        await postgresDb.upsertEvent({
+            lumaEventId: event.lumaEventId,
+            name: data.name ?? event.name,
+            description: data.description ?? event.description,
+            coverUrl: data.coverUrl ?? event.coverUrl,
+            url: data.url ?? event.url,
+            startAt: data.startAt ?? event.startAt,
+            endAt: data.endAt ?? event.endAt,
+            timezone: data.timezone ?? event.timezone,
+            location: data.location ?? event.location,
+            stats: data.stats ?? event.stats,
+            isCanceled: data.isCanceled ?? event.isCanceled
+        });
 
-    return result.modifiedCount > 0;
+        return true;
+    } catch (error) {
+        console.error('Error updating event by Luma ID:', error);
+        return false;
+    }
 }
 
 /**
@@ -145,69 +190,19 @@ export async function updateEventByLumaId(
  * Uses Luma event ID as the unique identifier.
  */
 export async function upsertEvent(data: EventInsert): Promise<Event> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
+    const postgresEvent = await postgresDb.upsertEvent({
+        lumaEventId: data.lumaEventId,
+        name: data.name,
+        description: data.description || null,
+        coverUrl: data.coverUrl || null,
+        url: data.url,
+        startAt: data.startAt,
+        endAt: data.endAt || null,
+        timezone: data.timezone,
+        location: data.location || null,
+        stats: data.stats || { registered: 0, checkedIn: 0 },
+        isCanceled: data.isCanceled || false
+    });
 
-    const now = new Date();
-    const event: Omit<Event, '_id'> = {
-        ...data,
-        description: data.description ?? null,
-        coverUrl: data.coverUrl ?? null,
-        endAt: data.endAt ?? null,
-        location: data.location ?? null,
-        stats: data.stats ?? { registered: 0, checkedIn: 0 },
-        isCanceled: data.isCanceled ?? false,
-        lastSyncedAt: data.lastSyncedAt ?? now,
-        createdAt: now,
-        updatedAt: now
-    };
-
-    const result = await collection.findOneAndUpdate(
-        { lumaEventId: data.lumaEventId },
-        {
-            $set: {
-                ...event,
-                updatedAt: now
-            },
-            $setOnInsert: {
-                createdAt: now
-            }
-        },
-        {
-            upsert: true,
-            returnDocument: 'after'
-        }
-    );
-
-    if (!result) {
-        throw new Error('Failed to upsert event');
-    }
-
-    return result as Event;
-}
-
-/**
- * Delete an event.
- */
-export async function deleteEvent(id: string): Promise<boolean> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
-
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
-
-    return result.deletedCount > 0;
-}
-
-/**
- * Delete an event by its Luma event ID.
- */
-export async function deleteEventByLumaId(
-    lumaEventId: string
-): Promise<boolean> {
-    const db = await getMongoDb();
-    const collection = db.collection<Event>(CollectionName.EVENTS);
-
-    const result = await collection.deleteOne({ lumaEventId });
-
-    return result.deletedCount > 0;
+    return toMongoEvent(postgresEvent)!;
 }

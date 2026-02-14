@@ -1,7 +1,6 @@
-import { ObjectId } from 'mongodb';
 import { getBadgeByName, hasBadge, awardBadge } from './badges.server';
 import { getCheckedInCountByMember } from './attendance.server';
-import type { Badge } from '@/types/mongodb';
+import type { Badge } from '@/types/adapters';
 
 /**
  * Badge criteria definitions
@@ -61,7 +60,7 @@ export async function checkAndAwardBadges(
         if (!alreadyHasBadge) {
             try {
                 await awardBadge({
-                    memberId: new ObjectId(memberId),
+                    memberId: memberId,
                     badgeId: badge._id
                 });
                 awardedBadges.push(badge);

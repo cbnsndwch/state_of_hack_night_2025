@@ -1,148 +1,142 @@
-import { ObjectId } from 'mongodb';
-import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
+/**
+ * PostgreSQL adapter for Attendance
+ * Wraps attendance.postgres.server.ts to maintain backward compatibility with existing routes
+ * Converts between Postgres UUIDs and MongoDB-compatible ObjectId interface
+ */
+
+import * as attendanceDb from './attendance.postgres.server';
+import { db } from './provider.server';
+import { attendance as attendanceTable } from '@drizzle/schema';
+import { eq, and, count } from 'drizzle-orm';
 import type {
     Attendance,
     AttendanceInsert,
     AttendanceUpdate,
     AttendanceStatus
-} from '@/types/mongodb';
+} from '@/types/adapters';
 
 /**
- * Get all attendance records for a member
+ * Convert Postgres attendance to MongoDB-compatible format
+ */
+function toMongoAttendance(pgAttendance: {
+    id: string;
+    memberId: string;
+    lumaEventId: string;
+    status: AttendanceStatus;
+    checkedInAt: Date | null;
+    createdAt: Date;
+}): Attendance {
+    return {
+        _id: pgAttendance.id as unknown as Attendance['_id'],
+        memberId: pgAttendance.memberId,
+        lumaEventId: pgAttendance.lumaEventId,
+        status: pgAttendance.status as AttendanceStatus,
+        checkedInAt: pgAttendance.checkedInAt,
+        createdAt: pgAttendance.createdAt
+    };
+}
+
+/**
+ * Get all attendance records for a member - adapter maintains MongoDB interface
  */
 export async function getAttendanceByMemberId(
     memberId: string
 ): Promise<Attendance[]> {
-    const db = await getMongoDb();
-    return db
-        .collection<Attendance>(CollectionName.ATTENDANCE)
-        .find({ memberId: new ObjectId(memberId) })
-        .sort({ createdAt: -1 })
-        .toArray();
+    const records = await attendanceDb.getAttendanceByMemberId(memberId);
+    return records.map(toMongoAttendance);
 }
 
 /**
- * Get all attendance records for an event
+ * Get all attendance records for an event - adapter maintains MongoDB interface
  */
 export async function getAttendanceByEventId(
     lumaEventId: string
 ): Promise<Attendance[]> {
-    const db = await getMongoDb();
-    return db
-        .collection<Attendance>(CollectionName.ATTENDANCE)
-        .find({ lumaEventId })
-        .toArray();
+    const records = await attendanceDb.getAttendanceByEventId(lumaEventId);
+    return records.map(toMongoAttendance);
 }
 
 /**
- * Get a specific attendance record
+ * Get a specific attendance record - adapter maintains MongoDB interface
  */
 export async function getAttendance(
     memberId: string,
     lumaEventId: string
 ): Promise<Attendance | null> {
-    const db = await getMongoDb();
-    return db.collection<Attendance>(CollectionName.ATTENDANCE).findOne({
-        memberId: new ObjectId(memberId),
-        lumaEventId
-    });
+    const record = await attendanceDb.getAttendance(memberId, lumaEventId);
+    return record ? toMongoAttendance(record) : null;
 }
 
 /**
- * Create an attendance record (register for event)
+ * Create an attendance record (register for event) - adapter maintains MongoDB interface
  */
 export async function createAttendance(
     data: AttendanceInsert
 ): Promise<Attendance> {
-    const db = await getMongoDb();
-    const now = new Date();
-
-    const doc = {
-        ...data,
-        createdAt: now
-    };
-
-    const result = await db
-        .collection<Attendance>(CollectionName.ATTENDANCE)
-        .insertOne(doc as Attendance);
-
-    return {
-        _id: result.insertedId,
-        ...doc
-    } as Attendance;
+    const created = await attendanceDb.registerAttendance({
+        memberId: data.memberId as string,
+        lumaEventId: data.lumaEventId,
+        status: data.status || 'registered'
+    });
+    return toMongoAttendance(created);
 }
 
 /**
- * Update an attendance record
+ * Update an attendance record - adapter maintains MongoDB interface
  */
 export async function updateAttendance(
     memberId: string,
     lumaEventId: string,
     data: AttendanceUpdate
 ): Promise<Attendance | null> {
-    const db = await getMongoDb();
-
-    const result = await db
-        .collection<Attendance>(CollectionName.ATTENDANCE)
-        .findOneAndUpdate(
-            {
-                memberId: new ObjectId(memberId),
-                lumaEventId
-            },
-            { $set: data },
-            { returnDocument: 'after' }
-        );
-
-    return result;
+    const updated = await attendanceDb.updateAttendance(
+        memberId,
+        lumaEventId,
+        data
+    );
+    return updated ? toMongoAttendance(updated) : null;
 }
 
 /**
- * Check-in a member to an event
+ * Check-in a member to an event - adapter delegates to Postgres
  */
 export async function checkInToEvent(
     memberId: string,
     lumaEventId: string
 ): Promise<Attendance | null> {
-    return updateAttendance(memberId, lumaEventId, {
-        status: 'checked-in' as AttendanceStatus,
-        checkedInAt: new Date()
-    });
+    const updated = await attendanceDb.checkInMember(memberId, lumaEventId);
+    return updated ? toMongoAttendance(updated) : null;
 }
 
 /**
- * Register a member for an event (upsert)
+ * Register a member for an event (upsert) - adapter maintains MongoDB interface
  */
 export async function registerForEvent(
     memberId: string,
     lumaEventId: string
 ): Promise<Attendance> {
-    const existing = await getAttendance(memberId, lumaEventId);
-    if (existing) {
-        return existing;
-    }
-
-    return createAttendance({
-        memberId: new ObjectId(memberId),
+    const created = await attendanceDb.registerAttendance({
+        memberId,
         lumaEventId,
         status: 'registered'
     });
+    return toMongoAttendance(created);
 }
 
 /**
- * Get attendance count for an event
+ * Get attendance count for an event - adapter delegates to Postgres
  */
 export async function getEventAttendanceCount(
     lumaEventId: string
 ): Promise<{ registered: number; checkedIn: number }> {
-    const db = await getMongoDb();
-
     const result = await db
-        .collection<Attendance>(CollectionName.ATTENDANCE)
-        .aggregate<{ _id: AttendanceStatus; count: number }>([
-            { $match: { lumaEventId } },
-            { $group: { _id: '$status', count: { $sum: 1 } } }
-        ])
-        .toArray();
+        .select({
+            status: attendanceTable.status,
+            count: count()
+        })
+        .from(attendanceTable)
+        .where(eq(attendanceTable.lumaEventId, lumaEventId))
+        .groupBy(attendanceTable.status);
 
     const counts = {
         registered: 0,
@@ -150,9 +144,9 @@ export async function getEventAttendanceCount(
     };
 
     for (const r of result) {
-        if (r._id === 'registered') {
+        if (r.status === 'registered') {
             counts.registered = r.count;
-        } else if (r._id === 'checked-in') {
+        } else if (r.status === 'checked-in') {
             counts.checkedIn = r.count;
         }
     }
@@ -161,14 +155,20 @@ export async function getEventAttendanceCount(
 }
 
 /**
- * Get total checked-in count for a member
+ * Get total checked-in count for a member - adapter delegates to Postgres
  */
 export async function getCheckedInCountByMember(
     memberId: string
 ): Promise<number> {
-    const db = await getMongoDb();
-    return db.collection<Attendance>(CollectionName.ATTENDANCE).countDocuments({
-        memberId: new ObjectId(memberId),
-        status: 'checked-in'
-    });
+    const result = await db
+        .select({ count: count() })
+        .from(attendanceTable)
+        .where(
+            and(
+                eq(attendanceTable.memberId, memberId),
+                eq(attendanceTable.status, 'checked-in')
+            )
+        );
+
+    return result[0]?.count || 0;
 }

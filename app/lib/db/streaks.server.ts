@@ -8,7 +8,7 @@
 import { getAttendanceByMemberId } from './attendance.server';
 import { getEvents } from './events.server';
 import { updateProfile } from './profiles.server';
-import type { Attendance } from '@/types/mongodb';
+import type { Attendance } from '@/types/adapters';
 
 /**
  * Calculate the current streak for a member based on their attendance history.

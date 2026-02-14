@@ -1,142 +1,120 @@
-import { ObjectId } from 'mongodb';
-import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
+/**
+ * PostgreSQL adapter for Badges and Badge Assignments
+ * Wraps badges.postgres.server.ts and badge-assignment.postgres.server.ts
+ * Maintains backward compatibility with existing routes
+ */
+
+import * as badgesDb from './badges.postgres.server';
+import * as badgeAssignmentDb from './badge-assignment.postgres.server';
 import type {
     Badge,
     BadgeInsert,
     MemberBadge,
     MemberBadgeInsert
-} from '@/types/mongodb';
+} from '@/types/adapters';
 
 /**
- * Get all badges
+ * Convert Postgres badge to MongoDB-compatible format
+ */
+function toMongoBadge(pgBadge: {
+    id: string;
+    name: string;
+    iconAscii: string;
+    criteria: string;
+    createdAt: Date;
+}): Badge {
+    return {
+        _id: pgBadge.id as unknown as Badge['_id'],
+        name: pgBadge.name,
+        iconAscii: pgBadge.iconAscii,
+        criteria: pgBadge.criteria,
+        createdAt: pgBadge.createdAt
+    };
+}
+
+/**
+ * Get all badges - adapter maintains MongoDB interface
  */
 export async function getBadges(): Promise<Badge[]> {
-    const db = await getMongoDb();
-    return db.collection<Badge>(CollectionName.BADGES).find().toArray();
+    const badges = await badgesDb.getBadges();
+    return badges.map(toMongoBadge);
 }
 
 /**
- * Get a badge by MongoDB _id
+ * Get a badge by ID - adapter maintains MongoDB interface
  */
 export async function getBadgeById(id: string): Promise<Badge | null> {
-    const db = await getMongoDb();
-    return db.collection<Badge>(CollectionName.BADGES).findOne({
-        _id: new ObjectId(id)
-    });
+    const badge = await badgesDb.getBadgeById(id);
+    return badge ? toMongoBadge(badge) : null;
 }
 
 /**
- * Get a badge by name
+ * Get a badge by name - adapter maintains MongoDB interface
  */
 export async function getBadgeByName(name: string): Promise<Badge | null> {
-    const db = await getMongoDb();
-    return db.collection<Badge>(CollectionName.BADGES).findOne({ name });
+    const badge = await badgesDb.getBadgeByName(name);
+    return badge ? toMongoBadge(badge) : null;
 }
 
 /**
- * Create a new badge
+ * Create a new badge - adapter maintains MongoDB interface
  */
 export async function createBadge(data: BadgeInsert): Promise<Badge> {
-    const db = await getMongoDb();
-    const now = new Date();
-
-    const doc = {
-        ...data,
-        createdAt: now
-    };
-
-    const result = await db
-        .collection<Badge>(CollectionName.BADGES)
-        .insertOne(doc as Badge);
-
-    return {
-        _id: result.insertedId,
-        ...doc
-    } as Badge;
+    const created = await badgesDb.createBadge(data);
+    return toMongoBadge(created);
 }
 
 /**
- * Get all badges for a member
+ * Get all badges for a member - adapter maintains MongoDB interface
  */
 export async function getMemberBadges(memberId: string): Promise<Badge[]> {
-    const db = await getMongoDb();
-
-    const memberBadges = await db
-        .collection<MemberBadge>(CollectionName.MEMBER_BADGES)
-        .aggregate<Badge>([
-            { $match: { memberId: new ObjectId(memberId) } },
-            {
-                $lookup: {
-                    from: CollectionName.BADGES,
-                    localField: 'badgeId',
-                    foreignField: '_id',
-                    as: 'badge'
-                }
-            },
-            { $unwind: '$badge' },
-            { $replaceRoot: { newRoot: '$badge' } }
-        ])
-        .toArray();
-
-    return memberBadges;
+    const memberBadges = await badgeAssignmentDb.getMemberBadges(memberId);
+    return memberBadges.map(
+        (mb: {
+            id: string;
+            name: string;
+            iconAscii: string;
+            criteria: string;
+            createdAt: Date;
+        }) => toMongoBadge(mb)
+    );
 }
 
 /**
- * Award a badge to a member
+ * Award a badge to a member - adapter maintains MongoDB interface
  */
 export async function awardBadge(
     data: MemberBadgeInsert
 ): Promise<MemberBadge> {
-    const db = await getMongoDb();
-    const now = new Date();
+    const memberId = data.memberId as string;
+    const badgeId = data.badgeId as string;
 
-    const doc = {
-        ...data,
-        awardedAt: now
-    };
-
-    const result = await db
-        .collection<MemberBadge>(CollectionName.MEMBER_BADGES)
-        .insertOne(doc as MemberBadge);
+    await badgeAssignmentDb.awardBadge(memberId, badgeId);
 
     return {
-        _id: result.insertedId,
-        ...doc
-    } as MemberBadge;
+        _id: badgeId as unknown as BadgeInsert['_id'],
+        memberId,
+        badgeId,
+        awardedAt: new Date()
+    };
 }
 
 /**
- * Check if a member has a badge
+ * Check if a member has a badge - adapter delegates to Postgres
  */
 export async function hasBadge(
     memberId: string,
     badgeId: string
 ): Promise<boolean> {
-    const db = await getMongoDb();
-    const memberBadge = await db
-        .collection<MemberBadge>(CollectionName.MEMBER_BADGES)
-        .findOne({
-            memberId: new ObjectId(memberId),
-            badgeId: new ObjectId(badgeId)
-        });
-
-    return memberBadge !== null;
+    return badgeAssignmentDb.hasMemberBadge(memberId, badgeId);
 }
 
 /**
- * Remove a badge from a member
+ * Remove a badge from a member - adapter delegates to Postgres
  */
 export async function removeBadge(
     memberId: string,
     badgeId: string
 ): Promise<boolean> {
-    const db = await getMongoDb();
-    const result = await db
-        .collection<MemberBadge>(CollectionName.MEMBER_BADGES)
-        .deleteOne({
-            memberId: new ObjectId(memberId),
-            badgeId: new ObjectId(badgeId)
-        });
-
-    return result.deletedCount === 1;
+    return badgeAssignmentDb.revokeBadge(memberId as string, badgeId as string);
 }

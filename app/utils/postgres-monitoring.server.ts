@@ -10,6 +10,8 @@
  * - Index usage
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { db } from '@/lib/db/provider.server';
 import { sql } from 'drizzle-orm';
 import {

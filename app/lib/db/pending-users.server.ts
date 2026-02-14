@@ -1,20 +1,25 @@
-import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { eq, desc, isNull } from 'drizzle-orm';
+import { pendingUsers, profiles } from '@drizzle/schema';
+import { db } from '@/lib/db/provider.server';
 import type {
     PendingUser,
     PendingUserInsert,
     PendingUserUpdate,
     Profile
-} from '@/types/mongodb';
+} from '@/types/adapters';
 
 /**
  * Get all pending users
  */
 export async function getPendingUsers(): Promise<PendingUser[]> {
-    const db = await getMongoDb();
-    return db
-        .collection<PendingUser>(CollectionName.PENDING_USERS)
-        .find()
-        .toArray();
+    const users = await db
+        .select()
+        .from(pendingUsers)
+        .where(isNull(pendingUsers.approvedAt))
+        .orderBy(desc(pendingUsers.subscribedAt));
+
+    return users.map(u => ({ ...u, _id: u.id }) as any);
 }
 
 /**
@@ -23,10 +28,12 @@ export async function getPendingUsers(): Promise<PendingUser[]> {
 export async function getPendingUserByEmail(
     email: string
 ): Promise<PendingUser | null> {
-    const db = await getMongoDb();
-    return db
-        .collection<PendingUser>(CollectionName.PENDING_USERS)
-        .findOne({ email });
+    const result = await db
+        .select()
+        .from(pendingUsers)
+        .where(eq(pendingUsers.email, email));
+
+    return result[0] ? ({ ...result[0], _id: result[0].id } as any) : null;
 }
 
 /**
@@ -35,10 +42,12 @@ export async function getPendingUserByEmail(
 export async function getPendingUserByLumaAttendeeId(
     lumaAttendeeId: string
 ): Promise<PendingUser | null> {
-    const db = await getMongoDb();
-    return db
-        .collection<PendingUser>(CollectionName.PENDING_USERS)
-        .findOne({ lumaAttendeeId });
+    const result = await db
+        .select()
+        .from(pendingUsers)
+        .where(eq(pendingUsers.lumaAttendeeId, lumaAttendeeId));
+
+    return result[0] ? ({ ...result[0], _id: result[0].id } as any) : null;
 }
 
 /**
@@ -47,25 +56,26 @@ export async function getPendingUserByLumaAttendeeId(
 export async function createPendingUser(
     data: PendingUserInsert
 ): Promise<PendingUser> {
-    const db = await getMongoDb();
+    // Check if already exists
+    const existing = await getPendingUserByLumaAttendeeId(data.lumaAttendeeId);
+    if (existing) {
+        return existing;
+    }
+
     const now = new Date();
+    const [user] = await db
+        .insert(pendingUsers)
+        .values({
+            email: data.email,
+            name: data.name,
+            lumaAttendeeId: data.lumaAttendeeId,
+            subscribedAt: data.subscribedAt ? new Date(data.subscribedAt) : now,
+            createdAt: now,
+            updatedAt: now
+        })
+        .returning();
 
-    const doc = {
-        ...data,
-        subscribedAt: data.subscribedAt ?? now,
-        approvedAt: data.approvedAt ?? null,
-        createdAt: now,
-        updatedAt: now
-    };
-
-    const result = await db
-        .collection<PendingUser>(CollectionName.PENDING_USERS)
-        .insertOne(doc as PendingUser);
-
-    return {
-        _id: result.insertedId,
-        ...doc
-    } as PendingUser;
+    return { ...user, _id: user.id } as any;
 }
 
 /**
@@ -75,33 +85,30 @@ export async function updatePendingUser(
     email: string,
     data: PendingUserUpdate
 ): Promise<PendingUser | null> {
-    const db = await getMongoDb();
+    const values: any = { updatedAt: new Date() };
+    if (data.name) values.name = data.name;
+    if (data.approvedAt) values.approvedAt = new Date(data.approvedAt);
+    if (data.lumaAttendeeId) values.lumaAttendeeId = data.lumaAttendeeId;
+    if (data.subscribedAt) values.subscribedAt = new Date(data.subscribedAt);
 
-    const result = await db
-        .collection<PendingUser>(CollectionName.PENDING_USERS)
-        .findOneAndUpdate(
-            { email },
-            {
-                $set: {
-                    ...data,
-                    updatedAt: new Date()
-                }
-            },
-            { returnDocument: 'after' }
-        );
+    const [updated] = await db
+        .update(pendingUsers)
+        .set(values)
+        .where(eq(pendingUsers.email, email))
+        .returning();
 
-    return result;
+    return updated ? ({ ...updated, _id: updated.id } as any) : null;
 }
 
 /**
  * Delete a pending user by email
  */
 export async function deletePendingUser(email: string): Promise<boolean> {
-    const db = await getMongoDb();
     const result = await db
-        .collection<PendingUser>(CollectionName.PENDING_USERS)
-        .deleteOne({ email });
-    return result.deletedCount > 0;
+        .delete(pendingUsers)
+        .where(eq(pendingUsers.email, email));
+
+    return (result.rowCount ?? 0) > 0;
 }
 
 /**
@@ -112,49 +119,42 @@ export async function promotePendingUserToProfile(
     email: string,
     clerkUserId: string
 ): Promise<{ success: boolean; profile?: Profile; error?: string }> {
-    const db = await getMongoDb();
-
-    // Get the pending user
-    const pendingUser = await getPendingUserByEmail(email);
-    if (!pendingUser) {
-        return { success: false, error: 'Pending user not found' };
-    }
-
-    // Start a session for transaction
-    const session = db.client.startSession();
-
     try {
-        return await session.withTransaction(async () => {
-            // Create the profile
-            const profile = {
-                clerkUserId,
-                lumaEmail: email,
-                verificationStatus: 'verified' as const,
-                lumaAttendeeId: pendingUser.lumaAttendeeId,
-                bio: null,
-                streakCount: 0,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            };
+        return await db.transaction(async tx => {
+            const result = await tx
+                .select()
+                .from(pendingUsers)
+                .where(eq(pendingUsers.email, email));
 
-            const profileResult = await db
-                .collection(CollectionName.PROFILES)
-                .insertOne(profile, { session });
+            const pendingUser = result[0];
 
-            // Delete from pending users
-            await db
-                .collection(CollectionName.PENDING_USERS)
-                .deleteOne({ email }, { session });
+            if (!pendingUser) {
+                return { success: false, error: 'Pending user not found' };
+            }
+
+            const [profile] = await tx
+                .insert(profiles)
+                .values({
+                    clerkUserId,
+                    lumaEmail: email,
+                    verificationStatus: 'verified',
+                    lumaAttendeeId: pendingUser.lumaAttendeeId,
+                    skills: [],
+                    seekingFunding: false,
+                    isAppAdmin: false
+                    // Additional defaults if required by schema
+                })
+                .returning();
+
+            await tx.delete(pendingUsers).where(eq(pendingUsers.email, email));
 
             return {
                 success: true,
-                profile: {
-                    _id: profileResult.insertedId,
-                    ...profile
-                }
+                profile: { ...profile, _id: profile.id } as any
             };
         });
-    } finally {
-        await session.endSession();
+    } catch (e) {
+        console.error('Proomotion failed', e);
+        return { success: false, error: 'Promotion failed' };
     }
 }

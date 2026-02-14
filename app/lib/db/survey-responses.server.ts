@@ -1,202 +1,201 @@
-import { ObjectId } from 'mongodb';
-import { getMongoDb, CollectionName } from '@/utils/mongodb.server';
+/**
+ * PostgreSQL adapter for Survey Responses
+ * Wraps survey-responses.postgres.server.ts to maintain backward compatibility with existing routes
+ * Converts between Postgres UUIDs and MongoDB-compatible ObjectId interface
+ */
+
+import * as surveyResponsesDb from './survey-responses.postgres.server';
+import { db } from './provider.server';
+import {
+    surveyResponses as surveyResponsesTable,
+    surveys as surveysTable,
+    profiles as profilesTable
+} from '@drizzle/schema';
+import { eq, and } from 'drizzle-orm';
 import type {
     SurveyResponse,
     SurveyResponseInsert,
     SurveyResponseUpdate,
     SurveyResponseWithProfile
-} from '@/types/mongodb';
+} from '@/types/adapters';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
- * Get all survey responses for a survey
+ * Convert Postgres survey response to MongoDB-compatible format
+ */
+function toMongoSurveyResponse(pgResponse: any): SurveyResponse {
+    return {
+        _id: pgResponse.id as any,
+        surveyId: pgResponse.surveyId as any,
+        memberId: pgResponse.memberId as any,
+        responses: pgResponse.responses || {},
+        isComplete: pgResponse.isComplete,
+        submittedAt: pgResponse.submittedAt,
+        createdAt: pgResponse.createdAt,
+        updatedAt: pgResponse.updatedAt
+    };
+}
+
+/**
+ * Get all survey responses for a survey - adapter maintains MongoDB interface
  */
 export async function getSurveyResponses(
     surveyId: string
 ): Promise<SurveyResponse[]> {
-    const db = await getMongoDb();
-    return db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .find({ surveyId: new ObjectId(surveyId) })
-        .toArray();
+    const responses = await surveyResponsesDb.getSurveyResponses(surveyId);
+    return responses.map(toMongoSurveyResponse);
 }
 
 /**
- * Get a survey response by MongoDB _id
+ * Get a survey response by ID - adapter maintains MongoDB interface
  */
 export async function getSurveyResponseById(
     id: string
 ): Promise<SurveyResponse | null> {
-    const db = await getMongoDb();
-    return db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .findOne({
-            _id: new ObjectId(id)
-        });
+    const response = await surveyResponsesDb.getSurveyResponseById(id);
+    return response ? toMongoSurveyResponse(response) : null;
 }
 
 /**
- * Get a member's response to a specific survey
+ * Get a member's response to a specific survey - adapter maintains MongoDB interface
  */
 export async function getMemberSurveyResponse(
     surveyId: string,
     memberId: string
 ): Promise<SurveyResponse | null> {
-    const db = await getMongoDb();
-    return db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .findOne({
-            surveyId: new ObjectId(surveyId),
-            memberId: new ObjectId(memberId)
-        });
+    const response = await surveyResponsesDb.getSurveyResponse(
+        surveyId,
+        memberId
+    );
+    return response ? toMongoSurveyResponse(response) : null;
 }
 
 /**
- * Get all survey responses for a member
+ * Get all survey responses for a member - adapter maintains MongoDB interface
  */
 export async function getMemberSurveyResponses(
     memberId: string
 ): Promise<SurveyResponse[]> {
-    const db = await getMongoDb();
-    return db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .find({ memberId: new ObjectId(memberId) })
-        .toArray();
+    const responses = await surveyResponsesDb.getMemberResponses(memberId);
+    return responses.map(toMongoSurveyResponse);
 }
 
 /**
- * Create a new survey response (or update if exists)
+ * Create a new survey response (or update if exists) - adapter maintains MongoDB interface
  */
 export async function upsertSurveyResponse(
     data: SurveyResponseInsert
 ): Promise<SurveyResponse> {
-    const db = await getMongoDb();
-    const now = new Date();
+    const surveyId = data.surveyId as any as string;
+    const memberId = data.memberId as any as string;
 
-    const existing = await getMemberSurveyResponse(
-        data.surveyId.toString(),
-        data.memberId.toString()
-    );
+    const existing = await getMemberSurveyResponse(surveyId, memberId);
 
     if (existing) {
         // Update existing response
-        const updated = await updateSurveyResponse(existing._id.toString(), {
-            responses: data.responses,
-            isComplete: data.isComplete,
-            submittedAt: data.submittedAt
-        });
+        const updated = await updateSurveyResponse(
+            existing._id as any as string,
+            {
+                responses: data.responses,
+                isComplete: data.isComplete,
+                submittedAt: data.submittedAt
+            }
+        );
         return updated!;
     }
 
     // Create new response
-    const doc = {
-        ...data,
-        responses: data.responses ?? {},
-        isComplete: data.isComplete ?? false,
-        submittedAt: data.submittedAt ?? now,
-        createdAt: now,
-        updatedAt: now
-    };
-
-    const result = await db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .insertOne(doc as SurveyResponse);
-
-    return {
-        _id: result.insertedId,
-        ...doc
-    } as SurveyResponse;
+    const created = await surveyResponsesDb.createSurveyResponse({
+        surveyId,
+        memberId,
+        responses: data.responses || {},
+        isComplete: data.isComplete
+    });
+    return toMongoSurveyResponse(created);
 }
 
 /**
- * Update a survey response by MongoDB _id
+ * Update a survey response - adapter maintains MongoDB interface
  */
 export async function updateSurveyResponse(
     id: string,
     data: SurveyResponseUpdate
 ): Promise<SurveyResponse | null> {
-    const db = await getMongoDb();
+    // This is complex since we need to find the surveyId/memberId first
+    const response = await getSurveyResponseById(id);
+    if (!response) return null;
 
-    const result = await db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .findOneAndUpdate(
-            { _id: new ObjectId(id) },
-            {
-                $set: {
-                    ...data,
-                    updatedAt: new Date()
-                }
-            },
-            { returnDocument: 'after' }
-        );
+    const surveyId = response.surveyId as any as string;
+    const memberId = response.memberId as any as string;
 
-    return result;
+    const updated = await surveyResponsesDb.updateSurveyResponse(
+        surveyId,
+        memberId,
+        data
+    );
+    return updated ? toMongoSurveyResponse(updated) : null;
 }
 
 /**
- * Delete a survey response by MongoDB _id
+ * Delete a survey response - adapter delegates to Postgres
  */
 export async function deleteSurveyResponse(id: string): Promise<boolean> {
-    const db = await getMongoDb();
-
-    const result = await db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .deleteOne({ _id: new ObjectId(id) });
-
-    return result.deletedCount > 0;
+    return surveyResponsesDb.deleteSurveyResponse(id);
 }
 
 /**
- * Get completed survey responses for a survey with profile info
+ * Get completed survey responses for a survey with profile info - adapter maintains MongoDB interface
  */
 export async function getCompletedSurveyResponsesWithProfiles(
     surveyId: string
 ): Promise<SurveyResponseWithProfile[]> {
-    const db = await getMongoDb();
-
     const responses = await db
-        .collection(CollectionName.SURVEY_RESPONSES)
-        .aggregate<SurveyResponseWithProfile>([
-            {
-                $match: {
-                    surveyId: new ObjectId(surveyId),
-                    isComplete: true
-                }
-            },
-            {
-                $lookup: {
-                    from: CollectionName.PROFILES,
-                    localField: 'memberId',
-                    foreignField: '_id',
-                    as: 'memberData'
-                }
-            },
-            {
-                $unwind: '$memberData'
-            },
-            {
-                $project: {
-                    _id: 1,
-                    surveyId: 1,
-                    responses: 1,
-                    isComplete: 1,
-                    submittedAt: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    member: {
-                        _id: '$memberData._id',
-                        lumaEmail: '$memberData.lumaEmail',
-                        githubUsername: '$memberData.githubUsername'
-                    }
-                }
+        .select({
+            id: surveyResponsesTable.id,
+            surveyId: surveyResponsesTable.surveyId,
+            memberId: surveyResponsesTable.memberId,
+            responses: surveyResponsesTable.responses,
+            isComplete: surveyResponsesTable.isComplete,
+            submittedAt: surveyResponsesTable.submittedAt,
+            createdAt: surveyResponsesTable.createdAt,
+            updatedAt: surveyResponsesTable.updatedAt,
+            member: {
+                id: profilesTable.id,
+                lumaEmail: profilesTable.lumaEmail,
+                githubUsername: profilesTable.githubUsername
             }
-        ])
-        .toArray();
+        })
+        .from(surveyResponsesTable)
+        .leftJoin(
+            profilesTable,
+            eq(surveyResponsesTable.memberId, profilesTable.id)
+        )
+        .where(
+            and(
+                eq(surveyResponsesTable.surveyId, surveyId),
+                eq(surveyResponsesTable.isComplete, true)
+            )
+        );
 
-    return responses;
+    return responses.map((r: any) => ({
+        _id: r.id as any,
+        surveyId: r.surveyId as any,
+        responses: r.responses,
+        isComplete: r.isComplete,
+        submittedAt: r.submittedAt,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        member: {
+            _id: r.member.id as any,
+            lumaEmail: r.member.lumaEmail,
+            githubUsername: r.member.githubUsername
+        }
+    }));
 }
 
 /**
- * Get aggregate statistics for a survey question
+ * Get aggregate statistics for a survey question - adapter maintains MongoDB interface
  */
 export async function getSurveyQuestionStats(
     surveyId: string,
@@ -205,25 +204,16 @@ export async function getSurveyQuestionStats(
     totalResponses: number;
     answerCounts: Record<string, number>;
 }> {
-    const db = await getMongoDb();
-
-    const responses = await db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .find({
-            surveyId: new ObjectId(surveyId),
-            isComplete: true,
-            [`responses.${questionId}`]: { $exists: true }
-        })
-        .toArray();
+    const responses = await surveyResponsesDb.getSurveyResponses(surveyId);
+    const completedResponses = responses.filter(r => r.isComplete);
 
     const answerCounts: Record<string, number> = {};
 
-    responses.forEach(response => {
+    completedResponses.forEach(response => {
         const answer = response.responses[questionId];
         if (!answer) return;
 
         if (answer.type === 'multiple-choice' && Array.isArray(answer.value)) {
-            // Count each selected option
             answer.value.forEach(option => {
                 answerCounts[option] = (answerCounts[option] || 0) + 1;
             });
@@ -244,90 +234,63 @@ export async function getSurveyQuestionStats(
     });
 
     return {
-        totalResponses: responses.length,
+        totalResponses: completedResponses.length,
         answerCounts
     };
 }
 
 /**
- * Check if member has completed a survey
+ * Check if member has completed a survey - adapter maintains MongoDB interface
  */
 export async function hasMemberCompletedSurvey(
     surveyId: string,
     memberId: string
 ): Promise<boolean> {
-    const db = await getMongoDb();
-
-    const response = await db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .findOne({
-            surveyId: new ObjectId(surveyId),
-            memberId: new ObjectId(memberId),
-            isComplete: true
-        });
-
-    return response !== null;
+    return surveyResponsesDb.hasMemberResponded(surveyId, memberId);
 }
 
 /**
- * Get member's completed surveys with survey details (aggregation)
+ * Get member's completed surveys with survey details - adapter maintains MongoDB interface
  */
 export async function getMemberCompletedSurveysWithDetails(
     memberId: string
 ): Promise<
     Array<{
-        _id: ObjectId;
-        surveyId: ObjectId;
+        _id: any;
+        surveyId: any;
         surveySlug: string;
         surveyTitle: string;
         surveyDescription: string;
         submittedAt: Date;
     }>
 > {
-    const db = await getMongoDb();
+    const responses = await surveyResponsesDb.getMemberResponses(memberId);
+    const completedResponses = responses.filter(r => r.isComplete);
 
-    const results = await db
-        .collection<SurveyResponse>(CollectionName.SURVEY_RESPONSES)
-        .aggregate([
-            {
-                $match: {
-                    memberId: new ObjectId(memberId),
-                    isComplete: true
-                }
-            },
-            {
-                $lookup: {
-                    from: CollectionName.SURVEYS,
-                    localField: 'surveyId',
-                    foreignField: '_id',
-                    as: 'survey'
-                }
-            },
-            {
-                $unwind: '$survey'
-            },
-            {
-                $project: {
-                    _id: 1,
-                    surveyId: '$survey._id',
-                    surveySlug: '$survey.slug',
-                    surveyTitle: '$survey.title',
-                    surveyDescription: '$survey.description',
-                    submittedAt: 1
-                }
-            },
-            {
-                $sort: { submittedAt: -1 }
+    const surveysMap = new Map();
+
+    // Fetch survey details for each response
+    await Promise.all(
+        completedResponses.map(async response => {
+            const survey = await db
+                .select()
+                .from(surveysTable)
+                .where(eq(surveysTable.id, response.surveyId));
+
+            if (survey[0]) {
+                surveysMap.set(response.surveyId, {
+                    _id: response.id as any,
+                    surveyId: response.surveyId as any,
+                    surveySlug: survey[0].slug,
+                    surveyTitle: survey[0].title,
+                    surveyDescription: survey[0].description,
+                    submittedAt: response.submittedAt
+                });
             }
-        ])
-        .toArray();
+        })
+    );
 
-    return results as Array<{
-        _id: ObjectId;
-        surveyId: ObjectId;
-        surveySlug: string;
-        surveyTitle: string;
-        surveyDescription: string;
-        submittedAt: Date;
-    }>;
+    return Array.from(surveysMap.values()).sort(
+        (a, b) => b.submittedAt.getTime() - a.submittedAt.getTime()
+    );
 }
