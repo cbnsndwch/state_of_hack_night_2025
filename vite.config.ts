@@ -8,7 +8,8 @@ export default defineConfig({
     plugins: [reactRouter(), tailwindcss()],
     resolve: {
         alias: {
-            '@': path.resolve(__dirname, './app')
+            '@': path.resolve(__dirname, './app'),
+            '@drizzle': path.resolve(__dirname, './drizzle')
         }
     }
 });

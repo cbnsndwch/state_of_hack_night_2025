@@ -36,6 +36,9 @@
         "paths": {
             "@/*": [
                 "./app/*"
+            ],
+            "@drizzle/*": [
+                "./drizzle/*"
             ]
         },
         "resolveJsonModule": true,

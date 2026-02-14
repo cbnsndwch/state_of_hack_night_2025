@@ -17,6 +17,7 @@ export default defineConfig([
         '.react-router',
         'build',
         'dist',
+        'drizzle.config.ts',
         'scripts/**',
         'server/**'
     ]),
