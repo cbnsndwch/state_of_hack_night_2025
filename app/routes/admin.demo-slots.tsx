@@ -18,7 +18,7 @@ import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
 
 type SerializedDemoSlot = {
-    _id: string;
+    id: string;
     eventId: string;
     title: string;
     description: string | null;
@@ -29,12 +29,12 @@ type SerializedDemoSlot = {
     createdAt: string;
     updatedAt: string;
     member: {
-        _id: string;
+        id: string;
         lumaEmail: string;
         githubUsername: string | null;
     };
     event: {
-        _id: string;
+        id: string;
         name: string;
         startAt: string;
     };
@@ -89,17 +89,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Serialize dates and ObjectIds for JSON
     const demoSlots = demoSlotsData.map(slot => ({
         ...slot,
-        _id: slot._id.toString(),
+        id: slot.id.toString(),
         eventId: slot.eventId.toString(),
         createdAt: slot.createdAt.toISOString(),
         updatedAt: slot.updatedAt.toISOString(),
         member: {
-            _id: slot.member._id.toString(),
+            id: slot.member.id.toString(),
             lumaEmail: slot.member.lumaEmail,
             githubUsername: slot.member.githubUsername
         },
         event: {
-            _id: slot.event._id.toString(),
+            id: slot.event.id.toString(),
             name: slot.event.name,
             startAt: slot.event.startAt.toISOString()
         }
@@ -357,7 +357,7 @@ export default function AdminDemoSlots() {
                         </NeoCard>
                     ) : (
                         filteredSlots.map(slot => (
-                            <NeoCard key={slot._id} className="p-6">
+                            <NeoCard key={slot.id} className="p-6">
                                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                                     {/* Demo Info */}
                                     <div className="flex-1">
@@ -428,7 +428,7 @@ export default function AdminDemoSlots() {
                                                     className="text-sm px-4 py-2"
                                                     onClick={() =>
                                                         handleAction(
-                                                            slot._id,
+                                                            slot.id,
                                                             'confirm'
                                                         )
                                                     }
@@ -442,7 +442,7 @@ export default function AdminDemoSlots() {
                                                     variant="secondary"
                                                     onClick={() =>
                                                         handleAction(
-                                                            slot._id,
+                                                            slot.id,
                                                             'pending'
                                                         )
                                                     }
@@ -456,7 +456,7 @@ export default function AdminDemoSlots() {
                                                     variant="secondary"
                                                     onClick={() =>
                                                         handleAction(
-                                                            slot._id,
+                                                            slot.id,
                                                             'cancel'
                                                         )
                                                     }

@@ -11,9 +11,9 @@ import type { SurveyWithResponseCount } from '@/types/adapters';
 
 type SerializedSurvey = Omit<
     SurveyWithResponseCount,
-    '_id' | 'createdAt' | 'updatedAt'
+    'id' | 'createdAt' | 'updatedAt'
 > & {
-    _id: string;
+    id: string;
     createdAt: string;
     updatedAt: string;
 };
@@ -52,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Serialize dates for JSON
     const surveys = surveysData.map(survey => ({
         ...survey,
-        _id: survey._id.toString(),
+        id: survey.id.toString(),
         createdAt: survey.createdAt.toISOString(),
         updatedAt: survey.updatedAt.toISOString()
     }));
@@ -126,7 +126,7 @@ export default function AdminSurveys() {
                     ) : (
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {surveys.map((survey: SerializedSurvey) => (
-                                <NeoCard key={survey._id} className="p-6">
+                                <NeoCard key={survey.id} className="p-6">
                                     {/* Survey Header */}
                                     <div className="mb-4">
                                         <div className="mb-2 flex items-start justify-between">
@@ -174,7 +174,7 @@ export default function AdminSurveys() {
 
                                     {/* Actions */}
                                     <Link
-                                        to={`/admin/surveys/${survey._id}?userId=${user.id}`}
+                                        to={`/admin/surveys/${survey.id}?userId=${user.id}`}
                                         prefetch="intent"
                                     >
                                         <NeoButton
