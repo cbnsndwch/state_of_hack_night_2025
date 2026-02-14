@@ -4,7 +4,7 @@
  */
 
 import { seedOnboardingSurvey } from '../app/lib/db/seed-onboarding-survey.server';
-import { closeMongoDb } from '../app/utils/mongodb.server';
+import { closeDb } from '../app/lib/db/provider.server';
 
 async function main() {
     try {
@@ -15,7 +15,7 @@ async function main() {
         console.error('Error seeding survey:', error);
         process.exit(1);
     } finally {
-        await closeMongoDb();
+        await closeDb();
     }
 }
 
