@@ -17,17 +17,17 @@ import { NeoButton } from '@/components/ui/NeoButton';
 import { cn } from '@/utils/cn';
 
 // Types that work with both ObjectId and string versions, and Date and string dates
-type FlexibleSurvey = Omit<Survey, '_id' | 'createdAt' | 'updatedAt'> & {
-    _id: { toString(): string } | string;
+type FlexibleSurvey = Omit<Survey, 'id' | 'createdAt' | 'updatedAt'> & {
+    id: { toString(): string } | string;
     createdAt: Date | string;
     updatedAt: Date | string;
 };
 
 type FlexibleSurveyResponse = Omit<
     SurveyResponse,
-    '_id' | 'surveyId' | 'memberId' | 'submittedAt' | 'createdAt' | 'updatedAt'
+    'id' | 'surveyId' | 'memberId' | 'submittedAt' | 'createdAt' | 'updatedAt'
 > & {
-    _id?: { toString(): string } | string;
+    id?: { toString(): string } | string;
     surveyId?: { toString(): string } | string;
     memberId?: { toString(): string } | string;
     submittedAt?: Date | string;
@@ -371,9 +371,9 @@ export function SurveyForm({
                 type="hidden"
                 name="surveyId"
                 value={
-                    typeof survey._id === 'string'
-                        ? survey._id
-                        : survey._id.toString()
+                    typeof survey.id === 'string'
+                        ? survey.id
+                        : survey.id.toString()
                 }
             />
             <input type="hidden" name="clerkUserId" value={clerkUserId} />
