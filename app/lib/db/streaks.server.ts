@@ -21,7 +21,7 @@ import type { Attendance } from '@/types/adapters';
  *    - If the member missed an event, break the streak
  * 4. Return the streak count
  *
- * @param memberId - The member's MongoDB _id
+ * @param memberId - The member's ID
  * @returns The current streak count (number of consecutive weeks attended)
  */
 export async function calculateStreak(memberId: string): Promise<number> {
@@ -75,7 +75,7 @@ export async function calculateStreak(memberId: string): Promise<number> {
 /**
  * Update a member's streak count in their profile.
  *
- * @param memberId - The member's MongoDB _id
+ * @param memberId - The member's ID
  * @returns The updated streak count
  */
 export async function updateMemberStreak(memberId: string): Promise<number> {
@@ -92,7 +92,7 @@ export async function updateMemberStreak(memberId: string): Promise<number> {
  * Get the streak count for a member without updating the database.
  * Useful for displaying streak in UI.
  *
- * @param memberId - The member's MongoDB _id
+ * @param memberId - The member's ID
  * @returns The current streak count
  */
 export async function getStreakCount(memberId: string): Promise<number> {
@@ -111,7 +111,7 @@ export async function recalculateAllStreaks(): Promise<number> {
 
     let updatedCount = 0;
     for (const profile of profiles) {
-        await updateMemberStreak(profile._id.toString());
+        await updateMemberStreak(profile.id.toString());
         updatedCount++;
     }
 
