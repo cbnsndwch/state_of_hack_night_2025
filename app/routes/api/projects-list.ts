@@ -6,7 +6,7 @@ export async function loader() {
 
     // Transform MongoDB documents to API response format
     const formattedProjects = projects.map(project => ({
-        id: project._id.toString(),
+        id: project.id.toString(),
         title: project.title,
         description: project.description,
         tags: project.tags,

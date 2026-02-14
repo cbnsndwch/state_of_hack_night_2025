@@ -37,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const imageUrls = imageUrlsString ? JSON.parse(imageUrlsString) : [];
 
     const project = await createProject({
-        memberId: profile._id,
+        memberId: profile.id,
         title,
         description: description || null,
         githubUrl: githubUrl || null,
