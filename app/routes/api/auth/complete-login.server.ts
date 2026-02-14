@@ -5,7 +5,7 @@ import {
     getProfileByClerkUserId,
     createProfile,
     verifyProfile
-} from '@/lib/db/profiles.postgres.server';
+} from '@/lib/db/profiles.server';
 import { checkCalendarSubscription } from '@/utils/luma-api.server';
 import { isAppAdmin } from '@/utils/app-admins.server';
 

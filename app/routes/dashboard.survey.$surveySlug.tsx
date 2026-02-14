@@ -76,8 +76,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         if (profile) {
             // Check if user has already responded
             existingResponse = await getMemberSurveyResponse(
-                survey._id.toString(),
-                profile._id.toString()
+                survey.id,
+                profile.id
             );
         }
     }
@@ -85,14 +85,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     return data({
         survey: {
             ...survey,
-            _id: survey._id.toString(),
+            id: survey.id,
             createdAt: survey.createdAt.toISOString(),
             updatedAt: survey.updatedAt.toISOString()
         },
         existingResponse: existingResponse
             ? {
                   ...existingResponse,
-                  _id: existingResponse._id.toString(),
+                  id: existingResponse.id,
                   surveyId: existingResponse.surveyId.toString(),
                   memberId: existingResponse.memberId.toString(),
                   submittedAt: existingResponse.submittedAt.toISOString(),

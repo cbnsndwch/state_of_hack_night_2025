@@ -16,7 +16,7 @@ import { handleMutateRequest } from '@rocicorp/zero/server';
 import { mustGetMutator } from '@rocicorp/zero';
 import { dbProvider } from '@/lib/db/provider.server';
 import { mutators } from '@/zero/mutators';
-import { getProfileByClerkUserId } from '@/lib/db/profiles.postgres.server';
+import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
 /**
  * Handle POST requests for Zero mutations

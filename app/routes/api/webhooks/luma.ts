@@ -8,7 +8,7 @@ import {
 import {
     createProfile,
     getProfileByLumaEmail
-} from '@/lib/db/profiles.postgres.server';
+} from '@/lib/db/profiles.server';
 
 // Luma webhook types from their documentation
 interface LumaWebhookPayload {

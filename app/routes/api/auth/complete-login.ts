@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
         getProfileByClerkUserId,
         createProfile,
         verifyProfile
-    } = await import('@/lib/db/profiles.postgres.server');
+    } = await import('@/lib/db/profiles.server');
 
     const { request } = args;
 

@@ -6,8 +6,8 @@ import {
     fetchAllUpcomingEvents,
     type LumaEvent
 } from '@/utils/luma-api.server';
-import { upsertEvent } from '@/lib/db/events.postgres.server';
-import type { EventInput } from '@/lib/db/events.postgres.server';
+import { upsertEvent } from '@/lib/db/events.server';
+import type { EventInput } from '@/lib/db/events.server';
 
 /**
  * Convert a Luma API event to our database event format.
