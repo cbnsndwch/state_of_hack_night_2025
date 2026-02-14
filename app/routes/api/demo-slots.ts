@@ -49,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
             // Serialize for JSON
             const serialized = demoSlots.map(slot => ({
-                id: slot._id.toString(),
+                id: slot.id.toString(),
                 eventId: slot.eventId.toString(),
                 title: slot.title,
                 description: slot.description,
@@ -60,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
                 createdAt: slot.createdAt.toISOString(),
                 updatedAt: slot.updatedAt.toISOString(),
                 member: {
-                    id: slot.member._id.toString(),
+                    id: slot.member.id.toString(),
                     lumaEmail: slot.member.lumaEmail,
                     githubUsername: slot.member.githubUsername
                 }
@@ -76,7 +76,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         });
 
         const serialized = demoSlots.map(slot => ({
-            id: slot._id.toString(),
+            id: slot.id.toString(),
             memberId: slot.memberId.toString(),
             eventId: slot.eventId.toString(),
             title: slot.title,
@@ -133,7 +133,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
             // Create the demo slot
             const demoSlot = await createDemoSlot({
-                memberId: profile._id,
+                memberId: profile.id,
                 eventId: eventId,
                 title,
                 description,
@@ -162,7 +162,7 @@ export async function action({ request }: ActionFunctionArgs) {
             return data({
                 success: true,
                 demoSlot: {
-                    id: demoSlot._id.toString(),
+                    id: demoSlot.id.toString(),
                     memberId: demoSlot.memberId.toString(),
                     eventId: demoSlot.eventId.toString(),
                     title: demoSlot.title,
@@ -227,7 +227,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
             // Only the owner or an admin can update the slot
             const isOwner =
-                existingSlot.memberId.toString() === profile._id.toString();
+                existingSlot.memberId.toString() === profile.id.toString();
             if (!isOwner && !profile.isAppAdmin) {
                 return data({ error: 'Unauthorized' }, { status: 403 });
             }
@@ -287,7 +287,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 success: true,
                 demoSlot: updatedSlot
                     ? {
-                          id: updatedSlot._id.toString(),
+                          id: updatedSlot.id.toString(),
                           memberId: updatedSlot.memberId.toString(),
                           eventId: updatedSlot.eventId.toString(),
                           title: updatedSlot.title,
@@ -340,7 +340,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
             // Only the owner or an admin can delete the slot
             const isOwner =
-                existingSlot.memberId.toString() === profile._id.toString();
+                existingSlot.memberId.toString() === profile.id.toString();
             if (!isOwner && !profile.isAppAdmin) {
                 return data({ error: 'Unauthorized' }, { status: 403 });
             }
