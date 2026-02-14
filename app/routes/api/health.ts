@@ -3,10 +3,10 @@
  * Returns the health status of all critical systems
  */
 
-import { data, type LoaderFunctionArgs } from 'react-router';
+import { data } from 'react-router';
 import { getHealthStatus } from '@/utils/monitoring.server';
 
-export async function loader(_args: LoaderFunctionArgs) {
+export async function loader() {
     const health = await getHealthStatus();
 
     // Return appropriate HTTP status based on health

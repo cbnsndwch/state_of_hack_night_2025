@@ -7,7 +7,7 @@ import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { getSurveysWithResponseCounts } from '@/lib/db/surveys.server';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
-import type { SurveyWithResponseCount } from '@/types/mongodb';
+import type { SurveyWithResponseCount } from '@/types/adapters';
 
 type SerializedSurvey = Omit<
     SurveyWithResponseCount,

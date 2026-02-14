@@ -5,7 +5,10 @@ import {
     getPendingUserByEmail,
     updatePendingUser
 } from '@/lib/db/pending-users.server';
-import { createProfile, getProfileByLumaEmail } from '@/lib/db/profiles.server';
+import {
+    createProfile,
+    getProfileByLumaEmail
+} from '@/lib/db/profiles.postgres.server';
 
 // Luma webhook types from their documentation
 interface LumaWebhookPayload {
@@ -177,12 +180,11 @@ async function handleGuestUpdated(data: GuestUpdatedData) {
                 // Create the profile with pending verification status
                 // clerkUserId is null until they complete the auth flow
                 await createProfile({
-                    clerkUserId: null,
+                    clerkUserId: '',
                     lumaEmail: email,
                     lumaAttendeeId: api_id, // Store their Luma ID
                     verificationStatus: 'pending',
-                    bio: null, // Can be populated later
-                    streakCount: 0
+                    bio: null // Can be populated later
                 });
                 console.log(`Created profile for approved user ${email}`);
             } else {

@@ -11,8 +11,8 @@ import { getAuth } from '@clerk/react-router/server';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { postgresMonitoring } from '@/utils/postgres-monitoring.server';
 
-export async function loader({ request }: LoaderFunctionArgs) {
-    const auth = await getAuth({ request } as any);
+export async function loader(args: LoaderFunctionArgs) {
+    const auth = await getAuth(args);
 
     // Require authentication
     if (!auth.userId) {

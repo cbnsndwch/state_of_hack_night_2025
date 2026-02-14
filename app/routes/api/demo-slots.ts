@@ -11,7 +11,6 @@ import {
     type LoaderFunctionArgs,
     type ActionFunctionArgs
 } from 'react-router';
-import { ObjectId } from 'mongodb';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import {
     createDemoSlot,
@@ -132,15 +131,10 @@ export async function action({ request }: ActionFunctionArgs) {
                 return data({ error: 'Profile not found' }, { status: 404 });
             }
 
-            // Validate eventId is a valid ObjectId
-            if (!ObjectId.isValid(eventId)) {
-                return data({ error: 'Invalid event ID' }, { status: 400 });
-            }
-
             // Create the demo slot
             const demoSlot = await createDemoSlot({
                 memberId: profile._id,
-                eventId: new ObjectId(eventId),
+                eventId: eventId,
                 title,
                 description,
                 requestedTime,
@@ -217,11 +211,6 @@ export async function action({ request }: ActionFunctionArgs) {
                     { error: 'Missing required fields' },
                     { status: 400 }
                 );
-            }
-
-            // Validate demo slot ID
-            if (!ObjectId.isValid(demoSlotId)) {
-                return data({ error: 'Invalid demo slot ID' }, { status: 400 });
             }
 
             // Get the profile for this user
@@ -335,11 +324,6 @@ export async function action({ request }: ActionFunctionArgs) {
                     { error: 'Missing required fields' },
                     { status: 400 }
                 );
-            }
-
-            // Validate demo slot ID
-            if (!ObjectId.isValid(demoSlotId)) {
-                return data({ error: 'Invalid demo slot ID' }, { status: 400 });
             }
 
             // Get the profile for this user

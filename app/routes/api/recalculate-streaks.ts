@@ -24,14 +24,14 @@ export async function loader() {
  * POST handler - Recalculate all member streaks
  * Requires authentication and admin privileges
  */
-export async function action({ request }: ActionFunctionArgs) {
-    if (request.method !== 'POST') {
+export async function action(args: ActionFunctionArgs) {
+    if (args.request.method !== 'POST') {
         return data({ error: 'Method not allowed' }, { status: 405 });
     }
 
     try {
         // Get authenticated user from Clerk
-        const auth = await getAuth({ request } as any);
+        const auth = await getAuth(args);
         const userId = auth.userId;
 
         if (!userId) {

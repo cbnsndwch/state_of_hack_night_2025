@@ -8,7 +8,7 @@
 
 import { useCallback, useState } from 'react';
 
-export type MutateResult<T = any> = {
+export type MutateResult<T = Record<string, unknown>> = {
     success: boolean;
     data?: T;
     error?: string;
@@ -22,9 +22,9 @@ export function useZeroMutate() {
     const [error, setError] = useState<string | null>(null);
 
     const mutate = useCallback(
-        async <T = any>(
+        async <T = Record<string, unknown>>(
             name: string,
-            args: Record<string, any>
+            args: Record<string, unknown>
         ): Promise<MutateResult<T>> => {
             setIsLoading(true);
             setError(null);

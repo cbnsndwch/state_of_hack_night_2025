@@ -18,11 +18,7 @@ interface CheckInHistoryItem {
     } | null;
 }
 
-interface CheckInHistoryProps {
-    // No props needed - uses authenticated user
-}
-
-export function CheckInHistory(_props: CheckInHistoryProps) {
+export function CheckInHistory() {
     const [history, setHistory] = useState<CheckInHistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

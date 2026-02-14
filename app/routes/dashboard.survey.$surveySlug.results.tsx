@@ -11,7 +11,7 @@ import {
 } from '@/lib/db/survey-responses.server';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
-import type { Survey, SurveyQuestion } from '@/types/mongodb';
+import type { Survey, SurveyQuestion } from '@/types/adapters';
 
 type SerializedSurvey = Omit<Survey, '_id' | 'createdAt' | 'updatedAt'> & {
     _id: string;

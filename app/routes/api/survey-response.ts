@@ -1,12 +1,11 @@
 import { data, type ActionFunctionArgs } from 'react-router';
-import { ObjectId } from 'mongodb';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import {
     upsertSurveyResponse,
     getMemberSurveyResponse
 } from '@/lib/db/survey-responses.server';
 import { getSurveyById } from '@/lib/db/surveys.server';
-import type { SurveyAnswer } from '@/types/mongodb';
+import type { SurveyAnswer } from '@/types/adapters';
 
 /**
  * API endpoint for creating/updating survey responses
@@ -104,7 +103,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
         // Upsert the survey response
         const savedResponse = await upsertSurveyResponse({
-            surveyId: new ObjectId(surveyId),
+            surveyId: surveyId,
             memberId: profile._id,
             responses,
             isComplete,

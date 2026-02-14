@@ -1,5 +1,4 @@
 import { data, type ActionFunctionArgs } from 'react-router';
-import { ObjectId } from 'mongodb';
 import { createProject } from '@/lib/db/projects.server';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
@@ -38,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const imageUrls = imageUrlsString ? JSON.parse(imageUrlsString) : [];
 
     const project = await createProject({
-        memberId: new ObjectId(profile._id),
+        memberId: profile._id,
         title,
         description: description || null,
         githubUrl: githubUrl || null,

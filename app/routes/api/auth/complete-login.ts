@@ -1,15 +1,22 @@
 import { data, type ActionFunctionArgs } from 'react-router';
 import { getAuth } from '@clerk/react-router/server';
-import {
-    getProfileByLumaEmail,
-    getProfileByClerkUserId,
-    updateProfile,
-    createProfile
-} from '@/lib/db/profiles.server';
 import { checkCalendarSubscription } from '@/utils/luma-api.server';
 import { isAppAdmin } from '@/utils/app-admins.server';
 
+// Default export for React Router route
+export default function CompleteLoginRoute() {
+    return null;
+}
+
 export async function action(args: ActionFunctionArgs) {
+    // Import server modules only inside the action function
+    const {
+        getProfileByLumaEmail,
+        getProfileByClerkUserId,
+        createProfile,
+        verifyProfile
+    } = await import('@/lib/db/profiles.postgres.server');
+
     const { request } = args;
 
     if (request.method !== 'POST') {
@@ -77,35 +84,20 @@ export async function action(args: ActionFunctionArgs) {
                 verificationStatus: 'verified',
                 isAppAdmin: userIsAppAdmin,
                 lumaAttendeeId: lumaCheck.person?.api_id ?? null,
-                bio: null,
-                streakCount: 0
+                bio: null
             });
             console.log(
-                `Created new profile ${profile._id} for ${normalizedEmail}${userIsAppAdmin ? ' (app admin)' : ''}`
+                `Created new profile ${profile.id} for ${normalizedEmail}${userIsAppAdmin ? ' (app admin)' : ''}`
             );
 
             return data({ success: true, created: true });
         }
 
-        // Profile exists - update it if needed
-        const updates: Record<string, unknown> = {};
-
-        if (profile.clerkUserId !== userId) {
-            updates.clerkUserId = userId;
-        }
+        // Profile exists - update it if needed, especially for verification
         if (profile.verificationStatus !== 'verified') {
-            updates.verificationStatus = 'verified';
-        }
-
-        // Ensure app admin status is up to date from env var
-        if (userIsAppAdmin && !profile.isAppAdmin) {
-            updates.isAppAdmin = true;
-        }
-
-        if (Object.keys(updates).length > 0) {
-            await updateProfile(profile._id.toString(), updates);
+            await verifyProfile(userId);
             console.log(
-                `Updated profile ${profile._id} for Clerk user ${userId}`
+                `Verified profile ${profile.id} for Clerk user ${userId}`
             );
         }
 

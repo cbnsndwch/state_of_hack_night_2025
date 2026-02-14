@@ -136,12 +136,18 @@ export function ImHereButton({ lumaAttendeeId }: ImHereButtonProps) {
 
                 // Show toast notifications for newly awarded badges
                 if (result.awardedBadges && result.awardedBadges.length > 0) {
-                    result.awardedBadges.forEach((badge: any) => {
-                        toast.success(`🏆 New Badge Unlocked!`, {
-                            description: `${badge.iconAscii} ${badge.name} - ${badge.criteria}`,
-                            duration: 5000
-                        });
-                    });
+                    result.awardedBadges.forEach(
+                        (badge: {
+                            iconAscii: string;
+                            name: string;
+                            criteria: string;
+                        }) => {
+                            toast.success(`🏆 New Badge Unlocked!`, {
+                                description: `${badge.iconAscii} ${badge.name} - ${badge.criteria}`,
+                                duration: 5000
+                            });
+                        }
+                    );
                 }
             }
         } catch (error) {

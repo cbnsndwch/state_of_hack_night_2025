@@ -26,7 +26,10 @@ export function ConnectionStatus({
 
     // Only show the status indicator after initial mount to avoid hydration issues
     useEffect(() => {
-        setShowStatus(true);
+        const timeout = setTimeout(() => {
+            setShowStatus(true);
+        }, 0);
+        return () => clearTimeout(timeout);
     }, []);
 
     if (!showStatus) {

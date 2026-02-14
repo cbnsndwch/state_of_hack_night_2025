@@ -38,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
         if (skillsJson) {
             try {
                 skills = JSON.parse(skillsJson);
-            } catch (e) {
+            } catch {
                 return data(
                     { error: 'Invalid skills format' },
                     { status: 400 }
@@ -47,7 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         // Build update object with only non-empty values
-        const updateData: Record<string, any> = {};
+        const updateData: Record<string, string | null> = {};
 
         if (bio !== null && bio !== undefined) {
             updateData.bio = bio.trim() || null;

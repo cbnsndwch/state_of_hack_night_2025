@@ -8,7 +8,6 @@
  */
 
 import { data, type ActionFunctionArgs } from 'react-router';
-import { ObjectId } from 'mongodb';
 import { getAuth } from '@clerk/react-router/server';
 import {
     getAttendance,
@@ -88,14 +87,14 @@ export async function loader() {
 /**
  * POST handler - Check in a member to an event
  */
-export async function action({ request }: ActionFunctionArgs) {
-    if (request.method !== 'POST') {
+export async function action(args: ActionFunctionArgs) {
+    if (args.request.method !== 'POST') {
         return data({ error: 'Method not allowed' }, { status: 405 });
     }
 
     try {
         // Verify user is authenticated with Clerk
-        const auth = await getAuth({ request } as any);
+        const auth = await getAuth(args);
         if (!auth.userId) {
             return data({ error: 'Authentication required' }, { status: 401 });
         }
@@ -111,7 +110,7 @@ export async function action({ request }: ActionFunctionArgs) {
             );
         }
 
-        const formData = await request.formData();
+        const formData = await args.request.formData();
         const lumaEventId = formData.get('lumaEventId')?.toString();
         const lumaAttendeeId = formData.get('lumaAttendeeId')?.toString();
 
@@ -156,7 +155,7 @@ export async function action({ request }: ActionFunctionArgs) {
         } else {
             // Create new attendance record with checked-in status
             attendance = await createAttendance({
-                memberId: new ObjectId(memberId),
+                memberId: memberId,
                 lumaEventId,
                 status: 'checked-in',
                 checkedInAt: new Date()

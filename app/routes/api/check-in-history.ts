@@ -11,9 +11,9 @@ import { getAttendanceByMemberId } from '@/lib/db/attendance.server';
 import { getEventByLumaId } from '@/lib/db/events.server';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader(args: LoaderFunctionArgs) {
     // Verify user is authenticated with Clerk
-    const auth = await getAuth({ request } as any);
+    const auth = await getAuth(args);
     if (!auth.userId) {
         return data({ error: 'Authentication required' }, { status: 401 });
     }

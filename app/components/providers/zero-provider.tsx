@@ -65,7 +65,9 @@ export function ZeroProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!cacheUrl) {
             setError(
-                new Error('VITE_ZERO_CACHE_URL not configured, Zero Sync disabled')
+                new Error(
+                    'VITE_ZERO_CACHE_URL not configured, Zero Sync disabled'
+                )
             );
             setIsConnected(false);
             return;
@@ -81,9 +83,11 @@ export function ZeroProvider({ children }: { children: React.ReactNode }) {
         setError(null);
 
         if (typeof window !== 'undefined') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (window as any).__zero = zero;
 
             import('@/zero/schema').then(({ builder }) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (window as any).__builder = builder;
             });
         }

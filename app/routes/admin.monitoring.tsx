@@ -10,8 +10,8 @@ import { MonitoringDashboard } from '@/components/monitoring-dashboard';
 import { PostgresMonitoringDashboard } from '@/components/postgres-monitoring-dashboard';
 import { useState } from 'react';
 
-export async function loader({ request }: LoaderFunctionArgs) {
-    const auth = await getAuth({ request } as any);
+export async function loader(args: LoaderFunctionArgs) {
+    const auth = await getAuth(args);
 
     if (!auth.userId) {
         return data({ error: 'Unauthorized' }, { status: 401 });

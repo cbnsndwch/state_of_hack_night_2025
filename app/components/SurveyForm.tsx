@@ -5,7 +5,7 @@ import type {
     SurveyQuestion,
     SurveyAnswer,
     SurveyResponse
-} from '@/types/mongodb';
+} from '@/types/adapters';
 import { Label } from '@/components/ui/label';
 import { NeoInput } from '@/components/ui/NeoInput';
 import { NeoTextarea } from '@/components/ui/NeoTextarea';
@@ -237,7 +237,7 @@ export function SurveyForm({
                     </RadioGroup>
                 );
 
-            case 'multiple-choice':
+            case 'multiple-choice': {
                 const selectedValues =
                     (response?.type === 'multiple-choice' && response.value) ||
                     [];
@@ -276,8 +276,9 @@ export function SurveyForm({
                         })}
                     </div>
                 );
+            }
 
-            case 'scale':
+            case 'scale': {
                 const scaleValue =
                     (response?.type === 'scale' && response.value) ||
                     question.scale?.min ||
@@ -311,8 +312,9 @@ export function SurveyForm({
                         />
                     </div>
                 );
+            }
 
-            case 'boolean':
+            case 'boolean': {
                 const boolValue =
                     response?.type === 'boolean' && response.value;
                 return (
@@ -335,6 +337,7 @@ export function SurveyForm({
                         </Label>
                     </div>
                 );
+            }
 
             default:
                 return null;
@@ -423,7 +426,7 @@ export function SurveyForm({
                 <NeoButton
                     type="submit"
                     disabled={isSubmitting}
-                    className="min-w-[200px]"
+                    className="min-w-50"
                 >
                     {isSubmitting
                         ? 'Submitting...'

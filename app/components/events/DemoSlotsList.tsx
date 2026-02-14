@@ -24,27 +24,27 @@ export function DemoSlotsList({ memberId }: { memberId?: string }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const fetchDemoSlots = async () => {
+            try {
+                setLoading(true);
+                const url = memberId
+                    ? `/api/demo-slots?memberId=${memberId}`
+                    : '/api/demo-slots';
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch demo slots');
+                }
+                const data = await response.json();
+                setDemoSlots(data.demoSlots || []);
+            } catch (err) {
+                console.error('Error fetching demo slots:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchDemoSlots();
     }, [memberId]);
-
-    const fetchDemoSlots = async () => {
-        try {
-            setLoading(true);
-            const url = memberId
-                ? `/api/demo-slots?memberId=${memberId}`
-                : '/api/demo-slots';
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error('Failed to fetch demo slots');
-            }
-            const data = await response.json();
-            setDemoSlots(data.demoSlots || []);
-        } catch (err) {
-            console.error('Error fetching demo slots:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     if (loading) {
         return (

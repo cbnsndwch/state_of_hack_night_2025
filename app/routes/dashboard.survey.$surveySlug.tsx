@@ -7,7 +7,7 @@ import { SurveyForm } from '@/components/SurveyForm';
 import { getSurveyBySlug } from '@/lib/db/surveys.server';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { getMemberSurveyResponse } from '@/lib/db/survey-responses.server';
-import type { Survey, SurveyResponse } from '@/types/mongodb';
+import type { Survey, SurveyResponse } from '@/types/adapters';
 import { useEffect } from 'react';
 
 type SerializedSurvey = Omit<Survey, '_id' | 'createdAt' | 'updatedAt'> & {
