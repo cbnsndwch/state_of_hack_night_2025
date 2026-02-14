@@ -13,8 +13,8 @@ import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
 import type { Survey, SurveyQuestion } from '@/types/adapters';
 
-type SerializedSurvey = Omit<Survey, '_id' | 'createdAt' | 'updatedAt'> & {
-    _id: string;
+type SerializedSurvey = Omit<Survey, 'id' | 'createdAt' | 'updatedAt'> & {
+    id: string;
     createdAt: string;
     updatedAt: string;
 };
@@ -102,8 +102,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
     // Check if member has completed this survey
     const memberResponse = await getMemberSurveyResponse(
-        surveyData._id.toString(),
-        profile._id.toString()
+        surveyData.id.toString(),
+        profile.id.toString()
     );
 
     if (!memberResponse || !memberResponse.isComplete) {
@@ -122,7 +122,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     // Get statistics for each question
     const questionStatsPromises = surveyData.questions.map(async question => {
         const stats = await getSurveyQuestionStats(
-            surveyData._id.toString(),
+            surveyData.id.toString(),
             question.id
         );
         return {
@@ -141,7 +141,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     // Serialize survey
     const survey: SerializedSurvey = {
         ...surveyData,
-        _id: surveyData._id.toString(),
+        id: surveyData.id.toString(),
         createdAt: surveyData.createdAt.toISOString(),
         updatedAt: surveyData.updatedAt.toISOString()
     };
@@ -196,7 +196,7 @@ export default function SurveyResultsPage() {
                         <div className="flex gap-4 justify-center">
                             {!hasCompleted && (
                                 <Link
-                                    to={`/dashboard/survey/${survey?._id}?clerkUserId=${user.id}`}
+                                    to={`/dashboard/survey/${survey?.id}?clerkUserId=${user.id}`}
                                 >
                                     <NeoButton>Take Survey</NeoButton>
                                 </Link>
@@ -404,7 +404,7 @@ export default function SurveyResultsPage() {
                             </NeoButton>
                         </Link>
                         <Link
-                            to={`/dashboard/survey/${survey._id}?clerkUserId=${user.id}`}
+                            to={`/dashboard/survey/${survey.id}?clerkUserId=${user.id}`}
                         >
                             <NeoButton>Update My Responses</NeoButton>
                         </Link>

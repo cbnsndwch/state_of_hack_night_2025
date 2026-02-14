@@ -13,8 +13,8 @@ import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
 import type { Survey, SurveyQuestion } from '@/types/adapters';
 
-type SerializedSurvey = Omit<Survey, '_id' | 'createdAt' | 'updatedAt'> & {
-    _id: string;
+type SerializedSurvey = Omit<Survey, 'id' | 'createdAt' | 'updatedAt'> & {
+    id: string;
     createdAt: string;
     updatedAt: string;
 };
@@ -112,7 +112,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     // Serialize survey
     const survey: SerializedSurvey = {
         ...surveyData,
-        _id: surveyData._id.toString(),
+        id: surveyData.id.toString(),
         createdAt: surveyData.createdAt.toISOString(),
         updatedAt: surveyData.updatedAt.toISOString()
     };
