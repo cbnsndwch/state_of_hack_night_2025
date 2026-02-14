@@ -185,6 +185,18 @@ export const attendanceQueries = {
                 )
             )
             .one();
+    },
+
+    /**
+     * Check if member has any RSVPs (status = 'registered')
+     */
+    hasRsvps(memberId: string) {
+        return zql.attendance.where(q =>
+            q.and(
+                q.cmp('memberId', '=', memberId),
+                q.cmp('status', '=', 'registered')
+            )
+        );
     }
 };
 

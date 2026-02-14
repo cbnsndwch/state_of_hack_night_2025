@@ -7,7 +7,8 @@ import {
     profileQueries,
     projectQueries,
     badgeQueries,
-    surveyResponseQueries
+    surveyResponseQueries,
+    attendanceQueries
 } from '@/zero/queries';
 import { Navbar } from '@/components/layout/Navbar';
 import { NeoCard } from '@/components/ui/NeoCard';
@@ -38,6 +39,9 @@ export default function Dashboard() {
     );
     const [surveyResponses] = useQuery(
         profile?.id ? surveyResponseQueries.byMemberId(profile.id) : null
+    );
+    const [rsvps] = useQuery(
+        profile?.id ? attendanceQueries.hasRsvps(profile.id) : null
     );
 
     // Redirect to home if not authenticated
@@ -105,7 +109,7 @@ export default function Dashboard() {
             label: 'RSVP to a hack night',
             description:
                 'Join us at The DOCK (Tuesdays) or Moonlighter (Thursdays)',
-            completed: false, // TODO: Track RSVPs when event system is implemented
+            completed: (rsvps?.length || 0) > 0,
             action: {
                 label: 'View Events',
                 href: 'https://luma.com/hello_miami'
