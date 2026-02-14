@@ -115,7 +115,7 @@ export async function action(args: ActionFunctionArgs) {
         const lumaAttendeeId = formData.get('lumaAttendeeId')?.toString();
 
         // Use the authenticated user's memberId (profile ID)
-        const memberId = userProfile._id.toString();
+        const memberId = userProfile.id.toString();
 
         // Validate required fields
         if (!lumaEventId) {
@@ -205,7 +205,7 @@ export async function action(args: ActionFunctionArgs) {
         try {
             const badges = await awardCheckInBadges(memberId, streakCount);
             awardedBadges = badges.map(badge => ({
-                id: badge._id.toString(),
+                id: badge.id.toString(),
                 name: badge.name,
                 iconAscii: badge.iconAscii,
                 criteria: badge.criteria
@@ -219,7 +219,7 @@ export async function action(args: ActionFunctionArgs) {
             success: true,
             message: 'Checked in successfully',
             attendance: {
-                id: attendance._id.toString(),
+                id: attendance.id.toString(),
                 memberId: attendance.memberId.toString(),
                 lumaEventId: attendance.lumaEventId,
                 status: attendance.status,

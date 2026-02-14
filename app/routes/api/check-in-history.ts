@@ -24,7 +24,7 @@ export async function loader(args: LoaderFunctionArgs) {
         return data({ error: 'Profile not found' }, { status: 404 });
     }
 
-    const memberId = userProfile._id.toString();
+    const memberId = userProfile.id.toString();
 
     try {
         // Get all attendance records for this member
@@ -40,11 +40,11 @@ export async function loader(args: LoaderFunctionArgs) {
             checkedInRecords.map(async record => {
                 const event = await getEventByLumaId(record.lumaEventId);
                 return {
-                    id: record._id.toString(),
+                    id: record.id.toString(),
                     checkedInAt: record.checkedInAt,
                     event: event
                         ? {
-                              id: event._id.toString(),
+                              id: event.id.toString(),
                               lumaEventId: event.lumaEventId,
                               name: event.name,
                               startAt: event.startAt,
