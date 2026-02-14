@@ -1,18 +1,20 @@
 import { type MetaFunction } from 'react-router';
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useNavigate } from 'react-router';
 import {
     GithubIcon,
     ExternalLinkIcon,
     ArrowLeftIcon,
-    CalendarIcon
+    CalendarIcon,
+    EditIcon,
+    TrashIcon
 } from 'lucide-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { projectQueries } from '@/zero/queries';
-// import { useUpdateProject, useDeleteProject } from '@/hooks/use-zero-mutate';
-// import { useAuth } from '@/hooks/use-auth';
+import { useDeleteProject } from '@/hooks/use-zero-mutate';
+import { useAuth } from '@/hooks/use-auth';
 
 /**
  * Example: How to add edit/delete functionality using Zero mutations
@@ -73,6 +75,9 @@ export const meta: MetaFunction = () => {
 export default function ProjectDetail() {
     const params = useParams();
     const projectId = params.projectId;
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const { deleteProject, isLoading: isDeleting } = useDeleteProject();
 
     // Use Zero query for realtime project data with member relation
     const [projectData] = useQuery(
@@ -107,9 +112,32 @@ export default function ProjectDetail() {
               bio: projectData.member.bio,
               githubUsername: projectData.member.githubUsername,
               twitterHandle: projectData.member.twitterHandle,
-              websiteUrl: projectData.member.websiteUrl
+              websiteUrl: projectData.member.websiteUrl,
+              clerkUserId: projectData.member.clerkUserId
           }
         : null;
+
+    // Check if current user owns the project
+    const isOwner = user && member && member.clerkUserId === user.id;
+
+    // Handle project deletion
+    const handleDelete = async () => {
+        if (!projectId) return;
+        if (
+            !confirm(
+                'Are you sure you want to delete this project? This action cannot be undone.'
+            )
+        ) {
+            return;
+        }
+
+        const result = await deleteProject(projectId);
+        if (result.success) {
+            navigate('/showcase');
+        } else {
+            alert(`Failed to delete project: ${result.error}`);
+        }
+    };
 
     // Loading state
     if (!projectData) {
@@ -233,6 +261,27 @@ export default function ProjectDetail() {
                                 <GithubIcon className="w-5 h-5" />
                                 view_code
                             </a>
+                        )}
+                        {isOwner && (
+                            <button
+                                onClick={() =>
+                                    navigate(`/showcase/${projectId}/edit`)
+                                }
+                                className="flex items-center gap-2 px-6 py-3 bg-zinc-900 border-2 border-white hover:bg-zinc-800 transition-colors"
+                            >
+                                <EditIcon className="w-5 h-5" />
+                                edit_project
+                            </button>
+                        )}
+                        {isOwner && (
+                            <button
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="flex items-center gap-2 px-6 py-3 bg-red-900 border-2 border-red-500 hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <TrashIcon className="w-5 h-5" />
+                                {isDeleting ? 'deleting...' : 'delete_project'}
+                            </button>
                         )}
                     </div>
 
