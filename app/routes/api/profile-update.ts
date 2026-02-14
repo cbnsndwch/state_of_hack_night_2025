@@ -92,7 +92,7 @@ export async function action({ request }: ActionFunctionArgs) {
         return data({
             success: true,
             profile: {
-                id: updatedProfile._id.toString(),
+                id: updatedProfile.id.toString(),
                 bio: updatedProfile.bio,
                 lumaAttendeeId: updatedProfile.lumaAttendeeId,
                 skills: updatedProfile.skills,

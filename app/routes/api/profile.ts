@@ -24,19 +24,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     // Get their projects count
-    const projects = await getProjectsByMemberId(profile._id.toString());
+    const projects = await getProjectsByMemberId(profile.id.toString());
 
     // Get completed surveys with details
     const completedSurveys = await getMemberCompletedSurveysWithDetails(
-        profile._id.toString()
+        profile.id.toString()
     );
 
     // Get member badges
-    const badges = await getMemberBadges(profile._id.toString());
+    const badges = await getMemberBadges(profile.id.toString());
 
     return data({
         profile: {
-            id: profile._id.toString(),
+            id: profile.id.toString(),
             clerkUserId: profile.clerkUserId,
             lumaEmail: profile.lumaEmail,
             verificationStatus: profile.verificationStatus,
@@ -56,7 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         },
         projectCount: projects.length,
         completedSurveys: completedSurveys.map(s => ({
-            id: s._id.toString(),
+            id: s.id.toString(),
             surveyId: s.surveyId.toString(),
             surveySlug: s.surveySlug,
             surveyTitle: s.surveyTitle,
@@ -64,7 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             submittedAt: s.submittedAt.toISOString()
         })),
         badges: badges.map(b => ({
-            id: b._id.toString(),
+            id: b.id.toString(),
             name: b.name,
             iconAscii: b.iconAscii,
             criteria: b.criteria,
