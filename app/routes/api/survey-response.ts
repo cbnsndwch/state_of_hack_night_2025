@@ -98,13 +98,13 @@ export async function action({ request }: ActionFunctionArgs) {
         // Check if user has already responded to this survey
         const existingResponse = await getMemberSurveyResponse(
             surveyId,
-            profile._id.toString()
+            profile.id.toString()
         );
 
         // Upsert the survey response
         const savedResponse = await upsertSurveyResponse({
             surveyId: surveyId,
-            memberId: profile._id,
+            memberId: profile.id,
             responses,
             isComplete,
             submittedAt: new Date()
@@ -117,7 +117,7 @@ export async function action({ request }: ActionFunctionArgs) {
                     ? 'Survey response updated successfully'
                     : 'Survey response submitted successfully',
                 response: {
-                    id: savedResponse._id.toString(),
+                    id: savedResponse.id.toString(),
                     surveyId: savedResponse.surveyId.toString(),
                     memberId: savedResponse.memberId.toString(),
                     isComplete: savedResponse.isComplete,
