@@ -22,7 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
         // Convert ObjectId to string for JSON serialization
         const serializedEvents = events.map(event => ({
-            id: event._id.toString(),
+            id: event.id.toString(),
             lumaEventId: event.lumaEventId,
             name: event.name,
             description: event.description,

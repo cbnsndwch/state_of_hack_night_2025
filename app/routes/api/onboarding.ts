@@ -34,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Update the onboarding status
-    await updateProfile(profile._id.toString(), {
+    await updateProfile(profile.id.toString(), {
         onboardingDismissed: dismissed
     });
 
