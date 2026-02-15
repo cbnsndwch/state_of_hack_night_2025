@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TopBar } from './TopBar';
 import { SidebarNav } from './SidebarNav';
 import { UserProfilePreview } from './UserProfilePreview';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/utils/cn';
+import { trackNavClick } from '@/utils/analytics';
 
 interface AppLayoutProps {
     children: React.ReactNode;
@@ -27,6 +28,23 @@ interface AppLayoutProps {
 export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
     const { user } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Handle navigation clicks for analytics
+    const handleNavClick = (item: { href: string; label: string }) => {
+        trackNavClick(item.href, item.label);
+    };
+
+    // Close mobile menu on Escape key press
+    useEffect(() => {
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isMobileMenuOpen) {
+                setIsMobileMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [isMobileMenuOpen]);
 
     // Transform user data for UserProfilePreview
     const userProfile = user
@@ -55,7 +73,11 @@ export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
                 {/* Sidebar - Desktop */}
                 <div className="hidden md:flex md:flex-col">
                     <div className="flex-1 overflow-y-auto">
-                        <SidebarNav isAdmin={isAdmin} />
+                        <SidebarNav
+                            isAdmin={isAdmin}
+                            onNavigate={() => setIsMobileMenuOpen(false)}
+                            onNavItemClick={handleNavClick}
+                        />
                     </div>
                     {userProfile && (
                         <UserProfilePreview
@@ -91,6 +113,10 @@ export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
                                 <SidebarNav
                                     isAdmin={isAdmin}
                                     className="border-r-0"
+                                    onNavigate={() =>
+                                        setIsMobileMenuOpen(false)
+                                    }
+                                    onNavItemClick={handleNavClick}
                                 />
                             </div>
                             {userProfile && (
@@ -104,8 +130,10 @@ export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
                 )}
 
                 {/* Content Area */}
-                <main className="flex-1 overflow-y-auto">
-                    <div className="w-full h-full">{children}</div>
+                <main className="flex-1 overflow-y-auto bg-black">
+                    <div className="w-full min-h-full p-6 md:p-8 lg:p-12">
+                        {children}
+                    </div>
                 </main>
             </div>
         </div>
