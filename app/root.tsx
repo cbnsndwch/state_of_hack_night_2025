@@ -8,7 +8,7 @@ import {
 } from 'react-router';
 
 import { ClerkProvider } from '@clerk/react-router';
-import { rootAuthLoader } from '@clerk/react-router/ssr.server';
+import { rootAuthLoader } from '@clerk/react-router/server';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { ZeroProvider } from '@/components/providers/zero-provider';

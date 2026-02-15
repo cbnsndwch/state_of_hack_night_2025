@@ -11,7 +11,7 @@
  */
 
 import type { ActionFunctionArgs } from 'react-router';
-import { getAuth } from '@clerk/react-router/ssr.server';
+import { getAuth } from '@clerk/react-router/server';
 import { handleQueryRequest } from '@rocicorp/zero/server';
 import { mustGetQuery, defineQueries, defineQuery } from '@rocicorp/zero';
 import { z } from 'zod';

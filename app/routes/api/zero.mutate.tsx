@@ -11,7 +11,7 @@
  */
 
 import type { ActionFunctionArgs } from 'react-router';
-import { getAuth } from '@clerk/react-router/ssr.server';
+import { getAuth } from '@clerk/react-router/server';
 import { handleMutateRequest } from '@rocicorp/zero/server';
 import { mustGetMutator } from '@rocicorp/zero';
 import { dbProvider } from '@/lib/db/provider.server';
