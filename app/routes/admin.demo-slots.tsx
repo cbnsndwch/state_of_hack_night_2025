@@ -6,7 +6,7 @@ import {
 } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Navbar } from '@/components/layout/Navbar';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import {
     getDemoSlotsWithMembersAndEvents,
@@ -244,9 +244,8 @@ export default function AdminDemoSlots() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-background">
-                <Navbar />
-                <div className="container mx-auto p-4 md:p-8">
+            <AppLayout isAdmin>
+                <div className="min-h-full bg-black px-4 py-12">
                     <NeoCard className="p-12 text-center">
                         <h1 className="mb-4 font-mono text-2xl font-bold text-red-500">
                             {error}
@@ -256,7 +255,7 @@ export default function AdminDemoSlots() {
                         </Link>
                     </NeoCard>
                 </div>
-            </div>
+            </AppLayout>
         );
     }
 
@@ -274,9 +273,8 @@ export default function AdminDemoSlots() {
     };
 
     return (
-        <div className="min-h-screen bg-background">
-            <Navbar />
-            <div className="container mx-auto p-4 md:p-8">
+        <AppLayout isAdmin>
+            <div className="min-h-full bg-black px-4 py-12">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="mb-4 font-mono text-4xl font-bold text-primary">
@@ -481,6 +479,6 @@ export default function AdminDemoSlots() {
                     </Link>
                 </div>
             </div>
-        </div>
+        </AppLayout>
     );
 }
