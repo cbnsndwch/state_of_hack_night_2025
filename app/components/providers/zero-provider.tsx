@@ -100,7 +100,29 @@ export function ZeroProvider({ children }: { children: React.ReactNode }) {
 
         return () => {
             console.log('[Zero] Cleaning up client');
-            void zero.close();
+            zero
+                .close()
+                .catch(err => {
+                    const message =
+                        err instanceof Error ? err.message : String(err);
+                    if (
+                        message.includes(
+                            'Global zero instance does not match this instance'
+                        )
+                    ) {
+                        return;
+                    }
+                    console.error('[Zero] Error closing client:', err);
+                })
+                .finally(() => {
+                    if (typeof window !== 'undefined') {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        if ((window as any).__zero === zero) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (window as any).__zero = undefined;
+                        }
+                    }
+                });
             setIsConnected(false);
         };
     }, [cacheUrl, zero, user?.id]);
