@@ -13,6 +13,7 @@
         "lint": "eslint .",
         "preview": "vite preview",
         "ralph": "tsx scripts/ralph/ralph.ts",
+        "preflight": "tsx --env-file=.env scripts/preflight/index.ts",
         "test:queries": "tsx --env-file=.env scripts/test-zero-queries.ts",
         "test:queries:data": "tsx --env-file=.env scripts/test-zero-queries-with-data.ts",
         "test:mutators": "tsx --env-file=.env scripts/test-zero-mutators.ts",
