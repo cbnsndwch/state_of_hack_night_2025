@@ -12,6 +12,9 @@ export default [
     // protected routes
     route('dashboard', 'routes/dashboard.tsx'),
     route('dashboard/profile', 'routes/dashboard.profile.tsx'),
+    route('dashboard/projects', 'routes/dashboard.projects.tsx'),
+    route('dashboard/check-ins', 'routes/dashboard.check-ins.tsx'),
+    route('dashboard/demo-slots', 'routes/dashboard.demo-slots.tsx'),
     route(
         'dashboard/survey/:surveySlug',
         'routes/dashboard.survey.$surveySlug.tsx'

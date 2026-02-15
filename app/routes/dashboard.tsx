@@ -294,7 +294,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Demo Slots Section */}
-                <div className="mt-12">
+                <div className="mt-12" id="demo-slots">
                     <h2 className="text-2xl font-sans text-primary mb-6">
                         my_demo_slots
                     </h2>
@@ -334,7 +334,7 @@ export default function Dashboard() {
                 )}
 
                 {/* Check-In History Section */}
-                <div className="mt-12">
+                <div className="mt-12" id="check-ins">
                     <h2 className="text-2xl font-sans text-primary mb-6">
                         check-in_history
                     </h2>
@@ -376,7 +376,7 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                <div className="mt-12">
+                <div className="mt-12" id="community-projects">
                     <h2 className="text-2xl font-sans text-primary mb-6">
                         community_builds
                     </h2>
