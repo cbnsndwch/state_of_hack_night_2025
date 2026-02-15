@@ -10,7 +10,7 @@ import {
     surveyResponseQueries,
     attendanceQueries
 } from '@/zero/queries';
-import { Navbar } from '@/components/layout/Navbar';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { LiveIndicator } from '@/components/connection-status';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
@@ -130,9 +130,8 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white selection:bg-primary selection:text-black">
-            <Navbar />
-            <main className="max-w-7xl mx-auto px-4 py-12">
+        <AppLayout isAdmin={!!profile?.isAppAdmin}>
+            <main className="max-w-7xl mx-auto px-4 py-12 bg-black text-white selection:bg-primary selection:text-black min-h-full">
                 <header className="mb-12">
                     <div className="flex items-center justify-between mb-2">
                         <h1 className="text-4xl font-sans text-primary">
@@ -384,6 +383,6 @@ export default function Dashboard() {
                     <ProjectGallery />
                 </div>
             </main>
-        </div>
+        </AppLayout>
     );
 }

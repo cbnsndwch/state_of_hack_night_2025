@@ -4,7 +4,7 @@ import { useQuery } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
 import { profileQueries } from '@/zero/queries';
 import { useUpdateProfile } from '@/hooks/use-zero-mutate';
-import { Navbar } from '@/components/layout/Navbar';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoInput } from '@/components/ui/NeoInput';
@@ -110,9 +110,8 @@ export default function ProfileEdit() {
     if (!user || !profile) return null;
 
     return (
-        <div className="min-h-screen bg-black text-white selection:bg-primary selection:text-black">
-            <Navbar />
-            <main className="max-w-4xl mx-auto px-4 py-12">
+        <AppLayout isAdmin={!!profile?.isAppAdmin}>
+            <main className="max-w-4xl mx-auto px-4 py-12 bg-black text-white selection:bg-primary selection:text-black min-h-full">
                 <header className="mb-8">
                     <button
                         onClick={() => navigate('/dashboard')}
@@ -384,6 +383,6 @@ export default function ProfileEdit() {
                     </form>
                 </NeoCard>
             </main>
-        </div>
+        </AppLayout>
     );
 }

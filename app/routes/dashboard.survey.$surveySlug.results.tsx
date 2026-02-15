@@ -2,7 +2,7 @@ import { useNavigate, useLoaderData, Link } from 'react-router';
 import { data, type LoaderFunctionArgs } from 'react-router';
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Navbar } from '@/components/layout/Navbar';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 import { getSurveyBySlug } from '@/lib/db/surveys.server';
 import {
@@ -180,9 +180,8 @@ export default function SurveyResultsPage() {
 
     if (error || !survey) {
         return (
-            <div className="min-h-screen bg-background">
-                <Navbar />
-                <div className="container mx-auto p-4 md:p-8">
+            <AppLayout>
+                <div className="min-h-full bg-black px-4 py-12">
                     <NeoCard className="p-12 text-center">
                         <h1 className="mb-4 font-mono text-2xl font-bold text-red-500">
                             {error || 'Survey not found'}
@@ -209,14 +208,13 @@ export default function SurveyResultsPage() {
                         </div>
                     </NeoCard>
                 </div>
-            </div>
+            </AppLayout>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background">
-            <Navbar />
-            <div className="container mx-auto p-4 md:p-8">
+        <AppLayout>
+            <div className="min-h-full bg-black px-4 py-12">
                 <div className="mx-auto max-w-6xl">
                     {/* Header */}
                     <div className="mb-8">
@@ -411,6 +409,6 @@ export default function SurveyResultsPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AppLayout>
     );
 }

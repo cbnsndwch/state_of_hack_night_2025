@@ -1,7 +1,7 @@
 import { useNavigate, useLoaderData } from 'react-router';
 import { data, type LoaderFunctionArgs } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
-import { Navbar } from '@/components/layout/Navbar';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { SurveyForm } from '@/components/SurveyForm';
 import { getSurveyBySlug } from '@/lib/db/surveys.server';
@@ -128,9 +128,8 @@ export default function SurveyPage() {
 
     if (loaderData.error) {
         return (
-            <>
-                <Navbar />
-                <div className="min-h-screen bg-black pt-24 px-4">
+            <AppLayout>
+                <div className="min-h-full bg-black px-4 py-12">
                     <div className="max-w-4xl mx-auto">
                         <NeoCard className="p-8">
                             <h1 className="text-2xl font-mono text-red-500 mb-4">
@@ -146,7 +145,7 @@ export default function SurveyPage() {
                         </NeoCard>
                     </div>
                 </div>
-            </>
+            </AppLayout>
         );
     }
 
@@ -158,9 +157,8 @@ export default function SurveyPage() {
     };
 
     return (
-        <>
-            <Navbar />
-            <div className="min-h-screen bg-black pt-24 px-4 pb-12">
+        <AppLayout>
+            <div className="min-h-full bg-black px-4 py-12">
                 <div className="max-w-4xl mx-auto">
                     <NeoCard className="p-8">
                         {loaderData.existingResponse?.isComplete && (
@@ -188,6 +186,6 @@ export default function SurveyPage() {
                     </NeoCard>
                 </div>
             </div>
-        </>
+        </AppLayout>
     );
 }
