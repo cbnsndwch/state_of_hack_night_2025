@@ -47,8 +47,33 @@ export const profiles = pgTable(
         twitterHandle: text('twitter_handle'),
         websiteUrl: text('website_url'),
         role: text('role'),
+        /** LinkedIn profile URL */
+        linkedinUrl: text('linkedin_url'),
         seekingFunding: boolean('seeking_funding').notNull().default(false),
         openToMentoring: boolean('open_to_mentoring').notNull().default(false),
+        /** Looking for a co-founder */
+        lookingForCofounder: boolean('looking_for_cofounder')
+            .notNull()
+            .default(false),
+        /** Wants product feedback from the community */
+        wantProductFeedback: boolean('want_product_feedback')
+            .notNull()
+            .default(false),
+        /** Seeking VC / angel / accelerator intros */
+        seekingAcceleratorIntros: boolean('seeking_accelerator_intros')
+            .notNull()
+            .default(false),
+        /** Wants to give back to the community */
+        wantToGiveBack: boolean('want_to_give_back')
+            .notNull()
+            .default(false),
+        /** Specialties from Luma (e.g., software, hardware, AI, etc.) */
+        specialties: jsonb('specialties').$type<string[]>().notNull().default([]),
+        /** Preferred community experiences */
+        interestedExperiences: jsonb('interested_experiences')
+            .$type<string[]>()
+            .notNull()
+            .default([]),
         streakCount: integer('streak_count').notNull().default(0),
         onboardingDismissed: boolean('onboarding_dismissed')
             .notNull()
