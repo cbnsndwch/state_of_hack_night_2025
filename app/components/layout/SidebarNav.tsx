@@ -178,7 +178,7 @@ export function SidebarNav({
             },
             {
                 href: '/reports/2025',
-                label: 'State of 2025',
+                label: 'State of Hack Night',
                 icon: BarChart3
             }
         ]
