@@ -1,7 +1,7 @@
 # Session Summary: SSR-Compatible Zero Sync Implementation
 
 ## Current State
-We have successfully refactored the application to support Server-Side Rendering (SSR) while maintaining Zero's realtime sync capabilities. The "white screen of death" during initial load (caused by `ZeroProvider` returning `null`) is resolved. Dashboard routes now render immediately with server-fetched data, and Zero hydrates the state with live updates once connected.
+The application fully supports Server-Side Rendering (SSR) with Zero's realtime sync as a progressive enhancement. The "white screen of death" is resolved. Dashboard routes render immediately with server-fetched data, Zero hydrates with live updates after connection, and error boundaries keep the app navigable when loaders fail. E2E tests validate the full SSR + hydration flow.
 
 ## Accomplished
 - **Created `useSafeQuery` Hook**:
@@ -20,8 +20,22 @@ We have successfully refactored the application to support Server-Side Rendering
     - **`dashboard.tsx`**: Added loader for profile, projects, badges, and survey responses. Uses "Server Data -> Zero Data" progressive pattern.
     - **`dashboard.profile.tsx`**: Simplified using `createDashboardLoader`.
     - **`dashboard.projects.tsx`**: Added loader for projects.
+    - **`dashboard.check-ins.tsx`** / **`dashboard.demo-slots.tsx`**: Confirmed as redirect-only routes — no loader changes needed.
 - **Updated Public Routes & Components**:
     - Replaced all `useQuery` imports with `useSafeQuery` in `showcase.tsx`, `events.tsx`, `ProjectGallery.tsx`, etc.
+- **Added Route-Level Error Boundaries**:
+    - Created `DashboardErrorBoundary` (`app/components/layout/DashboardErrorBoundary.tsx`) — a reusable error boundary that renders inside `AppLayout` so sidebar/nav remain functional.
+    - Exported as `ErrorBoundary` from all dashboard routes: `dashboard.tsx`, `dashboard.profile.tsx`, `dashboard.projects.tsx`, `dashboard.survey.$surveySlug.tsx`, `dashboard.survey.$surveySlug.results.tsx`.
+- **Set Up Playwright E2E Testing**:
+    - Installed `@playwright/test` + Chromium browser.
+    - Created `playwright.config.ts` with auto-start dev server, trace-on-retry, and screenshot-on-failure.
+    - Three test suites in `e2e/`:
+        - `public-pages.spec.ts` — SSR smoke tests for all public routes.
+        - `dashboard.spec.ts` — Auth redirect verification and WSOD prevention.
+        - `ssr-hydration.spec.ts` — Validates pages render before Zero connects and hydrate without errors.
+    - Added scripts: `pnpm test:e2e`, `pnpm test:e2e:ui`, `pnpm test:e2e:headed`.
+- **Updated Documentation**:
+    - README now documents the SSR + Zero architecture, `useSafeQuery` usage, `createDashboardLoader` pattern, error boundaries, and E2E testing commands.
 - **Verified Type Safety**:
     - Successfully ran `tsc`.
 
@@ -29,15 +43,21 @@ We have successfully refactored the application to support Server-Side Rendering
 - **Pattern**: `const data = zeroData ?? serverData ?? null`. We prefer Zero's reactive data when available but fall back to server-loaded data for first paint.
 - **Server Loaders**: Located in `app/lib/db/*.server.ts`. These provide the "initial state" for SSR.
 - **Zero Integration**: Zero is now a progressive enhancement. The app works (read-only snapshot) even if WebSocket fails initially.
-
-## Potential Next Steps
-1. **Extend Loader Pattern**: Apply `createDashboardLoader` or similar fetching to remaining dashboard routes if needed (`dashboard.check-ins.tsx`, `dashboard.demo-slots.tsx`).
-2. **Error Boundaries**: Verify or add error boundaries to withstand loader failures gracefully.
-3. **End-to-End Testing**: Verify the full login flow and data sync in a real browser to confirm "stub" context behaves correctly during hydration.
-4. **Code Cleanup**: Remove any unused legacy imports or patterns if found.
+- **Error Boundaries**: Dashboard routes catch loader/render errors without blanking the page. Users can retry or navigate away via the sidebar.
 
 ## Context Files
 - `app/hooks/use-safe-query.ts`
 - `app/components/providers/zero-provider.tsx`
 - `app/lib/create-dashboard-loader.server.ts`
+- `app/components/layout/DashboardErrorBoundary.tsx`
 - `app/routes/dashboard.tsx`
+- `playwright.config.ts`
+- `e2e/public-pages.spec.ts`
+- `e2e/dashboard.spec.ts`
+- `e2e/ssr-hydration.spec.ts`
+
+## Next Steps
+1. **Configure Playwright MCP Server**: Wire the Playwright MCP server into the VS Code settings so AI agents can interact with the running app in a real browser and validate flows end-to-end.
+2. **Authenticated E2E Tests**: Add a Playwright `storageState`-based auth fixture that logs in via Clerk so dashboard-specific flows (profile edit, project CRUD, check-in) can be tested.
+3. **CI Integration**: Add a GitHub Actions workflow that runs `pnpm test:e2e` on pull requests against a test environment.
+4. **Survey Routes — Loader Modernization**: Migrate `dashboard.survey.$surveySlug.tsx` and `dashboard.survey.$surveySlug.results.tsx` from raw Clerk query-string auth to `createDashboardLoader` for consistency.

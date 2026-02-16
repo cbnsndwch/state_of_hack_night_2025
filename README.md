@@ -167,7 +167,74 @@ app/zero/
 - `pnpm start` — Preview production build
 - `pnpm lint` — Run ESLint
 - `pnpm format` — Format code with Prettier
+- `pnpm test:e2e` — Run Playwright E2E tests
+- `pnpm test:e2e:ui` — Run Playwright with interactive UI
+- `pnpm test:e2e:headed` — Run Playwright with visible browser
 - `pnpm tsx scripts/performance-test.ts` — Run database performance analysis
+
+## Architecture: SSR + Zero Sync
+
+The application uses a **progressive enhancement** pattern for data loading:
+
+1. **Server-Side Rendering**: React Router 7 `loader` functions fetch data from Postgres on the server. Pages render immediately with real data — no loading spinners on first paint.
+2. **Zero Hydration**: After the page hydrates on the client, [Zero Sync](https://zero.rocicorp.dev/) activates and takes over with live, reactive data. Updates from other users appear in real time.
+3. **Graceful Degradation**: If the Zero WebSocket fails, the app still works with the server-loaded snapshot.
+
+### Key Patterns
+
+**`useSafeQuery` hook** (`app/hooks/use-safe-query.ts`):
+Wraps Zero's `useQuery` to handle SSR safely. During server-side rendering, it passes `null` to the underlying hook, avoiding the "useZero must be used within ZeroProvider" error.
+
+```tsx
+// Before (crashes during SSR):
+const [profile] = useQuery(profileQueries.byClerkUserId(userId));
+
+// After (SSR-safe):
+const [profile] = useSafeQuery(profileQueries.byClerkUserId(userId));
+```
+
+**`createDashboardLoader` factory** (`app/lib/create-dashboard-loader.server.ts`):
+Creates standardized server-side loaders for authenticated dashboard routes. Handles Clerk auth checks, profile fetching, and route-specific data in one place.
+
+```tsx
+// Simple: just auth + profile
+export const loader = createDashboardLoader();
+
+// Extended: auth + profile + projects
+export const loader = createDashboardLoader(async ({ profile }) => {
+    const projects = profile ? await getProjectsByMemberId(profile.id) : [];
+    return { projects };
+});
+```
+
+**Data resolution order**: `const data = zeroData ?? serverData ?? null`
+
+### Error Boundaries
+
+Dashboard routes export a shared `DashboardErrorBoundary` that catches loader and render errors. The error is displayed inside the `AppLayout` shell so the sidebar and navigation remain functional — users can navigate away without a full page reload.
+
+## E2E Testing
+
+End-to-end tests use [Playwright](https://playwright.dev/) and live in the `e2e/` directory.
+
+```bash
+# Start the dev server first (or let Playwright start it automatically)
+pnpm dev
+
+# Run all tests
+pnpm test:e2e
+
+# Interactive UI mode
+pnpm test:e2e:ui
+
+# Run with visible browser
+pnpm test:e2e:headed
+```
+
+Test suites:
+- **`public-pages.spec.ts`** — SSR smoke tests for all public routes (landing, ethos, events, showcase, login)
+- **`dashboard.spec.ts`** — Auth redirects and WSOD prevention for protected routes
+- **`ssr-hydration.spec.ts`** — Verifies pages render before Zero connects and hydrate without errors
 
 ## Deployment Checklist
 
