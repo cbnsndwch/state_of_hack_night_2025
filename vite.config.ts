@@ -7,6 +7,10 @@ import { reactRouterDevTools } from 'react-router-devtools';
 
 // https://vite.dev/config/
 export default defineConfig({
+    server: {
+        host: true,
+        allowedHosts: ['host.docker.internal']
+    },
     plugins: [reactRouterDevTools(), reactRouter(), tailwindcss()],
     resolve: {
         alias: {
