@@ -18,7 +18,7 @@ export const NeoButton = React.forwardRef<HTMLButtonElement, NeoButtonProps>(
             <button
                 ref={ref}
                 className={cn(
-                    'px-6 py-3 font-sans font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+                    'px-6 py-3 font-sans font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
                     variantClasses[variant],
                     className
                 )}
