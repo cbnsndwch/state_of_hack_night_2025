@@ -1,7 +1,7 @@
 import { type MetaFunction } from 'react-router';
 import { CalendarIcon, MapPinIcon, UsersIcon } from 'lucide-react';
 import { useMemo } from 'react';
-import { useQuery } from '@rocicorp/zero/react';
+import { useSafeQuery } from '@/hooks/use-safe-query';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
@@ -45,8 +45,8 @@ interface EventData {
 }
 
 export default function Events() {
-    // Use Zero query for realtime event data
-    const [eventsData] = useQuery(eventQueries.upcoming());
+    // Use Zero query for realtime event data (SSR-safe)
+    const [eventsData] = useSafeQuery(eventQueries.upcoming());
 
     // Transform Zero query results to match expected format
     const events = useMemo(() => {
@@ -164,9 +164,9 @@ function EventCard({ event }: EventCardProps) {
             </h3>
 
             {/* Event details */}
-            <div className="space-y-2 text-sm text-zinc-400 mb-4 flex-grow">
+            <div className="space-y-2 text-sm text-zinc-400 mb-4 grow">
                 <div className="flex items-start gap-2">
-                    <CalendarIcon className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <CalendarIcon className="w-4 h-4 mt-0.5 shrink-0" />
                     <div className="flex flex-col">
                         <span>{formattedDate}</span>
                         <span className="text-xs">{timeRange}</span>
@@ -175,7 +175,7 @@ function EventCard({ event }: EventCardProps) {
 
                 {event.location && event.location.name && (
                     <div className="flex items-start gap-2">
-                        <MapPinIcon className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <MapPinIcon className="w-4 h-4 mt-0.5 shrink-0" />
                         <span className="line-clamp-2">
                             {event.location.name}
                         </span>
@@ -183,7 +183,7 @@ function EventCard({ event }: EventCardProps) {
                 )}
 
                 <div className="flex items-center gap-2">
-                    <UsersIcon className="w-4 h-4 flex-shrink-0" />
+                    <UsersIcon className="w-4 h-4 shrink-0" />
                     <span>{event.stats.registered} registered</span>
                 </div>
             </div>

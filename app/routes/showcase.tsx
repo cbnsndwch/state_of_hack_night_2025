@@ -1,12 +1,12 @@
-import { type MetaFunction } from 'react-router';
-import { Link } from 'react-router';
-import { GithubIcon, ExternalLinkIcon, SearchIcon, XIcon } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import { useQuery } from '@rocicorp/zero/react';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
-import { NeoCard } from '@/components/ui/NeoCard';
+import { useSafeQuery } from '@/hooks/use-safe-query';
+import { ExternalLinkIcon, GithubIcon, SearchIcon, XIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Link, type MetaFunction } from 'react-router';
+
 import { LiveIndicator } from '@/components/connection-status';
+import { Footer } from '@/components/layout/Footer';
+import { Navbar } from '@/components/layout/Navbar';
+import { NeoCard } from '@/components/ui/NeoCard';
 import { projectQueries } from '@/zero/queries';
 
 export const meta: MetaFunction = () => {
@@ -38,8 +38,8 @@ interface ProjectWithMember {
 }
 
 export default function Showcase() {
-    // Use Zero query for realtime project data
-    const [projectsData] = useQuery(projectQueries.all());
+    // Use Zero query for realtime project data (SSR-safe)
+    const [projectsData] = useSafeQuery(projectQueries.all());
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -281,7 +281,7 @@ function ProjectCard({ project }: ProjectCardProps) {
 
             {/* Description */}
             {project.description && (
-                <p className="text-sm text-zinc-400 mb-4 line-clamp-3 flex-grow">
+                <p className="text-sm text-zinc-400 mb-4 line-clamp-3 grow">
                     {project.description}
                 </p>
             )}

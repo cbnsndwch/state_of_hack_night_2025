@@ -1,10 +1,10 @@
-import { useQuery } from '@rocicorp/zero/react';
+import { useSafeQuery } from '@/hooks/use-safe-query';
 import { projectQueries } from '@/zero/queries';
 import { NeoCard } from '@/components/ui/NeoCard';
 
 export function ProjectGallery() {
-    // Use Zero query to get all projects reactively
-    const [projects] = useQuery(projectQueries.all());
+    // Use Zero query to get all projects reactively (SSR-safe)
+    const [projects] = useSafeQuery(projectQueries.all());
 
     if (!projects)
         return (

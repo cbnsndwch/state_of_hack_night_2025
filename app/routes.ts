@@ -4,6 +4,9 @@ export default [
     // public routes
     index('routes/landing.tsx'),
     route('ethos', 'routes/ethos.tsx'),
+    route('events', 'routes/events.tsx'),
+    route('showcase', 'routes/showcase.tsx'),
+    route('showcase/:projectId', 'routes/showcase.$projectId.tsx'),
     route('reports/2025', 'routes/reports/state-of-hack-night-2025/route.tsx'),
 
     // auth routes
@@ -44,5 +47,9 @@ export default [
     route('api/streak', 'routes/api/streak.ts'),
     route('api/survey-response', 'routes/api/survey-response.ts'),
     route('api/sync-events', 'routes/api/sync-events.ts'),
-    route('api/upload-image', 'routes/api/upload-image.ts')
+    route('api/upload-image', 'routes/api/upload-image.ts'),
+
+    // zero sync routes (called by zero-cache for query authorization and mutations)
+    route('api/zero/query', 'routes/api/zero.query.tsx'),
+    route('api/zero/mutate', 'routes/api/zero.mutate.tsx')
 ] satisfies RouteConfig;

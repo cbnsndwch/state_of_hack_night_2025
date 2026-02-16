@@ -8,7 +8,7 @@ import {
     EditIcon,
     TrashIcon
 } from 'lucide-react';
-import { useQuery } from '@rocicorp/zero/react';
+import { useSafeQuery } from '@/hooks/use-safe-query';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NeoCard } from '@/components/ui/NeoCard';
@@ -79,8 +79,8 @@ export default function ProjectDetail() {
     const { user } = useAuth();
     const { deleteProject, isLoading: isDeleting } = useDeleteProject();
 
-    // Use Zero query for realtime project data with member relation
-    const [projectData] = useQuery(
+    // Use Zero query for realtime project data with member relation (SSR-safe)
+    const [projectData] = useSafeQuery(
         projectId ? projectQueries.byId(projectId) : null
     );
 
