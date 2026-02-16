@@ -44,7 +44,7 @@ export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
     }, [isMobileMenuOpen]);
 
     return (
-        <div className="h-screen flex bg-black">
+        <div className="h-screen flex overflow-hidden bg-black">
             {/* Sidebar - Desktop */}
             <div className="hidden md:flex md:flex-col">
                 <SidebarNav
