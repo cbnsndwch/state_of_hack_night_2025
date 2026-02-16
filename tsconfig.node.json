@@ -22,12 +22,24 @@
         "noUnusedParameters": true,
         "erasableSyntaxOnly": true,
         "noFallthroughCasesInSwitch": true,
-        "noUncheckedSideEffectImports": true
+        "noUncheckedSideEffectImports": true,
+        /* Paths */
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./app/*"
+            ],
+            "@drizzle/*": [
+                "./drizzle/*"
+            ]
+        }
     },
     "include": [
         "vite.config.ts",
+        "vitest.config.ts",
         "react-router.config.ts",
         "playwright.config.ts",
-        "e2e/**/*.ts"
+        "e2e/**/*.ts",
+        "tests/server/**/*.ts"
     ]
 }

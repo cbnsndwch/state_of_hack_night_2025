@@ -47,6 +47,8 @@
     "include": [
         "app",
         ".react-router/types",
-        ".local/scripts/luma.ts"
+        ".local/scripts/luma.ts",
+        "tests/client/**/*.ts",
+        "tests/client/**/*.tsx"
     ]
 }
