@@ -101,7 +101,7 @@ export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
                         <div
                             className={cn(
                                 'fixed top-16 left-0 bottom-0 z-50 md:hidden',
-                                'w-[280px] bg-zinc-950',
+                                'w-70 bg-zinc-950',
                                 'transform transition-transform duration-300 ease-in-out',
                                 'flex flex-col',
                                 isMobileMenuOpen

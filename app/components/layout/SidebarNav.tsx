@@ -132,12 +132,12 @@ export function SidebarNav({
                     icon: FolderOpen
                 },
                 {
-                    href: '/dashboard#check-ins',
+                    href: '/dashboard/check-ins',
                     label: 'Check-ins/Streaks',
                     icon: CalendarCheck
                 },
                 {
-                    href: '/dashboard#demo-slots',
+                    href: '/dashboard/demo-slots',
                     label: 'Demo Slots',
                     icon: Video
                 }
@@ -161,7 +161,7 @@ export function SidebarNav({
                     icon: Sparkles
                 },
                 {
-                    href: '/reports/state-of-hack-night-2025',
+                    href: '/reports/2025',
                     label: 'State of 2025',
                     icon: BarChart3
                 }
@@ -213,26 +213,29 @@ export function SidebarNav({
                 {/* Logo/Brand Section with Collapse Toggle */}
                 <div className="p-6 border-b-2 border-primary/30 flex items-center justify-between">
                     {!collapsed ? (
-                        <div className="flex justify-between items-center gap-4">
+                        <>
                             <img
                                 src="/logo_horizontal.svg"
                                 alt="hello_miami"
                                 className="h-6 w-auto"
                             />
                             <Button
+                                size="icon"
                                 variant="ghost"
                                 title="Collapse sidebar"
-                                className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                                className="text-primary transition-colors"
                                 onClick={toggleCollapsed}
                             >
                                 <ChevronsLeft className="h-5 w-5" />
                             </Button>
-                        </div>
+                        </>
                     ) : (
                         <Button
-                            onClick={toggleCollapsed}
-                            className="text-zinc-600 hover:text-zinc-400 transition-colors mx-auto"
+                            size="icon"
+                            variant="ghost"
                             title="Expand sidebar"
+                            className="text-primary transition-colors mx-auto"
+                            onClick={toggleCollapsed}
                         >
                             <ChevronsRight className="h-5 w-5" />
                         </Button>
