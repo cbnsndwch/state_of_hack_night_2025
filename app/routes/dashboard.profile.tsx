@@ -14,6 +14,9 @@ import {
     type DashboardLoaderData
 } from '@/lib/create-dashboard-loader.server';
 import { profileQueries } from '@/zero/queries';
+import { Button } from '@/components/ui/button';
+
+export { DashboardErrorBoundary as ErrorBoundary } from '@/components/layout/DashboardErrorBoundary';
 
 /**
  * Server-side loader: uses createDashboardLoader for auth + profile.
@@ -149,12 +152,13 @@ export default function ProfileEdit() {
         <AppLayout isAdmin={!!profile?.isAppAdmin}>
             <main className="max-w-4xl mx-auto px-4 py-12 bg-black text-white selection:bg-primary selection:text-black min-h-full">
                 <header className="mb-8">
-                    <button
-                        onClick={() => navigate('/dashboard')}
+                    <Button
+                        variant="ghost"
                         className="text-zinc-400 hover:text-white font-sans text-sm mb-4 flex items-center gap-2"
+                        onClick={() => navigate('/dashboard')}
                     >
                         <span>←</span> back to dashboard
-                    </button>
+                    </Button>
                     <h1 className="text-4xl font-sans text-primary mb-2">
                         edit_profile
                     </h1>

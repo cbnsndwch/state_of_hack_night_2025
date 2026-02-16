@@ -11,6 +11,9 @@ import {
     type DashboardLoaderData
 } from '@/lib/create-dashboard-loader.server';
 import { getProjectsByMemberId } from '@/lib/db/projects.server';
+import { Button } from '@/components/ui/button';
+
+export { DashboardErrorBoundary as ErrorBoundary } from '@/components/layout/DashboardErrorBoundary';
 
 /**
  * Server-side loader: auth + profile + projects from Postgres.
@@ -37,9 +40,7 @@ export default function DashboardProjects() {
         user?.id ? profileQueries.byClerkUserId(user.id) : null
     );
     const [zeroProjects] = useSafeQuery(
-        zeroProfile?.id
-            ? projectQueries.byMemberId(zeroProfile.id)
-            : null
+        zeroProfile?.id ? projectQueries.byMemberId(zeroProfile.id) : null
     );
 
     // Prefer Zero's reactive data, fall back to server-loaded data
@@ -71,12 +72,13 @@ export default function DashboardProjects() {
             <main className="max-w-6xl mx-auto px-4 py-12 bg-black text-white selection:bg-primary selection:text-black min-h-full">
                 <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={() => navigate('/dashboard')}
                             className="text-zinc-400 hover:text-white font-sans text-sm mb-3 flex items-center gap-2"
                         >
                             <span>←</span> back to dashboard
-                        </button>
+                        </Button>
                         <h1 className="text-4xl font-sans text-primary mb-2">
                             my_projects
                         </h1>

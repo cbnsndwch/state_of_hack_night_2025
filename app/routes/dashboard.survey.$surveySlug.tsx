@@ -10,6 +10,8 @@ import { getMemberSurveyResponse } from '@/lib/db/survey-responses.server';
 import type { Survey, SurveyResponse } from '@/types/adapters';
 import { useEffect } from 'react';
 
+export { DashboardErrorBoundary as ErrorBoundary } from '@/components/layout/DashboardErrorBoundary';
+
 type SerializedSurvey = Omit<Survey, '_id' | 'createdAt' | 'updatedAt'> & {
     _id: string;
     createdAt: string;

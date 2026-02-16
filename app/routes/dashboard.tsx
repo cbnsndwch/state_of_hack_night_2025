@@ -28,6 +28,8 @@ import { getProjectsByMemberId } from '@/lib/db/projects.server';
 import { getMemberBadges } from '@/lib/db/badges.server';
 import { getMemberSurveyResponses } from '@/lib/db/survey-responses.server';
 
+export { DashboardErrorBoundary as ErrorBoundary } from '@/components/layout/DashboardErrorBoundary';
+
 /**
  * Server-side loader: fetch profile + projects + badges from Postgres.
  * This provides immediate data during SSR. Zero queries take over for

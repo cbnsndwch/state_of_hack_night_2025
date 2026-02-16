@@ -13,6 +13,8 @@ import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
 import type { Survey, SurveyQuestion } from '@/types/adapters';
 
+export { DashboardErrorBoundary as ErrorBoundary } from '@/components/layout/DashboardErrorBoundary';
+
 type SerializedSurvey = Omit<Survey, 'id' | 'createdAt' | 'updatedAt'> & {
     id: string;
     createdAt: string;
