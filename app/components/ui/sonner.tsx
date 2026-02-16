@@ -18,7 +18,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
                     success: 'group-[.toast]:border-primary',
                     error: 'group-[.toast]:border-red-500',
                     warning: 'group-[.toast]:border-yellow-500',
-                    info: 'group-[.toast]:border-cyan-500'
+                    info: 'group-[.toast]:border-primary'
                 }
             }}
             {...props}
