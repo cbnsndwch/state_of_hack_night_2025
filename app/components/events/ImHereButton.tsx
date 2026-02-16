@@ -1,12 +1,7 @@
-/**
- * "I'm Here" Check-In Button Component
- *
- * This component allows members to check themselves into hack nights.
- * The button is only active during event hours (6:30 PM - 1:00 AM).
- */
-
-import { useState, useEffect } from 'react';
+import { ExternalLinkIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
 import { NeoCard } from '@/components/ui/NeoCard';
 import { Button } from '@/components/ui/button';
 
@@ -27,6 +22,12 @@ interface ImHereButtonProps {
     lumaAttendeeId?: string | null;
 }
 
+/**
+ * "I'm Here" Check-In Button Component
+ *
+ * This component allows members to check themselves into hack nights.
+ * The button is only active during event hours (6:30 PM - 1:00 AM).
+ */
 export function ImHereButton({ lumaAttendeeId }: ImHereButtonProps) {
     const [nextEvent, setNextEvent] = useState<Event | null>(null);
     const [loading, setLoading] = useState(true);
@@ -176,18 +177,22 @@ export function ImHereButton({ lumaAttendeeId }: ImHereButtonProps) {
     if (!nextEvent) {
         return (
             <NeoCard variant="cyan">
-                <h3 className="text-lg font-sans mb-4">check_in</h3>
+                <h3 className="text-lg font-sans mb-4">rsvp</h3>
                 <p className="text-sm text-zinc-400 mb-4">
                     no upcoming events scheduled at this time.
                 </p>
-                <a
-                    href="https://luma.com/hello_miami"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full py-2 bg-black border border-white text-center font-sans text-sm hover:invert transition-all"
-                >
-                    view calendar
-                </a>
+
+                <Button asChild className="font-sans " data-view-calendar>
+                    <a
+                        href="https://luma.com/hello_miami"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-full py-2 text-center font-sans text-sm transition-all"
+                    >
+                        <ExternalLinkIcon />
+                        view calendar
+                    </a>
+                </Button>
             </NeoCard>
         );
     }
@@ -253,8 +258,8 @@ export function ImHereButton({ lumaAttendeeId }: ImHereButtonProps) {
             )}
 
             {checkInStatus === 'already-checked-in' && (
-                <div className="mb-4 p-3 bg-cyan-900/30 border border-cyan-500">
-                    <div className="text-sm font-sans text-cyan-400">
+                <div className="mb-4 p-3 bg-primary/10 border border-primary">
+                    <div className="text-sm font-sans text-primary">
                         you're already checked in!
                     </div>
                     <div className="text-xs text-zinc-400 mt-1">

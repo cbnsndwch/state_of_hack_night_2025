@@ -130,15 +130,15 @@ export function DemoSlotBookingDialog({
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button
-                    className="font-sans bg-cyan-500 text-black hover:bg-cyan-400 border-2 border-black"
+                    className="font-sans bg-primary text-black hover:bg-primary/80 border-2 border-black"
                     data-book-demo-trigger
                 >
                     book_demo_slot
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px] bg-zinc-950 border-zinc-800 text-zinc-100">
+            <DialogContent className="sm:max-w-131.25 bg-zinc-950 border-zinc-800 text-zinc-100">
                 <DialogHeader>
-                    <DialogTitle className="font-sans text-cyan-400">
+                    <DialogTitle className="font-sans">
                         book_demo_slot
                     </DialogTitle>
                     <DialogDescription className="font-sans text-zinc-400">
@@ -201,7 +201,7 @@ export function DemoSlotBookingDialog({
                             value={title}
                             onChange={e => setTitle(e.target.value)}
                             required
-                            className="font-sans bg-zinc-900 border-zinc-700 text-zinc-100 focus:border-cyan-400"
+                            className="font-sans bg-zinc-900 border-zinc-700 text-zinc-100 focus:border-primary"
                             placeholder="My awesome project"
                         />
                     </div>
@@ -217,7 +217,7 @@ export function DemoSlotBookingDialog({
                             id="description"
                             value={description}
                             onChange={e => setDescription(e.target.value)}
-                            className="font-sans bg-zinc-900 border-zinc-700 text-zinc-100 focus:border-cyan-400"
+                            className="font-sans bg-zinc-900 border-zinc-700 text-zinc-100 focus:border-primary"
                             placeholder="What will you demo?"
                             rows={3}
                         />
@@ -235,7 +235,7 @@ export function DemoSlotBookingDialog({
                                 id="requested_time"
                                 value={requestedTime}
                                 onChange={e => setRequestedTime(e.target.value)}
-                                className="font-sans bg-zinc-900 border-zinc-700 text-zinc-100 focus:border-cyan-400"
+                                className="font-sans bg-zinc-900 border-zinc-700 text-zinc-100 focus:border-primary"
                                 placeholder="e.g., 8:30 PM"
                             />
                         </div>
@@ -288,7 +288,7 @@ export function DemoSlotBookingDialog({
                         <Button
                             type="submit"
                             disabled={loading || loadingEvents}
-                            className="w-full font-sans bg-cyan-500 text-black hover:bg-cyan-400 border-2 border-black"
+                            className="w-full font-sans bg-primary text-black hover:bg-primary/80 border-2 border-black"
                         >
                             {loading ? 'booking...' : 'book demo slot'}
                         </Button>
