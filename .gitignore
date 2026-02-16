@@ -33,3 +33,8 @@ build
 .local
 .ralph
 /supabase/.temp
+
+# Playwright
+e2e/results/
+playwright-report/
+test-results/

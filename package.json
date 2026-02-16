@@ -24,7 +24,10 @@
         "migrate:clerk-userid": "tsx --env-file=.env scripts/migrate-supabase-to-clerk-userid.ts",
         "deploy:zero-cache": "bash scripts/deploy-zero-cache.sh production",
         "deploy:zero-cache:staging": "bash scripts/deploy-zero-cache.sh staging",
-        "setup:postgres-monitoring": "tsx --env-file=.env scripts/setup-postgres-monitoring.ts"
+        "setup:postgres-monitoring": "tsx --env-file=.env scripts/setup-postgres-monitoring.ts",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui",
+        "test:e2e:headed": "playwright test --headed"
     },
     "dependencies": {
         "@clerk/react-router": "^2.4.2",
@@ -61,7 +64,6 @@
         "class-variance-authority": "^0.7.1",
         "cloudinary": "^2.9.0",
         "clsx": "^2.1.1",
-        "react-router-devtools": "^6.2.0",
         "cmdk": "^1.1.1",
         "d3-geo": "^3.1.1",
         "date-fns": "^4.1.0",
@@ -78,6 +80,7 @@
         "react-hook-form": "^7.70.0",
         "react-resizable-panels": "^4.2.2",
         "react-router": "^7.13.0",
+        "react-router-devtools": "^6.2.0",
         "recharts": "^2.15.4",
         "resend": "^6.9.1",
         "sonner": "^2.0.7",
@@ -91,6 +94,7 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.39.1",
+        "@playwright/test": "^1.58.2",
         "@react-router/dev": "^7.13.0",
         "@tailwindcss/vite": "^4.1.18",
         "@types/d3-geo": "^3.1.0",
