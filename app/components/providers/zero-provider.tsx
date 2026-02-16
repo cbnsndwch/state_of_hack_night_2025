@@ -37,6 +37,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { schema } from '@/zero/schema';
 import type { Schema } from '@/zero/schema';
+import { mutators } from '@/zero/mutators';
 
 /**
  * A minimal stub that satisfies `useZero()`'s truthiness check inside
@@ -96,6 +97,8 @@ export function ZeroProvider({ children }: { children: React.ReactNode }) {
                 userID: user?.id || 'anonymous',
                 schema,
                 server: cacheUrl,
+                mutators,
+                context: { userId: user?.id || 'anonymous' },
                 // loglevel info in dev, error in prod
                 logLevel: import.meta.env.DEV ? 'info' : 'error'
             });

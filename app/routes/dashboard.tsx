@@ -3,7 +3,9 @@ import { useNavigate, useLoaderData } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useSafeQuery } from '@/hooks/use-safe-query';
-import { useDismissOnboarding } from '@/hooks/use-zero-mutate';
+import { useZeroConnection } from '@/components/providers/zero-provider';
+import { mutators } from '@/zero/mutators';
+
 import {
     profileQueries,
     projectQueries,
@@ -51,8 +53,8 @@ type LoaderData = DashboardLoaderData<{
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
-    const { dismissOnboarding } = useDismissOnboarding();
     const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
+    const { zero } = useZeroConnection();
 
     // Server-side loader data (available immediately on navigation)
     const loaderData = useLoaderData<LoaderData>();
@@ -168,12 +170,15 @@ export default function Dashboard() {
     ];
 
     const handleDismissOnboarding = async () => {
-        if (!profile) return;
+        if (!profile || !zero) return;
 
         try {
-            // Use Zero mutation to dismiss onboarding
-            await dismissOnboarding(profile.id);
-            // Note: No need to manually update state - Zero will sync automatically
+            zero.mutate(
+                mutators.profiles.update({
+                    id: profile.id,
+                    onboardingDismissed: true
+                })
+            );
         } catch (err) {
             console.error('Error dismissing onboarding:', err);
         }

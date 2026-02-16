@@ -1,13 +1,13 @@
 /**
  * Zero Sync Mutate Endpoint
  *
- * This endpoint handles mutation requests from Zero clients.
- * Zero-cache calls this endpoint to execute mutations (inserts, updates, deletes).
- * Mutations are applied to the PostgreSQL database using the Drizzle adapter.
+ * This endpoint handles mutation requests from zero-cache (NOT from direct
+ * browser requests). When a client calls `zero.mutate(...)`, Zero sends
+ * the mutation to zero-cache, and zero-cache calls this endpoint to execute
+ * the mutation against Postgres.
  *
- * For this to work properly, mutations must be defined using defineMutators/defineMutator
- * from '@rocicorp/zero'. See the Zero documentation for examples:
- * https://zero.rocicorp.dev/docs/mutations
+ * The `handleMutateRequest` utility from `@rocicorp/zero/server` parses
+ * the push protocol, iterates mutations, and wraps each in a transaction.
  */
 
 import type { ActionFunctionArgs } from 'react-router';
@@ -19,91 +19,63 @@ import { mutators } from '@/zero/mutators';
 import { getProfileByClerkUserId } from '@/lib/db/profiles.server';
 
 /**
- * Handle POST requests for Zero mutations
+ * Handle POST requests for Zero mutations.
  *
- * Zero-cache sends the mutation name and arguments to this endpoint.
- * We authenticate the user via Clerk, look up the mutator implementation,
- * and execute it within a transaction.
+ * zero-cache sends mutation pushes to this endpoint. We authenticate the
+ * user via Clerk, resolve the mutator, and execute it within a DB transaction
+ * using Zero's `handleMutateRequest` + `transact` pattern.
  */
 export async function action(actionArgs: ActionFunctionArgs) {
     try {
-        // Get the authenticated user from Clerk
+        // Authenticate the user via Clerk
         const auth = await getAuth(actionArgs);
         const userId = auth.userId;
 
         if (!userId) {
+            console.log('Zero Mutate: No userId found. Returning 401.');
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Look up user's profile to determine role
+        console.log('Zero Mutate: Authenticated successfully. Proceeding to handleMutateRequest.');
+
+        // Look up user's role for context
         let userRole = 'user';
         try {
             const profile = await getProfileByClerkUserId(userId);
             if (profile?.isAppAdmin) {
                 userRole = 'admin';
             }
-        } catch (error) {
-            console.warn('Failed to fetch profile for role resolution:', error);
+        } catch {
             // Fall back to 'user' role if profile lookup fails
         }
 
-        // Handle the mutation request using Zero's handleMutateRequest helper
-        // This parses the request, executes mutations in a transaction, and returns results
+        // Handle the mutation using Zero's transact pattern.
+        // handleMutateRequest parses the push request from zero-cache,
+        // iterates over mutations, and calls our callback for each one.
         const result = await handleMutateRequest(
             dbProvider,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            async (tx: any, mutation: any) => {
-                // Process individual mutation
-                console.log('Mutation received:', { mutation, userId });
-
-                // Extract mutation details
-                const { id, clientID, name, args: mutationArgs } = mutation;
-
-                try {
-                    // Look up the mutator by name in our mutators registry
+            transact =>
+                transact((tx, name, args) => {
                     const mutator = mustGetMutator(mutators, name);
-
-                    // Execute the mutator function with tx, args, and context
-                    await mutator.fn({
+                    return mutator.fn({
+                        args,
                         tx,
-                        args: mutationArgs,
                         ctx: {
                             userId,
                             role: userRole
                         }
                     });
-
-                    // Return success result
-                    return {
-                        id: { id, clientID },
-                        result: { data: undefined }
-                    };
-                } catch (error) {
-                    // Return error result
-                    return {
-                        id: { id, clientID },
-                        result: {
-                            error: 'app' as const,
-                            message:
-                                error instanceof Error
-                                    ? error.message
-                                    : 'Unknown error'
-                        }
-                    };
-                }
-            },
+                }),
             actionArgs.request
         );
 
-        // Return the result as JSON
         return Response.json(result);
     } catch (error) {
         console.error('Zero mutate error:', error);
-
-        // Return error response
         return Response.json(
             {
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error:
+                    error instanceof Error ? error.message : 'Unknown error',
                 type: 'mutate-error'
             },
             { status: 500 }
@@ -112,7 +84,7 @@ export async function action(actionArgs: ActionFunctionArgs) {
 }
 
 /**
- * Handle GET requests (not supported - mutations must use POST)
+ * Handle GET requests (not supported — mutations must use POST)
  */
 export async function loader() {
     return Response.json(

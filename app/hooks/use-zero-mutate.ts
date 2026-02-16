@@ -1,12 +1,19 @@
 /**
- * Hook for calling Zero mutations
+ * Hooks for Zero mutations
  *
- * Provides a convenient interface for calling Zero mutations from React components.
- * Mutations are sent to the server-side /api/zero/mutate endpoint which handles
- * authentication, authorization, and database transactions.
+ * These hooks use the proper Zero client mutation API:
+ *   zero.mutate(mutators.table.action({ ...args }))
+ *
+ * Mutations run optimistically on the client (UI updates immediately),
+ * then sync to zero-cache -> /api/zero/mutate -> Postgres.
+ *
+ * Each hook generates a random ID for create operations (per Zero docs:
+ * "Do not generate IDs inside mutators, since mutators run multiple times").
  */
 
 import { useCallback, useState } from 'react';
+import { useZeroConnection } from '@/components/providers/zero-provider';
+import { mutators } from '@/zero/mutators';
 
 export type MutateResult<T = Record<string, unknown>> = {
     success: boolean;
@@ -14,93 +21,41 @@ export type MutateResult<T = Record<string, unknown>> = {
     error?: string;
 };
 
-/**
- * Generic hook for calling any Zero mutation
- */
-export function useZeroMutate() {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+// ---------------------------------------------------------------------------
+// Internal helper: run a Zero mutation and return { success, error }
+// ---------------------------------------------------------------------------
 
-    const mutate = useCallback(
-        async <T = Record<string, unknown>>(
-            name: string,
-            args: Record<string, unknown>
-        ): Promise<MutateResult<T>> => {
-            setIsLoading(true);
-            setError(null);
+type MutateWrite = {
+    client: Promise<{ type: 'ok' } | { type: 'error'; error: Error }>;
+    server: Promise<{ type: 'ok' } | { type: 'error'; error: Error }>;
+};
 
-            try {
-                // Call the Zero mutation endpoint
-                const response = await fetch('/api/zero/mutate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        mutations: [
-                            {
-                                id: Math.random(),
-                                clientID: 'web-client',
-                                name,
-                                args
-                            }
-                        ]
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(
-                        errorData.error ||
-                            `Mutation failed with status ${response.status}`
-                    );
-                }
-
-                const result = await response.json();
-
-                // Check if the mutation returned an error
-                if (result[0]?.result?.error) {
-                    throw new Error(
-                        result[0].result.message || 'Mutation failed'
-                    );
-                }
-
-                setIsLoading(false);
-                return {
-                    success: true,
-                    data: result[0]?.result?.data as T
-                };
-            } catch (err) {
-                const errorMessage =
-                    err instanceof Error ? err.message : 'Mutation failed';
-                setError(errorMessage);
-                setIsLoading(false);
-                return {
-                    success: false,
-                    error: errorMessage
-                };
-            }
-        },
-        []
-    );
-
-    const clearError = useCallback(() => {
-        setError(null);
-    }, []);
-
-    return {
-        mutate,
-        isLoading,
-        error,
-        clearError
-    };
+async function settleWrite(write: MutateWrite): Promise<MutateResult> {
+    try {
+        const result = await write.client;
+        if (result.type === 'error') {
+            return { success: false, error: result.error.message };
+        }
+        return { success: true };
+    } catch (err) {
+        return {
+            success: false,
+            error: err instanceof Error ? err.message : 'Mutation failed'
+        };
+    }
 }
+
+// ---------------------------------------------------------------------------
+// Profile mutations
+// ---------------------------------------------------------------------------
 
 /**
  * Hook for updating a user profile via Zero
  */
 export function useUpdateProfile() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const updateProfile = useCallback(
         async (args: {
@@ -121,49 +76,96 @@ export function useUpdateProfile() {
             wantToGiveBack?: boolean;
             specialties?: string[];
             interestedExperiences?: string[];
-        }) => {
-            return mutate('profiles.update', args);
+            onboardingDismissed?: boolean;
+        }): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const write = zero.mutate(
+                    mutators.profiles.update(args)
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        updateProfile,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { updateProfile, isLoading, error, clearError };
 }
 
 /**
- * Hook for dismissing onboarding
+ * Hook for dismissing onboarding via Zero
  */
 export function useDismissOnboarding() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const dismissOnboarding = useCallback(
-        async (profileId: string) => {
-            return mutate('profiles.update', {
-                id: profileId,
-                onboardingDismissed: true
-            });
+        async (profileId: string): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const write = zero.mutate(
+                    mutators.profiles.update({
+                        id: profileId,
+                        onboardingDismissed: true
+                    })
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        dismissOnboarding,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { dismissOnboarding, isLoading, error, clearError };
 }
+
+// ---------------------------------------------------------------------------
+// Project mutations
+// ---------------------------------------------------------------------------
 
 /**
  * Hook for creating a project via Zero
  */
 export function useCreateProject() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const createProject = useCallback(
         async (args: {
@@ -174,25 +176,49 @@ export function useCreateProject() {
             imageUrls?: string[];
             githubUrl?: string;
             publicUrl?: string;
-        }) => {
-            return mutate('projects.create', args);
+        }): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                // Generate ID outside the mutator (per Zero docs)
+                const id = crypto.randomUUID();
+
+                const write = zero.mutate(
+                    mutators.projects.create({ id, ...args })
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        createProject,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { createProject, isLoading, error, clearError };
 }
 
 /**
  * Hook for updating a project via Zero
  */
 export function useUpdateProject() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const updateProject = useCallback(
         async (args: {
@@ -203,67 +229,143 @@ export function useUpdateProject() {
             imageUrls?: string[];
             githubUrl?: string;
             publicUrl?: string;
-        }) => {
-            return mutate('projects.update', args);
+        }): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const write = zero.mutate(
+                    mutators.projects.update(args)
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        updateProject,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { updateProject, isLoading, error, clearError };
 }
 
 /**
  * Hook for deleting a project via Zero
  */
 export function useDeleteProject() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const deleteProject = useCallback(
-        async (projectId: string) => {
-            return mutate('projects.delete', { id: projectId });
+        async (projectId: string): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const write = zero.mutate(
+                    mutators.projects.delete({ id: projectId })
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        deleteProject,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { deleteProject, isLoading, error, clearError };
 }
+
+// ---------------------------------------------------------------------------
+// Attendance mutations
+// ---------------------------------------------------------------------------
 
 /**
  * Hook for checking in to an event via Zero
  */
 export function useCheckIn() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const checkIn = useCallback(
-        async (args: { memberId: string; lumaEventId: string }) => {
-            return mutate('attendance.checkIn', args);
+        async (args: {
+            memberId: string;
+            lumaEventId: string;
+        }): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const id = crypto.randomUUID();
+
+                const write = zero.mutate(
+                    mutators.attendance.checkIn({ id, ...args })
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        checkIn,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { checkIn, isLoading, error, clearError };
 }
+
+// ---------------------------------------------------------------------------
+// Survey mutations
+// ---------------------------------------------------------------------------
 
 /**
  * Hook for submitting a survey response via Zero
  */
 export function useSubmitSurveyResponse() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const submitSurveyResponse = useCallback(
         async (args: {
@@ -271,25 +373,52 @@ export function useSubmitSurveyResponse() {
             memberId: string;
             responses: Record<string, unknown>;
             isComplete: boolean;
-        }) => {
-            return mutate('surveyResponses.submit', args);
+        }): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const id = crypto.randomUUID();
+
+                const write = zero.mutate(
+                    mutators.surveyResponses.submit({ id, ...args })
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        submitSurveyResponse,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { submitSurveyResponse, isLoading, error, clearError };
 }
+
+// ---------------------------------------------------------------------------
+// Demo slots mutations
+// ---------------------------------------------------------------------------
 
 /**
  * Hook for requesting a demo slot via Zero
  */
 export function useRequestDemoSlot() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const requestDemoSlot = useCallback(
         async (args: {
@@ -299,40 +428,82 @@ export function useRequestDemoSlot() {
             description?: string;
             requestedTime?: string;
             durationMinutes?: number;
-        }) => {
-            return mutate('demoSlots.request', args);
+        }): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const id = crypto.randomUUID();
+
+                const write = zero.mutate(
+                    mutators.demoSlots.request({ id, ...args })
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        requestDemoSlot,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { requestDemoSlot, isLoading, error, clearError };
 }
 
 /**
  * Hook for updating a demo slot status via Zero
  */
 export function useUpdateDemoSlotStatus() {
-    const { mutate, isLoading, error, clearError } = useZeroMutate();
+    const { zero } = useZeroConnection();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const updateDemoSlotStatus = useCallback(
         async (args: {
             id: string;
             status: 'pending' | 'confirmed' | 'canceled';
-        }) => {
-            return mutate('demoSlots.updateStatus', args);
+        }): Promise<MutateResult> => {
+            if (!zero) {
+                return { success: false, error: 'Zero not connected' };
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const write = zero.mutate(
+                    mutators.demoSlots.updateStatus(args)
+                ) as unknown as MutateWrite;
+
+                const result = await settleWrite(write);
+                if (!result.success) setError(result.error ?? null);
+                return result;
+            } catch (err) {
+                const msg =
+                    err instanceof Error ? err.message : 'Mutation failed';
+                setError(msg);
+                return { success: false, error: msg };
+            } finally {
+                setIsLoading(false);
+            }
         },
-        [mutate]
+        [zero]
     );
 
-    return {
-        updateDemoSlotStatus,
-        isLoading,
-        error,
-        clearError
-    };
+    const clearError = useCallback(() => setError(null), []);
+
+    return { updateDemoSlotStatus, isLoading, error, clearError };
 }

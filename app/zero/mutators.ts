@@ -1,21 +1,48 @@
 /**
  * Zero Sync Mutators
  *
- * This file defines mutations for the Zero Sync system.
- * Mutations are executed on the server with authorization and validation.
+ * Defines mutations using Zero's `defineMutators` / `defineMutator` API.
+ * Mutators run optimistically on the client (against local storage) and then
+ * are sent to zero-cache, which calls our /api/zero/mutate endpoint to
+ * execute them against Postgres.
+ *
+ * Key rules (from Zero docs):
+ * - Do NOT generate IDs inside mutators -- they run multiple times.
+ *   Always pass client-generated IDs via args.
+ * - Use `Date.now()` for timestamps (schema columns are type 'number').
+ * - Use flat objects for CRUD:
+ *     tx.mutate.table.insert({ id, field1, field2 })
+ *     tx.mutate.table.update({ id, field1 })      // PK + changed fields
+ *     tx.mutate.table.delete({ id })
+ * - tx.run(zql...) reads data transactionally within mutators.
+ * - Auth checks use `tx.location === 'server'` to only run on the server,
+ *   keeping optimistic client-side mutations fast.
  */
 
 import { defineMutators, defineMutator } from '@rocicorp/zero';
 import { z } from 'zod';
 import { zql } from './schema';
 
+/** Context shape set by the Zero constructor (client) and mutate endpoint (server) */
+type MutationContext = {
+    userId: string;
+    role?: string;
+};
+
 /**
- * Define all mutators for the application
+ * All application mutators, registered with `defineMutators`.
+ *
+ * Usage on the client:
+ *   zero.mutate(mutators.profiles.update({ id, bio: 'new bio' }))
+ *
+ * Registration:
+ *   new Zero({ ..., mutators })
  */
 export const mutators = defineMutators({
     profiles: {
         /**
-         * Update a user's profile
+         * Update a user's profile.
+         * All fields except `id` are optional -- pass only the fields to change.
          */
         update: defineMutator(
             z.object({
@@ -25,44 +52,42 @@ export const mutators = defineMutators({
                 skills: z.array(z.string()).optional(),
                 githubUsername: z.string().optional(),
                 twitterHandle: z.string().optional(),
-                websiteUrl: z.string().url().optional(),
+                websiteUrl: z.string().optional(),
+                linkedinUrl: z.string().optional(),
                 role: z.string().optional(),
                 seekingFunding: z.boolean().optional(),
                 openToMentoring: z.boolean().optional(),
+                lookingForCofounder: z.boolean().optional(),
+                wantProductFeedback: z.boolean().optional(),
+                seekingAcceleratorIntros: z.boolean().optional(),
+                wantToGiveBack: z.boolean().optional(),
+                specialties: z.array(z.string()).optional(),
+                interestedExperiences: z.array(z.string()).optional(),
                 onboardingDismissed: z.boolean().optional()
             }),
-            async ({
-                args,
-                tx,
-                ctx
-            }: {
-                args: { memberId: string };
-                tx: unknown;
-                ctx: unknown;
-            }) => {
-                // Authorization: users can only update their own profile
-                const profile = await tx.run(
-                    zql.profiles.where('id', args.id).one()
-                );
-
-                if (!profile) {
-                    throw new Error('Profile not found');
-                }
-
-                if (profile.clerkUserId !== ctx.userId) {
-                    throw new Error(
-                        'Unauthorized: You can only update your own profile'
+            async ({ args, tx, ctx }) => {
+                // Server-only authorization: verify profile ownership
+                if (tx.location === 'server') {
+                    const { userId } = ctx as MutationContext;
+                    const profile = await tx.run(
+                        zql.profiles.where('id', args.id).one()
                     );
+                    if (!profile) {
+                        throw new Error('Profile not found');
+                    }
+                    if (profile.clerkUserId !== userId) {
+                        throw new Error(
+                            'Unauthorized: You can only update your own profile'
+                        );
+                    }
                 }
 
-                const { ...updates } = args;
+                const { id, ...updates } = args;
 
                 await tx.mutate.profiles.update({
-                    where: { id: args.id },
-                    set: {
-                        ...updates,
-                        updatedAt: new Date()
-                    }
+                    id,
+                    ...updates,
+                    updatedAt: Date.now()
                 });
             }
         )
@@ -70,51 +95,51 @@ export const mutators = defineMutators({
 
     projects: {
         /**
-         * Create a new project
+         * Create a new project.
+         * The `id` must be generated by the caller (e.g. `crypto.randomUUID()`).
          */
         create: defineMutator(
             z.object({
+                id: z.string(),
                 memberId: z.string(),
                 title: z.string().min(1, 'Title is required'),
                 description: z.string().optional(),
                 tags: z.array(z.string()).optional(),
-                imageUrls: z.array(z.string().url()).optional(),
-                githubUrl: z.string().url().optional(),
-                publicUrl: z.string().url().optional()
+                imageUrls: z.array(z.string()).optional(),
+                githubUrl: z.string().optional(),
+                publicUrl: z.string().optional()
             }),
             async ({ args, tx, ctx }) => {
-                // Authorization: users can only create projects for themselves
-                const profile = await tx.run(
-                    zql.profiles.where('id', args.memberId).one()
-                );
-
-                if (!profile || profile.clerkUserId !== ctx.userId) {
-                    throw new Error(
-                        'Unauthorized: You can only create projects for yourself'
+                // Server-only authorization: verify profile ownership
+                if (tx.location === 'server') {
+                    const { userId } = ctx as MutationContext;
+                    const profile = await tx.run(
+                        zql.profiles.where('id', args.memberId).one()
                     );
+                    if (!profile || profile.clerkUserId !== userId) {
+                        throw new Error(
+                            'Unauthorized: You can only create projects for yourself'
+                        );
+                    }
                 }
 
-                const id = crypto.randomUUID();
-
                 await tx.mutate.projects.insert({
-                    id,
+                    id: args.id,
                     memberId: args.memberId,
                     title: args.title,
-                    description: args.description || '',
-                    tags: args.tags || [],
-                    imageUrls: args.imageUrls || [],
+                    description: args.description,
+                    tags: args.tags,
+                    imageUrls: args.imageUrls,
                     githubUrl: args.githubUrl,
                     publicUrl: args.publicUrl,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
                 });
-
-                return { id };
             }
         ),
 
         /**
-         * Update an existing project
+         * Update an existing project.
          */
         update: defineMutator(
             z.object({
@@ -122,71 +147,69 @@ export const mutators = defineMutators({
                 title: z.string().min(1).optional(),
                 description: z.string().optional(),
                 tags: z.array(z.string()).optional(),
-                imageUrls: z.array(z.string().url()).optional(),
-                githubUrl: z.string().url().optional(),
-                publicUrl: z.string().url().optional()
+                imageUrls: z.array(z.string()).optional(),
+                githubUrl: z.string().optional(),
+                publicUrl: z.string().optional()
             }),
             async ({ args, tx, ctx }) => {
-                // Check ownership
-                const project = await tx.run(
-                    zql.projects.where('id', args.id).one()
-                );
-
-                if (!project) {
-                    throw new Error('Project not found');
-                }
-
-                const profile = await tx.run(
-                    zql.profiles.where('id', project.memberId).one()
-                );
-
-                if (!profile || profile.clerkUserId !== ctx.userId) {
-                    throw new Error(
-                        'Unauthorized: You can only update your own projects'
+                // Server-only authorization: verify project ownership
+                if (tx.location === 'server') {
+                    const { userId } = ctx as MutationContext;
+                    const project = await tx.run(
+                        zql.projects.where('id', args.id).one()
                     );
+                    if (!project) {
+                        throw new Error('Project not found');
+                    }
+                    const profile = await tx.run(
+                        zql.profiles.where('id', project.memberId).one()
+                    );
+                    if (!profile || profile.clerkUserId !== userId) {
+                        throw new Error(
+                            'Unauthorized: You can only update your own projects'
+                        );
+                    }
                 }
 
-                const { ...updates } = args;
+                const { id, ...updates } = args;
 
                 await tx.mutate.projects.update({
-                    where: { id: args.id },
-                    set: {
-                        ...updates,
-                        updatedAt: new Date()
-                    }
+                    id,
+                    ...updates,
+                    updatedAt: Date.now()
                 });
             }
         ),
 
         /**
-         * Delete a project
+         * Delete a project.
          */
         delete: defineMutator(
             z.object({
                 id: z.string()
             }),
             async ({ args, tx, ctx }) => {
-                // Check ownership
-                const project = await tx.run(
-                    zql.projects.where('id', args.id).one()
-                );
-
-                if (!project) {
-                    throw new Error('Project not found');
-                }
-
-                const profile = await tx.run(
-                    zql.profiles.where('id', project.memberId).one()
-                );
-
-                if (!profile || profile.clerkUserId !== ctx.userId) {
-                    throw new Error(
-                        'Unauthorized: You can only delete your own projects'
+                // Server-only authorization: verify project ownership
+                if (tx.location === 'server') {
+                    const { userId } = ctx as MutationContext;
+                    const project = await tx.run(
+                        zql.projects.where('id', args.id).one()
                     );
+                    if (!project) {
+                        throw new Error('Project not found');
+                    }
+                    const profile = await tx.run(
+                        zql.profiles.where('id', project.memberId).one()
+                    );
+                    if (!profile || profile.clerkUserId !== userId) {
+                        throw new Error(
+                            'Unauthorized: You can only delete your own projects'
+                        );
+                    }
                 }
 
                 await tx.mutate.projects.delete({
-                    where: { id: args.id }
+                    id: args.id
                 });
             }
         )
@@ -194,26 +217,30 @@ export const mutators = defineMutators({
 
     attendance: {
         /**
-         * Check in to an event
+         * Check in to an event.
+         * The `id` must be generated by the caller.
          */
         checkIn: defineMutator(
             z.object({
+                id: z.string(),
                 memberId: z.string(),
                 lumaEventId: z.string()
             }),
             async ({ args, tx, ctx }) => {
-                // Authorization: users can only check in for themselves
-                const profile = await tx.run(
-                    zql.profiles.where('id', args.memberId).one()
-                );
-
-                if (!profile || profile.clerkUserId !== ctx.userId) {
-                    throw new Error(
-                        'Unauthorized: You can only check in for yourself'
+                // Server-only authorization
+                if (tx.location === 'server') {
+                    const { userId } = ctx as MutationContext;
+                    const profile = await tx.run(
+                        zql.profiles.where('id', args.memberId).one()
                     );
+                    if (!profile || profile.clerkUserId !== userId) {
+                        throw new Error(
+                            'Unauthorized: You can only check in for yourself'
+                        );
+                    }
                 }
 
-                // Check if already checked in
+                // Duplicate check -- runs on both client (if cached) and server
                 const existing = await tx.run(
                     zql.attendance
                         .where(q =>
@@ -229,44 +256,45 @@ export const mutators = defineMutators({
                     throw new Error('Already checked in to this event');
                 }
 
-                const id = crypto.randomUUID();
-
                 await tx.mutate.attendance.insert({
-                    id,
+                    id: args.id,
                     memberId: args.memberId,
                     lumaEventId: args.lumaEventId,
-                    createdAt: new Date()
+                    createdAt: Date.now()
                 });
-
-                return { id };
             }
         )
     },
 
     surveyResponses: {
         /**
-         * Submit a survey response
+         * Submit or update a survey response.
+         * Pass `id` for new responses (generated by caller).
+         * If a response already exists for this member+survey, it is updated.
          */
         submit: defineMutator(
             z.object({
+                id: z.string(),
                 surveyId: z.string(),
                 memberId: z.string(),
                 responses: z.record(z.any()),
                 isComplete: z.boolean()
             }),
             async ({ args, tx, ctx }) => {
-                // Authorization: users can only submit responses for themselves
-                const profile = await tx.run(
-                    zql.profiles.where('id', args.memberId).one()
-                );
-
-                if (!profile || profile.clerkUserId !== ctx.userId) {
-                    throw new Error(
-                        'Unauthorized: You can only submit survey responses for yourself'
+                // Server-only authorization
+                if (tx.location === 'server') {
+                    const { userId } = ctx as MutationContext;
+                    const profile = await tx.run(
+                        zql.profiles.where('id', args.memberId).one()
                     );
+                    if (!profile || profile.clerkUserId !== userId) {
+                        throw new Error(
+                            'Unauthorized: You can only submit survey responses for yourself'
+                        );
+                    }
                 }
 
-                // Check if already submitted
+                // Check if already submitted (upsert logic)
                 const existing = await tx.run(
                     zql.surveyResponses
                         .where(q =>
@@ -281,29 +309,24 @@ export const mutators = defineMutators({
                 if (existing) {
                     // Update existing response
                     await tx.mutate.surveyResponses.update({
-                        where: { id: existing.id },
-                        set: {
-                            responses: args.responses,
-                            isComplete: args.isComplete,
-                            submittedAt: args.isComplete ? new Date() : null
-                        }
+                        id: existing.id,
+                        responses: args.responses,
+                        isComplete: args.isComplete,
+                        submittedAt: args.isComplete ? Date.now() : null,
+                        updatedAt: Date.now()
                     });
-
-                    return { id: existing.id };
                 } else {
                     // Create new response
-                    const id = crypto.randomUUID();
-
                     await tx.mutate.surveyResponses.insert({
-                        id,
+                        id: args.id,
                         surveyId: args.surveyId,
                         memberId: args.memberId,
                         responses: args.responses,
                         isComplete: args.isComplete,
-                        submittedAt: args.isComplete ? new Date() : null
+                        submittedAt: args.isComplete ? Date.now() : null,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now()
                     });
-
-                    return { id };
                 }
             }
         )
@@ -311,10 +334,12 @@ export const mutators = defineMutators({
 
     demoSlots: {
         /**
-         * Request a demo slot
+         * Request a demo slot.
+         * The `id` must be generated by the caller.
          */
         request: defineMutator(
             z.object({
+                id: z.string(),
                 memberId: z.string(),
                 eventId: z.string(),
                 title: z.string().min(1, 'Title is required'),
@@ -323,37 +348,36 @@ export const mutators = defineMutators({
                 durationMinutes: z.number().optional()
             }),
             async ({ args, tx, ctx }) => {
-                // Authorization: users can only request demo slots for themselves
-                const profile = await tx.run(
-                    zql.profiles.where('id', args.memberId).one()
-                );
-
-                if (!profile || profile.clerkUserId !== ctx.userId) {
-                    throw new Error(
-                        'Unauthorized: You can only request demo slots for yourself'
+                // Server-only authorization
+                if (tx.location === 'server') {
+                    const { userId } = ctx as MutationContext;
+                    const profile = await tx.run(
+                        zql.profiles.where('id', args.memberId).one()
                     );
+                    if (!profile || profile.clerkUserId !== userId) {
+                        throw new Error(
+                            'Unauthorized: You can only request demo slots for yourself'
+                        );
+                    }
                 }
 
-                const id = crypto.randomUUID();
-
                 await tx.mutate.demoSlots.insert({
-                    id,
+                    id: args.id,
                     memberId: args.memberId,
                     eventId: args.eventId,
                     title: args.title,
-                    description: args.description || '',
+                    description: args.description,
                     requestedTime: args.requestedTime,
-                    durationMinutes: args.durationMinutes || 5,
+                    durationMinutes: args.durationMinutes ?? 5,
                     status: 'pending',
-                    createdAt: new Date()
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
                 });
-
-                return { id };
             }
         ),
 
         /**
-         * Update demo slot status
+         * Update demo slot status (owner or admin).
          */
         updateStatus: defineMutator(
             z.object({
@@ -361,44 +385,41 @@ export const mutators = defineMutators({
                 status: z.enum(['pending', 'confirmed', 'canceled'])
             }),
             async ({ args, tx, ctx }) => {
-                const slot = await tx.run(
-                    zql.demoSlots.where('id', args.id).one()
-                );
-
-                if (!slot) {
-                    throw new Error('Demo slot not found');
-                }
-
-                const profile = await tx.run(
-                    zql.profiles.where('id', slot.memberId).one()
-                );
-
-                // Either the owner or an admin can update status
-                if (
-                    !profile ||
-                    (profile.clerkUserId !== ctx.userId && ctx.role !== 'admin')
-                ) {
-                    throw new Error('Unauthorized');
+                // Server-only authorization (includes admin check)
+                if (tx.location === 'server') {
+                    const { userId, role } = ctx as MutationContext;
+                    const slot = await tx.run(
+                        zql.demoSlots.where('id', args.id).one()
+                    );
+                    if (!slot) {
+                        throw new Error('Demo slot not found');
+                    }
+                    const profile = await tx.run(
+                        zql.profiles.where('id', slot.memberId).one()
+                    );
+                    if (
+                        !profile ||
+                        (profile.clerkUserId !== userId &&
+                            role !== 'admin')
+                    ) {
+                        throw new Error('Unauthorized');
+                    }
                 }
 
                 await tx.mutate.demoSlots.update({
-                    where: { id: args.id },
-                    set: {
-                        status: args.status
-                    }
+                    id: args.id,
+                    status: args.status,
+                    updatedAt: Date.now()
                 });
             }
         )
     }
 });
 
-/**
- * Legacy type exports for compatibility
- */
+// ---------------------------------------------------------------------------
+// Legacy type exports for backward compatibility
+// ---------------------------------------------------------------------------
 
-/**
- * Profile Mutation Types
- */
 export type CreateProfileInput = {
     clerkUserId: string;
     lumaEmail: string;
@@ -415,15 +436,21 @@ export type UpdateProfileInput = {
     githubUsername?: string;
     twitterHandle?: string;
     websiteUrl?: string;
+    linkedinUrl?: string;
     role?: string;
     seekingFunding?: boolean;
     openToMentoring?: boolean;
+    lookingForCofounder?: boolean;
+    wantProductFeedback?: boolean;
+    seekingAcceleratorIntros?: boolean;
+    wantToGiveBack?: boolean;
+    specialties?: string[];
+    interestedExperiences?: string[];
+    onboardingDismissed?: boolean;
 };
 
-/**
- * Project Mutation Types
- */
 export type CreateProjectInput = {
+    id: string;
     memberId: string;
     title: string;
     description?: string;
@@ -443,28 +470,22 @@ export type UpdateProjectInput = {
     publicUrl?: string;
 };
 
-/**
- * Attendance Mutation Types
- */
 export type CheckInInput = {
+    id: string;
     memberId: string;
     lumaEventId: string;
 };
 
-/**
- * Survey Response Mutation Types
- */
 export type SubmitSurveyResponseInput = {
+    id: string;
     surveyId: string;
     memberId: string;
     responses: Record<string, unknown>;
     isComplete: boolean;
 };
 
-/**
- * Demo Slot Mutation Types
- */
 export type RequestDemoSlotInput = {
+    id: string;
     memberId: string;
     eventId: string;
     title: string;
@@ -476,12 +497,8 @@ export type RequestDemoSlotInput = {
 export type UpdateDemoSlotStatusInput = {
     id: string;
     status: 'pending' | 'confirmed' | 'canceled';
-    confirmedByOrganizer?: boolean;
 };
 
-/**
- * Mutation Result Types
- */
 export type MutationSuccess<T = Record<string, unknown>> = {
     success: true;
     data?: T;
