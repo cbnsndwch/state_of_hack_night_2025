@@ -29,8 +29,8 @@ export default defineConfig({
     /* Retry on CI only */
     retries: process.env.CI ? 2 : 0,
 
-    /* Reporter */
-    reporter: process.env.CI ? 'github' : 'html',
+    /* Reporter: HTML report for local, GitHub Actions for CI */
+    reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['html', { open: 'on-failure' }]],
 
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:5173',
