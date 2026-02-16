@@ -111,9 +111,16 @@ export function useUpdateProfile() {
             githubUsername?: string;
             twitterHandle?: string;
             websiteUrl?: string;
+            linkedinUrl?: string;
             role?: string;
             seekingFunding?: boolean;
             openToMentoring?: boolean;
+            lookingForCofounder?: boolean;
+            wantProductFeedback?: boolean;
+            seekingAcceleratorIntros?: boolean;
+            wantToGiveBack?: boolean;
+            specialties?: string[];
+            interestedExperiences?: string[];
         }) => {
             return mutate('profiles.update', args);
         },

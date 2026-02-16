@@ -443,6 +443,47 @@ const profilesTable = {
             customType: null as unknown as boolean,
             serverName: 'open_to_mentoring'
         },
+        linkedinUrl: {
+            type: 'string',
+            optional: true,
+            customType: null as unknown as string,
+            serverName: 'linkedin_url'
+        },
+        lookingForCofounder: {
+            type: 'boolean',
+            optional: true,
+            customType: null as unknown as boolean,
+            serverName: 'looking_for_cofounder'
+        },
+        wantProductFeedback: {
+            type: 'boolean',
+            optional: true,
+            customType: null as unknown as boolean,
+            serverName: 'want_product_feedback'
+        },
+        seekingAcceleratorIntros: {
+            type: 'boolean',
+            optional: true,
+            customType: null as unknown as boolean,
+            serverName: 'seeking_accelerator_intros'
+        },
+        wantToGiveBack: {
+            type: 'boolean',
+            optional: true,
+            customType: null as unknown as boolean,
+            serverName: 'want_to_give_back'
+        },
+        specialties: {
+            type: 'json',
+            optional: true,
+            customType: null as unknown as string[]
+        },
+        interestedExperiences: {
+            type: 'json',
+            optional: true,
+            customType: null as unknown as string[],
+            serverName: 'interested_experiences'
+        },
         streakCount: {
             type: 'number',
             optional: true,

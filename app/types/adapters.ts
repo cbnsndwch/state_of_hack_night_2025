@@ -27,12 +27,26 @@ export interface Profile {
     twitterHandle: string | null;
     /** Personal or portfolio website */
     websiteUrl: string | null;
+    /** LinkedIn profile URL */
+    linkedinUrl: string | null;
     /** Current role/occupation */
     role: string | null;
     /** Whether seeking funding for projects */
     seekingFunding: boolean;
     /** Whether interested in mentoring others */
     openToMentoring: boolean;
+    /** Looking for a co-founder */
+    lookingForCofounder: boolean;
+    /** Wants product feedback from the community */
+    wantProductFeedback: boolean;
+    /** Seeking VC / angel / accelerator intros */
+    seekingAcceleratorIntros: boolean;
+    /** Wants to give back to the community */
+    wantToGiveBack: boolean;
+    /** Specialties (e.g., software, hardware, AI) */
+    specialties: string[];
+    /** Preferred community experiences */
+    interestedExperiences: string[];
     streakCount: number;
     /** Whether user has dismissed the onboarding checklist */
     onboardingDismissed: boolean;
@@ -51,9 +65,16 @@ export interface ProfileInsert {
     githubUsername?: string | null;
     twitterHandle?: string | null;
     websiteUrl?: string | null;
+    linkedinUrl?: string | null;
     role?: string | null;
     seekingFunding?: boolean;
     openToMentoring?: boolean;
+    lookingForCofounder?: boolean;
+    wantProductFeedback?: boolean;
+    seekingAcceleratorIntros?: boolean;
+    wantToGiveBack?: boolean;
+    specialties?: string[];
+    interestedExperiences?: string[];
     streakCount?: number;
     onboardingDismissed?: boolean;
 }
@@ -69,9 +90,16 @@ export interface ProfileUpdate {
     githubUsername?: string | null;
     twitterHandle?: string | null;
     websiteUrl?: string | null;
+    linkedinUrl?: string | null;
     role?: string | null;
     seekingFunding?: boolean;
     openToMentoring?: boolean;
+    lookingForCofounder?: boolean;
+    wantProductFeedback?: boolean;
+    seekingAcceleratorIntros?: boolean;
+    wantToGiveBack?: boolean;
+    specialties?: string[];
+    interestedExperiences?: string[];
     streakCount?: number;
     onboardingDismissed?: boolean;
 }
