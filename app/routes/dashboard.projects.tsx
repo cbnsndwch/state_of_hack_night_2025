@@ -69,31 +69,42 @@ export default function DashboardProjects() {
 
     return (
         <AppLayout isAdmin={!!profile?.isAppAdmin}>
-            <main className="max-w-6xl mx-auto px-4 py-12 bg-black text-white selection:bg-primary selection:text-black min-h-full">
-                <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <Button
-                            variant="ghost"
-                            onClick={() => navigate('/dashboard')}
-                            className="text-zinc-400 hover:text-white font-sans text-sm mb-3 flex items-center gap-2"
-                        >
-                            <span>←</span> back to dashboard
-                        </Button>
-                        <h1 className="text-4xl font-sans text-primary mb-2">
-                            my_projects
-                        </h1>
-                        <p className="text-zinc-400 font-sans">
-                            your builds and hack night demos
-                        </p>
-                    </div>
-                    <AddProjectDialog
-                        open={addProjectDialogOpen}
-                        onOpenChange={setAddProjectDialogOpen}
-                        onProjectAdded={() => {
-                            // Zero will automatically sync the new project
-                        }}
-                    />
+            <main className="max-w-6xl mx-auto bg-black text-white selection:bg-primary selection:text-black min-h-full">
+                <header className="mb-8">
+                    <Button
+                        variant="ghost"
+                        onClick={() => navigate('/dashboard')}
+                        className="text-zinc-400 hover:text-white font-sans text-sm mb-3 flex items-center gap-2"
+                    >
+                        <span>←</span> back to dashboard
+                    </Button>
+                    <h1 className="text-4xl font-sans text-primary mb-2">
+                        my_projects
+                    </h1>
+                    <p className="text-zinc-400 font-sans">
+                        your builds and hack night demos
+                    </p>
                 </header>
+
+                {/* Submit a build CTA */}
+                <div className="mb-8">
+                    <NeoCard variant="magenta">
+                        <h3 className="text-lg font-sans mb-2">
+                            ship_something
+                        </h3>
+                        <p className="text-sm text-zinc-400 mb-4">
+                            built something at a hack night? share it with the
+                            community.
+                        </p>
+                        <AddProjectDialog
+                            open={addProjectDialogOpen}
+                            onOpenChange={setAddProjectDialogOpen}
+                            onProjectAdded={() => {
+                                // Zero will automatically sync the new project
+                            }}
+                        />
+                    </NeoCard>
+                </div>
 
                 {items.length === 0 ? (
                     <NeoCard className="p-8 text-center">

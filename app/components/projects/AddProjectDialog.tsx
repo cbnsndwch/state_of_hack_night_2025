@@ -17,15 +17,17 @@ import {
     DialogTrigger
 } from '@/components/ui/dialog';
 
+type Props = {
+    onProjectAdded?: () => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+};
+
 export function AddProjectDialog({
     onProjectAdded,
     open: externalOpen,
     onOpenChange: externalOnOpenChange
-}: {
-    onProjectAdded?: () => void;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
-}) {
+}: Props) {
     const { user } = useAuth();
     const { createProject, isLoading: submitting } = useCreateProject();
     const [internalOpen, setInternalOpen] = useState(false);
@@ -115,12 +117,12 @@ export function AddProjectDialog({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger asChild className='w-full'>
                 <Button
-                    className="font-sans bg-primary text-black hover:bg-primary/90"
+                    className="grow w-full font-sans bg-primary text-black hover:bg-primary/90"
                     data-add-project-trigger
                 >
-                    submit_build
+                    submit a build
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-106.25 bg-zinc-950 border-zinc-800 text-zinc-100">
