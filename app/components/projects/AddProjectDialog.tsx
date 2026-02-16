@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
+import { useSafeQuery } from '@/hooks/use-safe-query';
 import { useCreateProject } from '@/hooks/use-zero-mutate';
 import { profileQueries } from '@/zero/queries';
 import { Button } from '@/components/ui/button';
@@ -41,8 +41,8 @@ export function AddProjectDialog({
     const [tags, setTags] = useState('');
     const [file, setFile] = useState<File | null>(null);
 
-    // Get user's profile for memberId
-    const [profile] = useQuery(
+    // Get user's profile for memberId (SSR-safe)
+    const [profile] = useSafeQuery(
         user?.id ? profileQueries.byClerkUserId(user.id) : null
     );
 

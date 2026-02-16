@@ -1,23 +1,50 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { useQuery } from '@rocicorp/zero/react';
+import { useNavigate, useLoaderData } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
+import { useSafeQuery } from '@/hooks/use-safe-query';
 import { profileQueries, projectQueries } from '@/zero/queries';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
+import {
+    createDashboardLoader,
+    type DashboardLoaderData
+} from '@/lib/create-dashboard-loader.server';
+import { getProjectsByMemberId } from '@/lib/db/projects.server';
+
+/**
+ * Server-side loader: auth + profile + projects from Postgres.
+ */
+export const loader = createDashboardLoader(async ({ profile }) => {
+    const projects = profile ? await getProjectsByMemberId(profile.id) : [];
+    return { projects };
+});
+
+type LoaderData = DashboardLoaderData<{
+    projects: Awaited<ReturnType<typeof getProjectsByMemberId>>;
+}>;
 
 export default function DashboardProjects() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
 
-    const [profile] = useQuery(
+    // Server-side loader data
+    const loaderData = useLoaderData<LoaderData>();
+
+    // Zero queries for live/reactive data
+    const [zeroProfile] = useSafeQuery(
         user?.id ? profileQueries.byClerkUserId(user.id) : null
     );
-    const [projects] = useQuery(
-        profile?.id ? projectQueries.byMemberId(profile.id) : null
+    const [zeroProjects] = useSafeQuery(
+        zeroProfile?.id
+            ? projectQueries.byMemberId(zeroProfile.id)
+            : null
     );
+
+    // Prefer Zero's reactive data, fall back to server-loaded data
+    const profile = zeroProfile ?? loaderData?.profile ?? null;
+    const projects = zeroProjects ?? loaderData?.projects ?? null;
 
     useEffect(() => {
         if (!loading && !user) {
@@ -118,16 +145,16 @@ export default function DashboardProjects() {
                                     <div className="mt-auto space-y-4">
                                         {tags.length > 0 && (
                                             <div className="flex flex-wrap gap-2">
-                                                {tags.slice(0, 3).map(
-                                                    (tag, index) => (
+                                                {tags
+                                                    .slice(0, 3)
+                                                    .map((tag, index) => (
                                                         <span
                                                             key={`${tag}-${index}`}
                                                             className="px-2 py-0.5 text-xs border border-primary/50 text-primary font-sans bg-primary/10"
                                                         >
                                                             #{tag}
                                                         </span>
-                                                    )
-                                                )}
+                                                    ))}
                                             </div>
                                         )}
 

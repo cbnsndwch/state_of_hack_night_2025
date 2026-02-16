@@ -1,14 +1,27 @@
-import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
-import { useQuery } from '@rocicorp/zero/react';
-import { useAuth } from '@/hooks/use-auth';
-import { profileQueries } from '@/zero/queries';
-import { useUpdateProfile } from '@/hooks/use-zero-mutate';
+import { useLoaderData, useNavigate } from 'react-router';
+
 import { AppLayout } from '@/components/layout/AppLayout';
-import { NeoCard } from '@/components/ui/NeoCard';
 import { NeoButton } from '@/components/ui/NeoButton';
+import { NeoCard } from '@/components/ui/NeoCard';
 import { NeoInput } from '@/components/ui/NeoInput';
 import { NeoTextarea } from '@/components/ui/NeoTextarea';
+import { useAuth } from '@/hooks/use-auth';
+import { useSafeQuery } from '@/hooks/use-safe-query';
+import { useUpdateProfile } from '@/hooks/use-zero-mutate';
+import {
+    createDashboardLoader,
+    type DashboardLoaderData
+} from '@/lib/create-dashboard-loader.server';
+import { profileQueries } from '@/zero/queries';
+
+/**
+ * Server-side loader: uses createDashboardLoader for auth + profile.
+ * Profile data is available immediately on navigation, without waiting for Zero.
+ */
+export const loader = createDashboardLoader();
+
+type LoaderData = DashboardLoaderData;
 
 export default function ProfileEdit() {
     const { user, loading } = useAuth();
@@ -16,6 +29,10 @@ export default function ProfileEdit() {
     const { updateProfile, isLoading: saving } = useUpdateProfile();
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+
+    // Server-side loader data (available immediately on navigation)
+    const loaderData = useLoaderData<LoaderData>();
+    const serverProfile = loaderData?.profile ?? null;
 
     // Form state
     const [bio, setBio] = useState('');
@@ -28,10 +45,14 @@ export default function ProfileEdit() {
     const [seekingFunding, setSeekingFunding] = useState(false);
     const [openToMentoring, setOpenToMentoring] = useState(false);
 
-    // Use Zero to query profile reactively
-    const [profile] = useQuery(
+    // Use Zero for reactive updates (SSR-safe — disabled until Zero connects)
+    const [zeroProfile] = useSafeQuery(
         user?.id ? profileQueries.byClerkUserId(user.id) : null
     );
+
+    // Prefer Zero's reactive data when available, fall back to server-loaded profile
+    const profile = zeroProfile ?? serverProfile ?? null;
+    const [formInitialized, setFormInitialized] = useState(false);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -39,9 +60,9 @@ export default function ProfileEdit() {
         }
     }, [user, loading, navigate]);
 
-    // Populate form when profile loads
+    // Populate form when profile loads (only once, or when Zero provides fresher data)
     useEffect(() => {
-        if (profile) {
+        if (profile && !formInitialized) {
             setBio(profile.bio || '');
             setLumaAttendeeId(profile.lumaAttendeeId || '');
             setSkillsInput((profile.skills as string[])?.join(', ') || '');
@@ -51,8 +72,9 @@ export default function ProfileEdit() {
             setRole(profile.role || '');
             setSeekingFunding(profile.seekingFunding || false);
             setOpenToMentoring(profile.openToMentoring || false);
+            setFormInitialized(true);
         }
-    }, [profile]);
+    }, [profile, formInitialized]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -107,7 +129,21 @@ export default function ProfileEdit() {
         );
     }
 
-    if (!user || !profile) return null;
+    if (!user) return null;
+
+    if (!profile) {
+        // Server loader returned null — profile genuinely doesn't exist
+        return (
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+                <div className="text-red-500 font-sans mb-4">
+                    Profile not found. Please try refreshing or re-login.
+                </div>
+                <NeoButton onClick={() => window.location.reload()}>
+                    Retry
+                </NeoButton>
+            </div>
+        );
+    }
 
     return (
         <AppLayout isAdmin={!!profile?.isAppAdmin}>
@@ -166,13 +202,12 @@ export default function ProfileEdit() {
                                 <label className="block text-sm font-sans text-zinc-300">
                                     Role / Occupation
                                 </label>
-                                <NeoTextarea
-                                    value={bio}
+                                <NeoInput
+                                    value={role}
                                     onChange={(
-                                        e: React.ChangeEvent<HTMLTextAreaElement>
-                                    ) => setBio(e.target.value)}
-                                    placeholder="Tell the community about yourself, what you're building, or what you're interested in learning..."
-                                    rows={4}
+                                        e: React.ChangeEvent<HTMLInputElement>
+                                    ) => setRole(e.target.value)}
+                                    placeholder="Software Engineer, Founder, Student, etc."
                                 />
                             </div>
                         </div>

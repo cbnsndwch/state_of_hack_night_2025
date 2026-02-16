@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router';
+import { useNavigate, useLoaderData } from 'react-router';
 import { useEffect, useState } from 'react';
-import { useQuery } from '@rocicorp/zero/react';
 import { useAuth } from '@/hooks/use-auth';
+import { useSafeQuery } from '@/hooks/use-safe-query';
 import { useDismissOnboarding } from '@/hooks/use-zero-mutate';
 import {
     profileQueries,
@@ -20,6 +20,33 @@ import { DemoSlotBookingDialog } from '@/components/events/DemoSlotBookingDialog
 import { DemoSlotsList } from '@/components/events/DemoSlotsList';
 import { ImHereButton } from '@/components/events/ImHereButton';
 import { CheckInHistory } from '@/components/events/CheckInHistory';
+import {
+    createDashboardLoader,
+    type DashboardLoaderData
+} from '@/lib/create-dashboard-loader.server';
+import { getProjectsByMemberId } from '@/lib/db/projects.server';
+import { getMemberBadges } from '@/lib/db/badges.server';
+import { getMemberSurveyResponses } from '@/lib/db/survey-responses.server';
+
+/**
+ * Server-side loader: fetch profile + projects + badges from Postgres.
+ * This provides immediate data during SSR. Zero queries take over for
+ * live/reactive updates after hydration.
+ */
+export const loader = createDashboardLoader(async ({ profile }) => {
+    const projects = profile ? await getProjectsByMemberId(profile.id) : [];
+    const memberBadges = profile ? await getMemberBadges(profile.id) : [];
+    const surveyResponses = profile
+        ? await getMemberSurveyResponses(profile.id)
+        : [];
+    return { projects, memberBadges, surveyResponses };
+});
+
+type LoaderData = DashboardLoaderData<{
+    projects: Awaited<ReturnType<typeof getProjectsByMemberId>>;
+    memberBadges: Awaited<ReturnType<typeof getMemberBadges>>;
+    surveyResponses: Awaited<ReturnType<typeof getMemberSurveyResponses>>;
+}>;
 
 export default function Dashboard() {
     const { user, loading } = useAuth();
@@ -27,22 +54,39 @@ export default function Dashboard() {
     const { dismissOnboarding } = useDismissOnboarding();
     const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
 
-    // Use Zero queries for reactive data
-    const [profile] = useQuery(
+    // Server-side loader data (available immediately on navigation)
+    const loaderData = useLoaderData<LoaderData>();
+
+    // Zero queries for live/reactive data (activate after hydration)
+    const [zeroProfile] = useSafeQuery(
         user?.id ? profileQueries.byClerkUserId(user.id) : null
     );
-    const [projects] = useQuery(
-        profile?.id ? projectQueries.byMemberId(profile.id) : null
+    const [zeroProjects] = useSafeQuery(
+        zeroProfile?.id
+            ? projectQueries.byMemberId(zeroProfile.id)
+            : null
     );
-    const [memberBadges] = useQuery(
-        profile?.id ? badgeQueries.byMemberId(profile.id) : null
+    const [zeroMemberBadges] = useSafeQuery(
+        zeroProfile?.id ? badgeQueries.byMemberId(zeroProfile.id) : null
     );
-    const [surveyResponses] = useQuery(
-        profile?.id ? surveyResponseQueries.byMemberId(profile.id) : null
+    const [zeroSurveyResponses] = useSafeQuery(
+        zeroProfile?.id
+            ? surveyResponseQueries.byMemberId(zeroProfile.id)
+            : null
     );
-    const [rsvps] = useQuery(
-        profile?.id ? attendanceQueries.hasRsvps(profile.id) : null
+    const [rsvps] = useSafeQuery(
+        zeroProfile?.id
+            ? attendanceQueries.hasRsvps(zeroProfile.id)
+            : null
     );
+
+    // Prefer Zero's reactive data, fall back to server-loaded data
+    const profile = zeroProfile ?? loaderData?.profile ?? null;
+    const projects = zeroProjects ?? loaderData?.projects ?? null;
+    const memberBadges =
+        zeroMemberBadges ?? loaderData?.memberBadges ?? null;
+    const surveyResponses =
+        zeroSurveyResponses ?? loaderData?.surveyResponses ?? null;
 
     // Redirect to home if not authenticated
     useEffect(() => {
@@ -63,19 +107,32 @@ export default function Dashboard() {
 
     if (!user) return null;
 
-    // Compute derived values from Zero queries
+    // Compute derived values
     const projectCount = projects?.length || 0;
-    const badges =
-        memberBadges
-            ?.map(mb => mb.badge)
-            .filter((b): b is NonNullable<typeof b> => b != null) || [];
+    // Zero memberBadges have .badge relation; server data has badge fields directly
+    const badges = (() => {
+        if (!memberBadges || memberBadges.length === 0) return [];
+        // Check if this is Zero data (has .badge relation) or server data
+        const first = memberBadges[0];
+        if ('badge' in first && first.badge) {
+            // Zero query result with .badge relation
+            return memberBadges
+                .map((mb: any) => mb.badge)
+                .filter(
+                    (b: unknown): b is NonNullable<typeof b> => b != null
+                );
+        }
+        // Server data — badges are flat objects from getMemberBadges join
+        return memberBadges as any[];
+    })();
     const completedSurveys =
-        surveyResponses?.map(sr => ({
+        surveyResponses?.map((sr: any) => ({
             id: sr.id,
             surveyId: sr.surveyId,
-            surveySlug: sr.survey?.slug || '',
-            surveyTitle: sr.survey?.title || '',
-            surveyDescription: sr.survey?.description || '',
+            surveySlug: sr.survey?.slug || sr.surveySlug || '',
+            surveyTitle: sr.survey?.title || sr.surveyTitle || '',
+            surveyDescription:
+                sr.survey?.description || sr.surveyDescription || '',
             submittedAt: sr.submittedAt
                 ? new Date(sr.submittedAt).toISOString()
                 : new Date().toISOString()
