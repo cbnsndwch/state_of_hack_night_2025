@@ -1,5 +1,7 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useLoaderData, useNavigate } from 'react-router';
+import type { ActionFunctionArgs } from 'react-router';
+import { getAuth } from '@clerk/react-router/server';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { NeoButton } from '@/components/ui/NeoButton';
@@ -12,11 +14,16 @@ import {
 import type { ProfileLike } from '@/components/profile/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useSafeQuery } from '@/hooks/use-safe-query';
-import { useUpdateProfile } from '@/hooks/use-zero-mutate';
+import { useZeroConnection } from '@/components/providers/zero-provider';
+import { mutators } from '@/zero/mutators';
 import {
     createDashboardLoader,
     type DashboardLoaderData
 } from '@/lib/create-dashboard-loader.server';
+import {
+    getProfileByClerkUserId,
+    updateProfile as updateProfileDb
+} from '@/lib/db/profiles.server';
 import { profileQueries } from '@/zero/queries';
 import { Button } from '@/components/ui/button';
 
@@ -28,12 +35,53 @@ export { DashboardErrorBoundary as ErrorBoundary } from '@/components/layout/Das
  */
 export const loader = createDashboardLoader();
 
+/**
+ * Server-side action: handles profile updates directly via Drizzle/Postgres.
+ *
+ * This replaces the broken Zero push endpoint path. Changes are written
+ * directly to Postgres, and zero-cache picks them up via WAL replication.
+ */
+export async function action(args: ActionFunctionArgs) {
+    const auth = await getAuth(args);
+    if (!auth.userId) {
+        return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await args.request.json();
+    const { id, ...fields } = body as { id: string; [key: string]: unknown };
+
+    if (!id) {
+        return Response.json({ success: false, error: 'Profile ID required' }, { status: 400 });
+    }
+
+    // Verify ownership: the authenticated user can only update their own profile
+    const profile = await getProfileByClerkUserId(auth.userId);
+    if (!profile || profile.id !== id) {
+        return Response.json(
+            { success: false, error: 'You can only update your own profile' },
+            { status: 403 }
+        );
+    }
+
+    try {
+        await updateProfileDb(id, fields);
+        return Response.json({ success: true });
+    } catch (err) {
+        console.error('Profile update error:', err);
+        return Response.json(
+            { success: false, error: err instanceof Error ? err.message : 'Update failed' },
+            { status: 500 }
+        );
+    }
+}
+
 type LoaderData = DashboardLoaderData;
 
 export default function ProfileEdit() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
-    const { updateProfile, isLoading: saving } = useUpdateProfile();
+    const [saving, setSaving] = useState(false);
+    const { zero } = useZeroConnection();
 
     // Server-side loader data (available immediately on navigation)
     const loaderData = useLoaderData<LoaderData>();
@@ -56,6 +104,9 @@ export default function ProfileEdit() {
     /**
      * Generic save handler shared by all section cards.
      * Each card passes only the fields it manages.
+     *
+     * Uses Zero's mutation API for optimistic updates + server sync.
+     * Zero-cache picks up changes via WAL replication automatically.
      */
     const handleSectionSave = useCallback(
         async (
@@ -65,16 +116,24 @@ export default function ProfileEdit() {
                 return { success: false, error: 'Not authenticated' };
             }
 
-            try {
-                const result = await updateProfile({
-                    id: profile.id,
-                    ...fields,
-                } as Parameters<typeof updateProfile>[0]);
+            if (!zero) {
+                return { success: false, error: 'Sync not connected' };
+            }
 
-                if (!result.success) {
+            setSaving(true);
+            try {
+                const write = zero.mutate(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    mutators.profiles.update({ id: profile.id, ...fields } as any)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ) as any;
+
+                const result = await write.client;
+
+                if (result.type === 'error') {
                     return {
                         success: false,
-                        error: result.error || 'Failed to update profile',
+                        error: result.error?.message || 'Failed to update profile',
                     };
                 }
                 return { success: true };
@@ -86,9 +145,11 @@ export default function ProfileEdit() {
                             ? err.message
                             : 'Failed to update profile',
                 };
+            } finally {
+                setSaving(false);
             }
         },
-        [user, profile, updateProfile]
+        [user, profile, zero]
     );
 
     if (loading) {

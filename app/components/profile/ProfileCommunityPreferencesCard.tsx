@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 
+import { Checkbox } from '@/components/ui/checkbox';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { cn } from '@/utils/cn';
 
 import type { ProfileSectionProps } from './types';
+import { Button } from '../ui/button';
 
 // ─── Toggle preferences ─────────────────────────────────────────────────────
 // These map to boolean columns on the profile. Each describes a way the member
@@ -17,43 +19,42 @@ interface TogglePref {
     description: string;
 }
 
-const TOGGLE_PREFS: TogglePref[] = [
+const TOGGLE_PREFERENCES: TogglePref[] = [
     {
         key: 'openToMentoring',
         label: 'Open to mentoring',
-        description:
-            'Help others by sharing your knowledge and experience',
+        description: 'Help others by sharing your knowledge and experience'
     },
     {
         key: 'seekingFunding',
         label: "I'm seeking funding",
         description:
-            'Make your profile visible to investors and VCs in the community',
+            'Make your profile visible to investors and VCs in the community'
     },
     {
         key: 'lookingForCofounder',
         label: 'Looking for a co-founder',
         description:
-            'Let other builders know you are looking for someone to build with',
+            'Let other builders know you are looking for someone to build with'
     },
     {
         key: 'wantProductFeedback',
         label: 'I want product feedback',
         description:
-            'Get constructive feedback on your projects from fellow builders',
+            'Get constructive feedback on your projects from fellow builders'
     },
     {
         key: 'seekingAcceleratorIntros',
         label: 'Seeking VC / accelerator intros',
         description:
-            'Get introduced to investors, angels, or accelerator programs',
+            'Get introduced to investors, angels, or accelerator programs'
     },
     {
         key: 'wantToGiveBack',
         label: 'I want to give back',
         description:
-            'Volunteer to host workshops, mentor newcomers, or organize events',
-    },
+            'Volunteer to host workshops, mentor newcomers, or organize events'
+    }
 ];
 
 // ─── Experience interests ────────────────────────────────────────────────────
@@ -73,19 +74,21 @@ const EXPERIENCE_OPTIONS = [
     'lab_nights with special guests',
     'quarterly project showcase',
     'skills workshops and trainings',
-    'technical conference',
+    'technical conference'
 ];
 
-export function ProfileCommunityPrefsCard({
+export function ProfileCommunityPreferencesCard({
     profile,
     onSave,
-    saving,
+    saving
 }: ProfileSectionProps) {
     // Boolean toggles
     const [toggles, setToggles] = useState<Record<string, boolean>>(() => {
         const init: Record<string, boolean> = {};
-        for (const pref of TOGGLE_PREFS) {
-            init[pref.key] = !!((profile as unknown) as Record<string, unknown>)[pref.key];
+        for (const pref of TOGGLE_PREFERENCES) {
+            init[pref.key] = !!(profile as unknown as Record<string, unknown>)[
+                pref.key
+            ];
         }
         return init;
     });
@@ -95,11 +98,37 @@ export function ProfileCommunityPrefsCard({
         (profile.interestedExperiences as string[]) ?? []
     );
 
+    const [prevProfile, setPrevProfile] = useState(profile);
+
+    // Adjust state during render if profile prop has changed (from Server/Zero)
+    if (profile !== prevProfile) {
+        setPrevProfile(profile);
+
+        // Sync toggles
+        const nextToggles: Record<string, boolean> = {};
+        for (const pref of TOGGLE_PREFERENCES) {
+            nextToggles[pref.key] = !!(
+                profile as unknown as Record<string, unknown>
+            )[pref.key];
+        }
+        setToggles(nextToggles);
+
+        // Sync experiences
+        setExperiences((profile.interestedExperiences as string[]) ?? []);
+    }
+
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    const flipToggle = (key: string) =>
-        setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+    const flipToggle = (key: string) => {
+        setToggles(prev => {
+            if (!prev) return { [key]: true }; // Safety fallback
+            return {
+                ...prev,
+                [key]: !prev[key]
+            };
+        });
+    };
 
     const toggleExperience = (exp: string) => {
         setExperiences(prev =>
@@ -114,7 +143,7 @@ export function ProfileCommunityPrefsCard({
         const result = await onSave({
             ...toggles,
             interestedExperiences:
-                experiences.length > 0 ? experiences : undefined,
+                experiences.length > 0 ? experiences : undefined
         });
 
         if (result.success) {
@@ -141,10 +170,10 @@ export function ProfileCommunityPrefsCard({
 
                 {/* Toggle preferences */}
                 <div className="space-y-3">
-                    {TOGGLE_PREFS.map(pref => {
+                    {TOGGLE_PREFERENCES.map(pref => {
                         const active = toggles[pref.key];
                         return (
-                            <label
+                            <div
                                 key={pref.key}
                                 className={cn(
                                     'flex items-start gap-3 p-3 cursor-pointer border-2 transition-all',
@@ -152,28 +181,17 @@ export function ProfileCommunityPrefsCard({
                                         ? 'border-primary/50 bg-primary/5'
                                         : 'border-zinc-800 hover:border-zinc-700'
                                 )}
+                                onClick={() => flipToggle(pref.key)}
                             >
                                 <div className="pt-0.5">
-                                    <div
-                                        className={cn(
-                                            'w-5 h-5 border-2 flex items-center justify-center transition-all',
-                                            active
-                                                ? 'bg-primary border-primary'
-                                                : 'border-zinc-500 bg-black'
-                                        )}
-                                    >
-                                        {active && (
-                                            <Check className="w-3.5 h-3.5 text-black" />
-                                        )}
-                                    </div>
+                                    <Checkbox
+                                        checked={!!active}
+                                        onCheckedChange={() =>
+                                            flipToggle(pref.key)
+                                        }
+                                    />
                                 </div>
-                                <input
-                                    type="checkbox"
-                                    checked={active}
-                                    onChange={() => flipToggle(pref.key)}
-                                    className="sr-only"
-                                />
-                                <div>
+                                <div className="pointer-events-none">
                                     <div className="text-sm font-sans text-zinc-200">
                                         {pref.label}
                                     </div>
@@ -181,7 +199,7 @@ export function ProfileCommunityPrefsCard({
                                         {pref.description}
                                     </p>
                                 </div>
-                            </label>
+                            </div>
                         );
                     })}
                 </div>
@@ -199,20 +217,21 @@ export function ProfileCommunityPrefsCard({
                         {EXPERIENCE_OPTIONS.map(exp => {
                             const active = experiences.includes(exp);
                             return (
-                                <button
+                                <Button
                                     key={exp}
                                     type="button"
+                                    variant={active ? 'default' : 'secondary'}
                                     onClick={() => toggleExperience(exp)}
                                     className={cn(
-                                        'px-3 py-1.5 text-sm font-sans border-2 transition-all',
-                                        active
-                                            ? 'bg-primary/20 text-primary border-primary/60'
-                                            : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:border-zinc-500'
+                                        'px-3 py-1.5 text-sm font-sans border-2 transition-all'
+                                        // active
+                                        //     ? 'bg-primary/20 text-primary border-primary/60'
+                                        //     : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:border-zinc-500'
                                     )}
                                 >
                                     {active ? '✓ ' : ''}
                                     {exp}
-                                </button>
+                                </Button>
                             );
                         })}
                     </div>

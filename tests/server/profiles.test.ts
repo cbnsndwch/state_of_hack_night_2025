@@ -92,7 +92,7 @@ describe('Profile — Create', () => {
                 wantProductFeedback: true,
                 seekingAcceleratorIntros: true,
                 wantToGiveBack: true,
-                specialties: ['software', 'data/AI'],
+                specialties: ['software', 'data/ai'],
                 interestedExperiences: ['hack nights', 'demo nights'],
             })
             .returning();
@@ -104,7 +104,7 @@ describe('Profile — Create', () => {
         expect(profile.wantProductFeedback).toBe(true);
         expect(profile.seekingAcceleratorIntros).toBe(true);
         expect(profile.wantToGiveBack).toBe(true);
-        expect(profile.specialties).toEqual(['software', 'data/AI']);
+        expect(profile.specialties).toEqual(['software', 'data/ai']);
         expect(profile.interestedExperiences).toEqual([
             'hack nights',
             'demo nights',
@@ -270,7 +270,7 @@ describe('Profile — Update', () => {
             .returning();
         createdIds.push(profile.id);
 
-        const specialties = ['software', 'hardware/electrical', 'data/AI'];
+        const specialties = ['software', 'hardware/electrical', 'data/ai'];
         const experiences = ['hack nights', 'hackathon', 'demo nights'];
 
         const [updated] = await db

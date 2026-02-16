@@ -9,11 +9,11 @@ import { cn } from '@/utils/cn';
  */
 const SUGGESTED_SKILLS = [
     // From Luma "Select all your specialities"
-    'AR/VR',
+    'ar/vr',
     'aerospace',
     'chemical/ag/bio',
     'civil/industrial',
-    'data/AI',
+    'data/ai',
     'design',
     'firmware',
     'hardware/electrical',

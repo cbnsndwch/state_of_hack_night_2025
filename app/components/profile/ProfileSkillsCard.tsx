@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { NeoButton } from '@/components/ui/NeoButton';
 import { NeoCard } from '@/components/ui/NeoCard';
 
@@ -12,22 +13,22 @@ import type { ProfileSectionProps } from './types';
  * Displayed as toggle-able chips so users can self-identify broadly.
  */
 const SPECIALTY_OPTIONS = [
-    'AR/VR',
+    'ar/vr',
     'aerospace',
     'chemical/ag/bio',
     'civil/industrial',
-    'data/AI',
+    'data/ai',
     'design',
     'firmware',
     'hardware/electrical',
     'mechanical',
-    'software',
+    'software'
 ];
 
 export function ProfileSkillsCard({
     profile,
     onSave,
-    saving,
+    saving
 }: ProfileSectionProps) {
     const [skills, setSkills] = useState<string[]>(
         (profile.skills as string[]) ?? []
@@ -49,7 +50,7 @@ export function ProfileSkillsCard({
         setSuccess(false);
         const result = await onSave({
             skills: skills.length > 0 ? skills : undefined,
-            specialties: specialties.length > 0 ? specialties : undefined,
+            specialties: specialties.length > 0 ? specialties : undefined
         });
         if (result.success) {
             setSuccess(true);
@@ -72,26 +73,24 @@ export function ProfileSkillsCard({
                         Specialties
                     </label>
                     <p className="text-xs text-zinc-500 -mt-1">
-                        Select all that apply — helps us match you with the right
-                        people and events
+                        Select all that apply — helps us match you with the
+                        right people and events
                     </p>
                     <div className="flex flex-wrap gap-2">
-                        {SPECIALTY_OPTIONS.map(s => {
-                            const active = specialties.includes(s);
+                        {SPECIALTY_OPTIONS.map(specialtyLabel => {
+                            const active = specialties.includes(specialtyLabel);
                             return (
-                                <button
-                                    key={s}
+                                <Button
+                                    key={specialtyLabel}
                                     type="button"
-                                    onClick={() => toggleSpecialty(s)}
-                                    className={`px-3 py-1.5 text-sm font-sans border-2 transition-all ${
-                                        active
-                                            ? 'bg-primary/20 text-primary border-primary/60'
-                                            : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:border-zinc-500'
-                                    }`}
+                                    variant={active ? 'default' : 'secondary'}
+                                    onClick={() =>
+                                        toggleSpecialty(specialtyLabel)
+                                    }
                                 >
                                     {active ? '✓ ' : ''}
-                                    {s}
-                                </button>
+                                    {specialtyLabel}
+                                </Button>
                             );
                         })}
                     </div>
@@ -114,12 +113,13 @@ export function ProfileSkillsCard({
 
                 <div className="flex items-center gap-3 pt-2">
                     <NeoButton
+                        data-testid="save-skills-button"
                         type="button"
                         onClick={handleSave}
                         disabled={saving}
                         className="text-sm"
                     >
-                        {saving ? 'saving...' : 'save_skills'}
+                        {saving ? 'saving...' : 'save'}
                     </NeoButton>
                     {success && (
                         <span className="flex items-center gap-1.5 text-primary text-sm font-sans">

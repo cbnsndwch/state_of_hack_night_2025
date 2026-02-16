@@ -95,7 +95,7 @@ describe('ProfileBasicInfoCard', () => {
         await user.type(roleInput, 'Engineer');
 
         // Click save
-        await user.click(screen.getByText('save_basic_info'));
+        await user.click(screen.getByTestId('btn-save-basic-info'));
 
         expect(onSave).toHaveBeenCalledWith({
             bio: 'Hello world',
@@ -112,7 +112,7 @@ describe('ProfileBasicInfoCard', () => {
         const user = userEvent.setup();
         const { onSave } = renderCard();
 
-        await user.click(screen.getByText('save_basic_info'));
+        await user.click(screen.getByTestId('btn-save-basic-info'));
 
         expect(onSave).toHaveBeenCalled();
         // The "saved" text should appear after successful save
@@ -127,7 +127,7 @@ describe('ProfileBasicInfoCard', () => {
 
         renderCard({ onSave: failingSave });
 
-        await user.click(screen.getByText('save_basic_info'));
+        await user.click(screen.getByTestId('btn-save-basic-info'));
 
         expect(await screen.findByText('Network error')).toBeInTheDocument();
     });

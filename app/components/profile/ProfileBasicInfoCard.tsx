@@ -101,12 +101,13 @@ export function ProfileBasicInfoCard({
 
                 <div className="flex items-center gap-3 pt-2">
                     <NeoButton
+                        data-testid="btn-save-basic-info"
                         type="button"
                         onClick={handleSave}
                         disabled={saving}
                         className="text-sm"
                     >
-                        {saving ? 'saving...' : 'save_basic_info'}
+                        {saving ? 'saving...' : 'save'}
                     </NeoButton>
                     {success && (
                         <span className="flex items-center gap-1.5 text-primary text-sm font-sans animate-in fade-in">

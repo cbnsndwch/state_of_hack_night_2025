@@ -8,7 +8,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { ProfileCommunityPrefsCard } from '@/components/profile/ProfileCommunityPrefsCard';
+import { ProfileCommunityPreferencesCard } from '@/components/profile/ProfileCommunityPreferencesCard';
 import type { ProfileLike, ProfileSectionProps } from '@/components/profile/types';
 
 function makeProfile(overrides: Partial<Record<string, unknown>> = {}): ProfileLike {
@@ -52,7 +52,7 @@ function renderCard(
         onSave: overrides.onSave ?? defaultOnSave,
         saving: overrides.saving ?? false,
     };
-    const result = render(<ProfileCommunityPrefsCard {...props} />);
+    const result = render(<ProfileCommunityPreferencesCard {...props} />);
     return { ...result, onSave: props.onSave as ReturnType<typeof vi.fn> };
 }
 

@@ -65,8 +65,8 @@ describe('ProfileSkillsCard', () => {
     it('renders all 10 specialty options', () => {
         renderCard();
         const SPECIALTIES = [
-            'AR/VR', 'aerospace', 'chemical/ag/bio', 'civil/industrial',
-            'data/AI', 'design', 'firmware', 'hardware/electrical',
+            'ar/vr', 'aerospace', 'chemical/ag/bio', 'civil/industrial',
+            'data/ai', 'design', 'firmware', 'hardware/electrical',
             'mechanical', 'software',
         ];
         for (const s of SPECIALTIES) {
@@ -75,11 +75,11 @@ describe('ProfileSkillsCard', () => {
     });
 
     it('pre-selects specialties from profile data', () => {
-        renderCard({}, { specialties: ['software', 'data/AI'] });
+        renderCard({}, { specialties: ['software', 'data/ai'] });
 
         // The selected chips should show the checkmark prefix
         expect(screen.getByText(/✓ software/)).toBeInTheDocument();
-        expect(screen.getByText(/✓ data\/AI/)).toBeInTheDocument();
+        expect(screen.getByText(/✓ data\/ai/)).toBeInTheDocument();
     });
 
     it('toggles a specialty on click', async () => {
@@ -123,7 +123,7 @@ describe('ProfileSkillsCard', () => {
         const user = userEvent.setup();
         const { onSave } = renderCard({}, { specialties: ['software'] });
 
-        await user.click(screen.getByText('save_skills'));
+        await user.click(screen.getByTestId('save-skills-button'));
 
         expect(onSave).toHaveBeenCalledWith({
             skills: undefined, // empty array → undefined
@@ -140,7 +140,7 @@ describe('ProfileSkillsCard', () => {
         const user = userEvent.setup();
         renderCard();
 
-        await user.click(screen.getByText('save_skills'));
+        await user.click(screen.getByTestId('save-skills-button'));
         expect(await screen.findByText('saved')).toBeInTheDocument();
     });
 });
