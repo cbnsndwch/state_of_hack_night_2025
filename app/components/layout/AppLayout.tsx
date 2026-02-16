@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { TopBar } from './TopBar';
+import { Menu } from 'lucide-react';
 import { SidebarNav } from './SidebarNav';
-import { UserProfilePreview } from './UserProfilePreview';
-import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/utils/cn';
 import { trackNavClick } from '@/utils/analytics';
+import { Button } from '@/components/ui/button';
 
 interface AppLayoutProps {
     children: React.ReactNode;
@@ -15,18 +14,16 @@ interface AppLayoutProps {
  * AppLayout - Main wrapper for logged-in dashboard pages
  *
  * Architecture:
- * - TopBar at top (full width) with search, notifications, user menu
- * - SidebarNav on left (desktop) / hamburger menu (mobile)
+ * - SidebarNav on left (desktop) with search, nav, admin, user controls
+ * - Mobile: hamburger button in content header, sidebar slides in as overlay
  * - Content area (flex-1) with proper spacing
  * - NO footer (footer only on public site)
- * - UserProfilePreview at bottom of sidebar
  *
  * Responsive:
- * - Desktop (1024px+): Sidebar visible, full layout
- * - Mobile (<1024px): Hamburger menu, sidebar slides in from left
+ * - Desktop (768px+): Sidebar visible, full layout
+ * - Mobile (<768px): Hamburger menu, sidebar slides in from left
  */
 export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
-    const { user } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Handle navigation clicks for analytics
@@ -46,96 +43,74 @@ export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
         return () => document.removeEventListener('keydown', handleEscape);
     }, [isMobileMenuOpen]);
 
-    // Transform user data for UserProfilePreview
-    const userProfile = user
-        ? {
-              id: user.id,
-              email: user.email,
-              displayName: user.email.split('@')[0], // Fallback display name
-              avatarUrl: undefined, // TODO: Add avatar URL from profile
-              affiliation: undefined, // TODO: Add from profile
-              role: undefined, // TODO: Add role from profile
-              streakCount: undefined, // TODO: Add streak data
-              badgeCount: undefined // TODO: Add badge count
-          }
-        : null;
-
     return (
-        <div className="h-screen flex flex-col bg-black">
-            {/* Top Bar */}
-            <TopBar
-                onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                showMenuButton={true}
-            />
+        <div className="h-screen flex bg-black">
+            {/* Sidebar - Desktop */}
+            <div className="hidden md:flex md:flex-col">
+                <SidebarNav
+                    isAdmin={isAdmin}
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                    onNavItemClick={handleNavClick}
+                />
+            </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Sidebar - Desktop */}
-                <div className="hidden md:flex md:flex-col">
-                    <div className="flex-1 overflow-y-auto">
+            {/* Sidebar - Mobile (Overlay) */}
+            {isMobileMenuOpen && (
+                <>
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black/80 z-40 md:hidden"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        aria-hidden="true"
+                    />
+
+                    {/* Sidebar Panel */}
+                    <div
+                        className={cn(
+                            'fixed top-0 left-0 bottom-0 z-50 md:hidden',
+                            'w-70 bg-zinc-950',
+                            'transform transition-transform duration-300 ease-in-out',
+                            'flex flex-col',
+                            isMobileMenuOpen
+                                ? 'translate-x-0'
+                                : '-translate-x-full'
+                        )}
+                    >
                         <SidebarNav
                             isAdmin={isAdmin}
-                            onNavigate={() => setIsMobileMenuOpen(false)}
+                            className="border-r-0"
+                            onNavigate={() =>
+                                setIsMobileMenuOpen(false)
+                            }
                             onNavItemClick={handleNavClick}
                         />
                     </div>
-                    {userProfile && (
-                        <UserProfilePreview
-                            user={userProfile}
-                            className="sticky bottom-0"
-                        />
-                    )}
+                </>
+            )}
+
+            {/* Content Area */}
+            <main className="flex-1 overflow-y-auto bg-black">
+                {/* Mobile menu button - only visible on small screens */}
+                <div className="md:hidden sticky top-0 z-30 bg-black/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 flex items-center gap-3">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-zinc-400 hover:text-primary shrink-0"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        aria-label="Toggle menu"
+                    >
+                        <Menu className="h-5 w-5" />
+                    </Button>
+                    <img
+                        src="/logo_horizontal.svg"
+                        alt="hello_miami"
+                        className="h-5 w-auto"
+                    />
                 </div>
-
-                {/* Sidebar - Mobile (Overlay) */}
-                {isMobileMenuOpen && (
-                    <>
-                        {/* Backdrop */}
-                        <div
-                            className="fixed inset-0 bg-black/80 z-40 md:hidden"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            aria-hidden="true"
-                        />
-
-                        {/* Sidebar Panel */}
-                        <div
-                            className={cn(
-                                'fixed top-16 left-0 bottom-0 z-50 md:hidden',
-                                'w-70 bg-zinc-950',
-                                'transform transition-transform duration-300 ease-in-out',
-                                'flex flex-col',
-                                isMobileMenuOpen
-                                    ? 'translate-x-0'
-                                    : '-translate-x-full'
-                            )}
-                        >
-                            <div className="flex-1 overflow-y-auto">
-                                <SidebarNav
-                                    isAdmin={isAdmin}
-                                    className="border-r-0"
-                                    onNavigate={() =>
-                                        setIsMobileMenuOpen(false)
-                                    }
-                                    onNavItemClick={handleNavClick}
-                                />
-                            </div>
-                            {userProfile && (
-                                <UserProfilePreview
-                                    user={userProfile}
-                                    className="sticky bottom-0"
-                                />
-                            )}
-                        </div>
-                    </>
-                )}
-
-                {/* Content Area */}
-                <main className="flex-1 overflow-y-auto bg-black">
-                    <div className="w-full min-h-full p-6 md:p-8 lg:p-12">
-                        {children}
-                    </div>
-                </main>
-            </div>
+                <div className="w-full min-h-full px-4 py-4 md:px-8 md:py-6 lg:px-12 lg:py-8">
+                    {children}
+                </div>
+            </main>
         </div>
     );
 }

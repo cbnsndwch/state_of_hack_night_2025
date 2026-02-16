@@ -1,4 +1,4 @@
-import { Bell, LogOut, Menu, Search } from 'lucide-react';
+import { Bell, LogOut, Menu } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { ConnectionStatus } from '@/components/connection-status';
@@ -12,7 +12,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 
 interface TopBarProps {
     onMenuToggle?: () => void;
@@ -57,17 +56,8 @@ export function TopBar({ onMenuToggle, showMenuButton = true }: TopBarProps) {
                     </Button>
                 )}
 
-                {/* Center: Search Input */}
-                <div className="flex-1 max-w-md mx-auto hidden md:flex">
-                    <div className="relative w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                        <Input
-                            type="search"
-                            placeholder="Search..."
-                            className="w-full pl-10 bg-zinc-900/50 border-zinc-800 focus:border-primary text-zinc-300 placeholder:text-zinc-600"
-                        />
-                    </div>
-                </div>
+                {/* Spacer */}
+                <div className="flex-1" />
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-4">

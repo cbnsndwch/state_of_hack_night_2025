@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useNavigate, useLoaderData } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
@@ -12,14 +13,11 @@ import {
 } from '@/zero/queries';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { NeoCard } from '@/components/ui/NeoCard';
-import { LiveIndicator } from '@/components/connection-status';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
 import { ProjectGallery } from '@/components/projects/ProjectGallery';
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
-import { DemoSlotBookingDialog } from '@/components/events/DemoSlotBookingDialog';
-import { DemoSlotsList } from '@/components/events/DemoSlotsList';
 import { ImHereButton } from '@/components/events/ImHereButton';
-import { CheckInHistory } from '@/components/events/CheckInHistory';
+import { UpcomingDemoSlots } from '@/components/events/UpcomingDemoSlots';
 import {
     createDashboardLoader,
     type DashboardLoaderData
@@ -64,9 +62,7 @@ export default function Dashboard() {
         user?.id ? profileQueries.byClerkUserId(user.id) : null
     );
     const [zeroProjects] = useSafeQuery(
-        zeroProfile?.id
-            ? projectQueries.byMemberId(zeroProfile.id)
-            : null
+        zeroProfile?.id ? projectQueries.byMemberId(zeroProfile.id) : null
     );
     const [zeroMemberBadges] = useSafeQuery(
         zeroProfile?.id ? badgeQueries.byMemberId(zeroProfile.id) : null
@@ -77,16 +73,13 @@ export default function Dashboard() {
             : null
     );
     const [rsvps] = useSafeQuery(
-        zeroProfile?.id
-            ? attendanceQueries.hasRsvps(zeroProfile.id)
-            : null
+        zeroProfile?.id ? attendanceQueries.hasRsvps(zeroProfile.id) : null
     );
 
     // Prefer Zero's reactive data, fall back to server-loaded data
     const profile = zeroProfile ?? loaderData?.profile ?? null;
     const projects = zeroProjects ?? loaderData?.projects ?? null;
-    const memberBadges =
-        zeroMemberBadges ?? loaderData?.memberBadges ?? null;
+    const memberBadges = zeroMemberBadges ?? loaderData?.memberBadges ?? null;
     const surveyResponses =
         zeroSurveyResponses ?? loaderData?.surveyResponses ?? null;
 
@@ -120,9 +113,7 @@ export default function Dashboard() {
             // Zero query result with .badge relation
             return memberBadges
                 .map((mb: any) => mb.badge)
-                .filter(
-                    (b: unknown): b is NonNullable<typeof b> => b != null
-                );
+                .filter((b: unknown): b is NonNullable<typeof b> => b != null);
         }
         // Server data — badges are flat objects from getMemberBadges join
         return memberBadges as any[];
@@ -165,10 +156,10 @@ export default function Dashboard() {
         },
         {
             id: 'rsvp-event',
-            label: 'RSVP to a hack night',
+            label: 'RSVP to your next hack night',
             description:
                 'Join us at The DOCK (Tuesdays) or Moonlighter (Thursdays)',
-            completed: (rsvps?.length || 0) > 0,
+            completed: (rsvps?.length || 0) > 1,
             action: {
                 label: 'View Events',
                 href: 'https://luma.com/hello_miami'
@@ -190,19 +181,7 @@ export default function Dashboard() {
 
     return (
         <AppLayout isAdmin={!!profile?.isAppAdmin}>
-            <main className="max-w-7xl mx-auto px-4 py-12 bg-black text-white selection:bg-primary selection:text-black min-h-full">
-                <header className="mb-12">
-                    <div className="flex items-center justify-between mb-2">
-                        <h1 className="text-4xl font-sans text-primary">
-                            builder_dashboard
-                        </h1>
-                        <LiveIndicator />
-                    </div>
-                    <p className="text-zinc-400 font-sans">
-                        welcome back, {user.email?.split('@')[0]}
-                    </p>
-                </header>
-
+            <main className="max-w-7xl mx-auto bg-black text-white selection:bg-primary selection:text-black min-h-full">
                 {/* Luma Attendee ID Prompt - Shows if not linked */}
                 {profile && !profile.lumaAttendeeId && (
                     <div className="mb-8">
@@ -288,36 +267,11 @@ export default function Dashboard() {
 
                     {/* Quick Links / Actions */}
                     <div className="space-y-6">
-                        {/* Admin Panel - Shows only for admins */}
-                        {profile?.isAppAdmin && (
-                            <NeoCard variant="yellow">
-                                <h3 className="text-lg font-sans mb-4">
-                                    admin_panel
-                                </h3>
-                                <p className="text-sm text-zinc-400 mb-4">
-                                    View survey insights and manage community
-                                    data.
-                                </p>
-                                <div className="space-y-2">
-                                    <a
-                                        href={`/admin/surveys?userId=${user.id}`}
-                                        className="block w-full py-2 bg-primary text-black border border-primary text-center font-sans text-sm hover:bg-primary/80 transition-all"
-                                    >
-                                        survey insights
-                                    </a>
-                                    <a
-                                        href={`/admin/demo-slots?userId=${user.id}`}
-                                        className="block w-full py-2 bg-primary text-black border border-primary text-center font-sans text-sm hover:bg-primary/80 transition-all"
-                                    >
-                                        manage demo slots
-                                    </a>
-                                </div>
-                            </NeoCard>
-                        )}
-
                         <ImHereButton
                             lumaAttendeeId={profile?.lumaAttendeeId}
                         />
+
+                        <UpcomingDemoSlots />
 
                         <NeoCard variant="magenta">
                             <h3 className="text-lg font-sans mb-4">
@@ -334,30 +288,7 @@ export default function Dashboard() {
                                 }}
                             />
                         </NeoCard>
-
-                        <NeoCard variant="cyan">
-                            <h3 className="text-lg font-sans mb-4">
-                                demo_night
-                            </h3>
-                            <p className="text-sm text-zinc-400 mb-4">
-                                reserve a time slot to present your project at
-                                an upcoming hack night.
-                            </p>
-                            <DemoSlotBookingDialog
-                                onDemoBooked={() => {
-                                    // Zero will automatically sync the new demo slot
-                                }}
-                            />
-                        </NeoCard>
                     </div>
-                </div>
-
-                {/* Demo Slots Section */}
-                <div className="mt-12" id="demo-slots">
-                    <h2 className="text-2xl font-sans text-primary mb-6">
-                        my_demo_slots
-                    </h2>
-                    <DemoSlotsList memberId={profile?.id} />
                 </div>
 
                 {/* Badges Section */}
@@ -391,14 +322,6 @@ export default function Dashboard() {
                         </div>
                     </div>
                 )}
-
-                {/* Check-In History Section */}
-                <div className="mt-12" id="check-ins">
-                    <h2 className="text-2xl font-sans text-primary mb-6">
-                        check-in_history
-                    </h2>
-                    <CheckInHistory />
-                </div>
 
                 {/* Completed Surveys Section */}
                 {completedSurveys.length > 0 && (
@@ -435,12 +358,7 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                <div className="mt-12" id="community-projects">
-                    <h2 className="text-2xl font-sans text-primary mb-6">
-                        community_builds
-                    </h2>
-                    <ProjectGallery />
-                </div>
+                <ProjectGallery />
             </main>
         </AppLayout>
     );
