@@ -150,7 +150,7 @@ export default function ProfileEdit() {
 
     return (
         <AppLayout isAdmin={!!profile?.isAppAdmin}>
-            <main className="max-w-4xl mx-auto px-4 py-12 bg-black text-white selection:bg-primary selection:text-black min-h-full">
+            <main className="max-w-4xl mx-auto bg-black text-white selection:bg-primary selection:text-black min-h-full">
                 <header className="mb-8">
                     <Button
                         variant="ghost"
@@ -175,6 +175,7 @@ export default function ProfileEdit() {
                                 basic_info
                             </h2>
 
+                            {/* Luma Integration */}
                             <div className="space-y-2">
                                 <label className="block text-sm font-sans text-zinc-300">
                                     Email (from Luma)
@@ -188,6 +189,20 @@ export default function ProfileEdit() {
                                     This is your verified Luma email and cannot
                                     be changed
                                 </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-sm font-sans text-zinc-300">
+                                    Luma Attendee ID
+                                </label>
+                                <NeoInput
+                                    disabled
+                                    value={lumaAttendeeId}
+                                    onChange={(
+                                        e: React.ChangeEvent<HTMLInputElement>
+                                    ) => setLumaAttendeeId(e.target.value)}
+                                    placeholder="att-xxxxxxxxxxxxx"
+                                />
                             </div>
 
                             <div className="space-y-2">
@@ -219,7 +234,7 @@ export default function ProfileEdit() {
                         {/* Skills */}
                         <div className="space-y-6">
                             <h2 className="text-xl font-sans text-primary border-b border-zinc-800 pb-2">
-                                skills_&_interests
+                                skills_and_interests
                             </h2>
 
                             <div className="space-y-2">
@@ -231,7 +246,7 @@ export default function ProfileEdit() {
                                     onChange={(
                                         e: React.ChangeEvent<HTMLInputElement>
                                     ) => setSkillsInput(e.target.value)}
-                                    placeholder="e.g., Python, React, Hardware, CAD design"
+                                    placeholder="e.g., python, react, hardware, light mapping, 3d printing, CAD, lovable, v0, etc."
                                 />
                                 <p className="text-xs text-zinc-500">
                                     Separate skills with commas
@@ -242,7 +257,7 @@ export default function ProfileEdit() {
                         {/* Social Links */}
                         <div className="space-y-6">
                             <h2 className="text-xl font-sans text-primary border-b border-zinc-800 pb-2">
-                                social_links
+                                socials
                             </h2>
 
                             <div className="space-y-2">
@@ -283,61 +298,6 @@ export default function ProfileEdit() {
                                     placeholder="https://yoursite.com"
                                     type="url"
                                 />
-                            </div>
-                        </div>
-
-                        {/* Luma Integration */}
-                        <div className="space-y-6">
-                            <h2 className="text-xl font-sans text-primary border-b border-zinc-800 pb-2">
-                                luma_integration
-                            </h2>
-
-                            <div className="space-y-2">
-                                <label className="block text-sm font-sans text-zinc-300">
-                                    Luma Attendee ID
-                                </label>
-                                <NeoInput
-                                    value={lumaAttendeeId}
-                                    onChange={(
-                                        e: React.ChangeEvent<HTMLInputElement>
-                                    ) => setLumaAttendeeId(e.target.value)}
-                                    placeholder="att-xxxxxxxxxxxxx"
-                                />
-                                <div className="text-xs text-zinc-500 space-y-1">
-                                    <p>
-                                        Link your Luma account for automated
-                                        check-ins and attendance tracking.
-                                    </p>
-                                    <p className="mt-2">
-                                        <strong className="text-zinc-400">
-                                            How to find your Attendee ID:
-                                        </strong>
-                                    </p>
-                                    <ol className="list-decimal list-inside space-y-1 ml-2">
-                                        <li>
-                                            Visit{' '}
-                                            <a
-                                                href="https://lu.ma/hello_miami"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-primary hover:underline"
-                                            >
-                                                lu.ma/hello_miami
-                                            </a>
-                                        </li>
-                                        <li>
-                                            Make sure you're logged into Luma
-                                        </li>
-                                        <li>
-                                            Check your profile or registration
-                                            confirmation emails
-                                        </li>
-                                        <li>
-                                            Your ID starts with "att-" followed
-                                            by letters and numbers
-                                        </li>
-                                    </ol>
-                                </div>
                             </div>
                         </div>
 
