@@ -48,6 +48,7 @@ export default [
     route('api/survey-response', 'routes/api/survey-response.ts'),
     route('api/sync-events', 'routes/api/sync-events.ts'),
     route('api/upload-image', 'routes/api/upload-image.ts'),
+    route('api/verify-link', 'routes/api/verify-link.ts'),
 
     // zero sync routes (called by zero-cache for query authorization and mutations)
     route('api/zero/query', 'routes/api/zero.query.tsx'),
