@@ -63,27 +63,43 @@ export default function Dashboard() {
     const [zeroProfile] = useSafeQuery(
         user?.id ? profileQueries.byClerkUserId(user.id) : null
     );
-    const [zeroProjects] = useSafeQuery(
-        zeroProfile?.id ? projectQueries.byMemberId(zeroProfile.id) : null
+
+    // Resolve profile early so downstream Zero queries can activate even if
+    // zeroProfile hasn't synced yet (using the loader-provided profile ID).
+    const profile = zeroProfile ?? loaderData?.profile ?? null;
+
+    const [zeroProjects, zeroProjectsStatus] = useSafeQuery(
+        profile?.id ? projectQueries.byMemberId(profile.id) : null
     );
-    const [zeroMemberBadges] = useSafeQuery(
-        zeroProfile?.id ? badgeQueries.byMemberId(zeroProfile.id) : null
+    const [zeroMemberBadges, zeroBadgesStatus] = useSafeQuery(
+        profile?.id ? badgeQueries.byMemberId(profile.id) : null
     );
-    const [zeroSurveyResponses] = useSafeQuery(
-        zeroProfile?.id
-            ? surveyResponseQueries.byMemberId(zeroProfile.id)
+    const [zeroSurveyResponses, zeroSurveyStatus] = useSafeQuery(
+        profile?.id
+            ? surveyResponseQueries.byMemberId(profile.id)
             : null
     );
     const [rsvps] = useSafeQuery(
-        zeroProfile?.id ? attendanceQueries.hasRsvps(zeroProfile.id) : null
+        profile?.id ? attendanceQueries.hasRsvps(profile.id) : null
     );
 
-    // Prefer Zero's reactive data, fall back to server-loaded data
-    const profile = zeroProfile ?? loaderData?.profile ?? null;
-    const projects = zeroProjects ?? loaderData?.projects ?? null;
-    const memberBadges = zeroMemberBadges ?? loaderData?.memberBadges ?? null;
+    // Prefer Zero's reactive data once the query has fully synced
+    // ('complete'). Before that, Zero returns [] for collection queries
+    // — which the ?? operator treats as truthy, silently hiding loader data.
+    const projects =
+        (zeroProjectsStatus?.type === 'complete' ? zeroProjects : null) ??
+        loaderData?.projects ??
+        null;
+    const memberBadges =
+        (zeroBadgesStatus?.type === 'complete' ? zeroMemberBadges : null) ??
+        loaderData?.memberBadges ??
+        null;
     const surveyResponses =
-        zeroSurveyResponses ?? loaderData?.surveyResponses ?? null;
+        (zeroSurveyStatus?.type === 'complete'
+            ? zeroSurveyResponses
+            : null) ??
+        loaderData?.surveyResponses ??
+        null;
 
     // Redirect to home if not authenticated
     useEffect(() => {
@@ -286,6 +302,7 @@ export default function Dashboard() {
                                 show the community what you've been building.
                             </p>
                             <AddProjectDialog
+                                memberId={profile?.id ?? ''}
                                 open={addProjectDialogOpen}
                                 onOpenChange={setAddProjectDialogOpen}
                                 onProjectAdded={() => {
