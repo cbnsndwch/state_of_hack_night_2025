@@ -1,9 +1,9 @@
 import { data, type ActionFunctionArgs } from 'react-router';
-import { uploadToCloudinary } from '@/utils/cloudinary.server';
+import { uploadToCloudflareImages } from '@/utils/cloudflare-images.server';
 import { getAuth } from '@clerk/react-router/server';
 
 /**
- * API endpoint for uploading images to Cloudinary
+ * API endpoint for uploading images to Cloudflare Images
  * POST /api/upload-image
  */
 export async function action(args: ActionFunctionArgs) {
@@ -29,13 +29,11 @@ export async function action(args: ActionFunctionArgs) {
             return data({ error: 'No file provided' }, { status: 400 });
         }
 
-        // Convert file to base64 for Cloudinary upload
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
-
-        // Upload to Cloudinary
-        const imageUrl = await uploadToCloudinary(base64, userId);
+        // Upload to Cloudflare Images (accepts File directly, no base64 needed)
+        const imageUrl = await uploadToCloudflareImages(file, {
+            userId,
+            uploadedAt: new Date().toISOString()
+        });
 
         return data({ success: true, imageUrl });
     } catch (error) {
