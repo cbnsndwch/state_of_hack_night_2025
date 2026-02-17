@@ -28,11 +28,9 @@ build
 *.sln
 *.sw?
 
-
+# Local data
 .data
 .local
-.ralph
-/supabase/.temp
 
 # Playwright
 e2e/results/

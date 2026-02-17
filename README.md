@@ -232,6 +232,7 @@ pnpm test:e2e:headed
 ```
 
 Test suites:
+
 - **`public-pages.spec.ts`** — SSR smoke tests for all public routes (landing, ethos, events, showcase, login)
 - **`dashboard.spec.ts`** — Auth redirects and WSOD prevention for protected routes
 - **`ssr-hydration.spec.ts`** — Verifies pages render before Zero connects and hydrate without errors
