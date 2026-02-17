@@ -73,7 +73,9 @@ export function UpcomingDemoSlots() {
             <NeoCard className="flex flex-col gap-2">
                 <h3 className="text-lg font-sans mb-3">upcoming_demos</h3>
 
-                <p className="text-sm text-zinc-400 mb-4">no demos scheduled yet</p>
+                <p className="text-sm text-zinc-400 mb-4">
+                    no demos scheduled yet
+                </p>
 
                 <Button
                     asChild

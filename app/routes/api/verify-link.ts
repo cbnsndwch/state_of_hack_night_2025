@@ -34,8 +34,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
             signal: controller.signal,
             redirect: 'follow',
             headers: {
-                'User-Agent': 'HelloMiami-LinkVerifier/1.0',
-            },
+                'User-Agent': 'HelloMiami-LinkVerifier/1.0'
+            }
         });
 
         clearTimeout(timeout);

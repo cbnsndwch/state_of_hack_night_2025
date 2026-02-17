@@ -11,7 +11,7 @@ import type { ProfileSectionProps } from './types';
 export function ProfileBasicInfoCard({
     profile,
     onSave,
-    saving,
+    saving
 }: ProfileSectionProps) {
     const [bio, setBio] = useState(profile.bio || '');
     const [role, setRole] = useState(profile.role || '');
@@ -23,7 +23,7 @@ export function ProfileBasicInfoCard({
         setSuccess(false);
         const result = await onSave({
             bio: bio.trim() || undefined,
-            role: role.trim() || undefined,
+            role: role.trim() || undefined
         });
         if (result.success) {
             setSuccess(true);

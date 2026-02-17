@@ -9,7 +9,7 @@ import {
     ProfileBasicInfoCard,
     ProfileSkillsCard,
     ProfileSocialsCard,
-    ProfileCommunityPrefsCard,
+    ProfileCommunityPrefsCard
 } from '@/components/profile';
 import type { ProfileLike } from '@/components/profile/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -44,14 +44,20 @@ export const loader = createDashboardLoader();
 export async function action(args: ActionFunctionArgs) {
     const auth = await getAuth(args);
     if (!auth.userId) {
-        return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        return Response.json(
+            { success: false, error: 'Unauthorized' },
+            { status: 401 }
+        );
     }
 
     const body = await args.request.json();
     const { id, ...fields } = body as { id: string; [key: string]: unknown };
 
     if (!id) {
-        return Response.json({ success: false, error: 'Profile ID required' }, { status: 400 });
+        return Response.json(
+            { success: false, error: 'Profile ID required' },
+            { status: 400 }
+        );
     }
 
     // Verify ownership: the authenticated user can only update their own profile
@@ -69,7 +75,10 @@ export async function action(args: ActionFunctionArgs) {
     } catch (err) {
         console.error('Profile update error:', err);
         return Response.json(
-            { success: false, error: err instanceof Error ? err.message : 'Update failed' },
+            {
+                success: false,
+                error: err instanceof Error ? err.message : 'Update failed'
+            },
             { status: 500 }
         );
     }
@@ -124,7 +133,10 @@ export default function ProfileEdit() {
             try {
                 const write = zero.mutate(
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    mutators.profiles.update({ id: profile.id, ...fields } as any)
+                    mutators.profiles.update({
+                        id: profile.id,
+                        ...fields
+                    } as any)
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ) as any;
 
@@ -133,7 +145,8 @@ export default function ProfileEdit() {
                 if (result.type === 'error') {
                     return {
                         success: false,
-                        error: result.error?.message || 'Failed to update profile',
+                        error:
+                            result.error?.message || 'Failed to update profile'
                     };
                 }
                 return { success: true };
@@ -143,7 +156,7 @@ export default function ProfileEdit() {
                     error:
                         err instanceof Error
                             ? err.message
-                            : 'Failed to update profile',
+                            : 'Failed to update profile'
                 };
             } finally {
                 setSaving(false);

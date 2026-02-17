@@ -67,7 +67,9 @@ export type DashboardLoaderContext = {
 export function createDashboardLoader<T = Record<string, never>>(
     extend?: (ctx: DashboardLoaderContext) => Promise<T>
 ) {
-    return async (args: LoaderFunctionArgs): Promise<DashboardLoaderData<T>> => {
+    return async (
+        args: LoaderFunctionArgs
+    ): Promise<DashboardLoaderData<T>> => {
         const auth = await getAuth(args);
 
         if (!auth.userId) {

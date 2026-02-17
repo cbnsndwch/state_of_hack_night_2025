@@ -44,7 +44,7 @@ const SOCIAL_FIELDS: SocialFieldConfig[] = [
                 return null;
             return 'Invalid GitHub username format';
         },
-        buildUrl: (v: string) => `https://github.com/${v}`,
+        buildUrl: (v: string) => `https://github.com/${v}`
     },
     {
         key: 'twitterHandle',
@@ -57,7 +57,7 @@ const SOCIAL_FIELDS: SocialFieldConfig[] = [
             if (/^[a-zA-Z0-9_]{1,15}$/.test(cleaned)) return null;
             return 'Invalid Twitter handle format';
         },
-        buildUrl: (v: string) => `https://x.com/${v.replace(/^@/, '')}`,
+        buildUrl: (v: string) => `https://x.com/${v.replace(/^@/, '')}`
     },
     {
         key: 'linkedinUrl',
@@ -82,7 +82,7 @@ const SOCIAL_FIELDS: SocialFieldConfig[] = [
         buildUrl: (v: string) => {
             if (v.startsWith('http')) return v;
             return `https://linkedin.com/in/${v}`;
-        },
+        }
     },
     {
         key: 'websiteUrl',
@@ -98,9 +98,8 @@ const SOCIAL_FIELDS: SocialFieldConfig[] = [
                 return 'Enter a valid URL';
             }
         },
-        buildUrl: (v: string) =>
-            v.startsWith('http') ? v : `https://${v}`,
-    },
+        buildUrl: (v: string) => (v.startsWith('http') ? v : `https://${v}`)
+    }
 ];
 
 type VerifyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
@@ -108,13 +107,13 @@ type VerifyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
 export function ProfileSocialsCard({
     profile,
     onSave,
-    saving,
+    saving
 }: ProfileSectionProps) {
     const [fields, setFields] = useState<Record<string, string>>({
         githubUsername: profile.githubUsername || '',
         twitterHandle: (profile.twitterHandle || '').replace(/^@/, ''),
         linkedinUrl: profile.linkedinUrl || '',
-        websiteUrl: profile.websiteUrl || '',
+        websiteUrl: profile.websiteUrl || ''
     });
     const [validationErrors, setValidationErrors] = useState<
         Record<string, string | null>
@@ -168,7 +167,7 @@ export function ProfileSocialsCard({
             const data = await resp.json();
             setVerifyStatus(prev => ({
                 ...prev,
-                [key]: data.exists ? 'valid' : 'invalid',
+                [key]: data.exists ? 'valid' : 'invalid'
             }));
         } catch {
             // Network error — don't block the user, just mark as idle
@@ -198,7 +197,7 @@ export function ProfileSocialsCard({
             githubUsername: fields.githubUsername.trim() || undefined,
             twitterHandle: fields.twitterHandle.trim() || undefined,
             linkedinUrl: fields.linkedinUrl.trim() || undefined,
-            websiteUrl: fields.websiteUrl.trim() || undefined,
+            websiteUrl: fields.websiteUrl.trim() || undefined
         });
 
         if (result.success) {

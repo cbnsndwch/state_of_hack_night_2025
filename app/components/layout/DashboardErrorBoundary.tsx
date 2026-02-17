@@ -29,16 +29,14 @@ function getErrorInfo(error: unknown) {
         if (error.status === 401 || error.status === 302) {
             return {
                 title: 'session_expired',
-                message:
-                    'Your session may have expired. Try logging in again.',
+                message: 'Your session may have expired. Try logging in again.',
                 status: error.status
             };
         }
         return {
             title: `error_${error.status}`,
             message:
-                error.statusText ||
-                'Something went wrong loading this page.',
+                error.statusText || 'Something went wrong loading this page.',
             status: error.status
         };
     }

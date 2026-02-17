@@ -65,9 +65,7 @@ export default function DashboardDemoSlots() {
                 {/* Book a demo slot */}
                 <div className="mb-8">
                     <NeoCard variant="cyan">
-                        <h3 className="text-lg font-sans mb-4">
-                            book_a_slot
-                        </h3>
+                        <h3 className="text-lg font-sans mb-4">book_a_slot</h3>
                         <p className="text-sm text-zinc-400 mb-4">
                             reserve a time slot to present your project at an
                             upcoming hack night.

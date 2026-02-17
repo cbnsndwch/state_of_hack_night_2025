@@ -456,11 +456,11 @@ export function SidebarNav({
                     <div className="py-4">
                         {renderSectionTitle(
                             discoverSection,
-                            (discoverExpanded || collapsed)
+                            discoverExpanded || collapsed
                         )}
                         {renderSectionItems(
                             discoverSection,
-                            (discoverExpanded || collapsed)
+                            discoverExpanded || collapsed
                         )}
                     </div>
 
@@ -535,7 +535,10 @@ export function SidebarNav({
                                         </div>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator className="bg-zinc-800" />
-                                    <DropdownMenuItem asChild className="text-zinc-300 focus:bg-zinc-800 focus:text-primary cursor-pointer">
+                                    <DropdownMenuItem
+                                        asChild
+                                        className="text-zinc-300 focus:bg-zinc-800 focus:text-primary cursor-pointer"
+                                    >
                                         <Link to="/dashboard/profile">
                                             <User className="mr-2 h-4 w-4" />
                                             <span>My Profile</span>

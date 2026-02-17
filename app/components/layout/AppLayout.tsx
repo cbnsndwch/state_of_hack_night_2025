@@ -79,9 +79,7 @@ export function AppLayout({ children, isAdmin = false }: AppLayoutProps) {
                         <SidebarNav
                             isAdmin={isAdmin}
                             className="border-r-0"
-                            onNavigate={() =>
-                                setIsMobileMenuOpen(false)
-                            }
+                            onNavigate={() => setIsMobileMenuOpen(false)}
                             onNavItemClick={handleNavClick}
                         />
                     </div>

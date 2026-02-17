@@ -64,7 +64,7 @@ const SUGGESTED_SKILLS = [
     'unreal engine',
     'lovable',
     'v0',
-    'cursor',
+    'cursor'
 ];
 
 const TAG_COLOR = 'bg-primary/20 text-primary border-primary/40';
@@ -80,7 +80,7 @@ export function SkillTagInput({
     value,
     onChange,
     placeholder = 'Type a skill and press Enter...',
-    className,
+    className
 }: SkillTagInputProps) {
     const [input, setInput] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -96,8 +96,7 @@ export function SkillTagInput({
                   !value.some(v => v.toLowerCase() === skill.toLowerCase())
           )
         : SUGGESTED_SKILLS.filter(
-              skill =>
-                  !value.some(v => v.toLowerCase() === skill.toLowerCase())
+              skill => !value.some(v => v.toLowerCase() === skill.toLowerCase())
           );
 
     const addSkill = useCallback(
@@ -126,7 +125,10 @@ export function SkillTagInput({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
-            if (highlightIndex >= 0 && highlightIndex < filteredSuggestions.length) {
+            if (
+                highlightIndex >= 0 &&
+                highlightIndex < filteredSuggestions.length
+            ) {
                 addSkill(filteredSuggestions[highlightIndex]);
             } else if (input.trim()) {
                 addSkill(input);
@@ -206,7 +208,9 @@ export function SkillTagInput({
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={handleKeyDown}
-                    placeholder={value.length === 0 ? placeholder : 'Add more...'}
+                    placeholder={
+                        value.length === 0 ? placeholder : 'Add more...'
+                    }
                     className="flex-1 min-w-30 bg-transparent text-white font-sans text-sm outline-none placeholder:text-zinc-500"
                 />
             </div>
@@ -235,7 +239,8 @@ export function SkillTagInput({
                     ))}
                     {filteredSuggestions.length > 12 && (
                         <div className="px-3 py-1.5 text-xs text-zinc-500 font-sans">
-                            +{filteredSuggestions.length - 12} more — keep typing to narrow down
+                            +{filteredSuggestions.length - 12} more — keep
+                            typing to narrow down
                         </div>
                     )}
                 </div>

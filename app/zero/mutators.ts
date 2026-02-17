@@ -399,8 +399,7 @@ export const mutators = defineMutators({
                     );
                     if (
                         !profile ||
-                        (profile.clerkUserId !== userId &&
-                            role !== 'admin')
+                        (profile.clerkUserId !== userId && role !== 'admin')
                     ) {
                         throw new Error('Unauthorized');
                     }

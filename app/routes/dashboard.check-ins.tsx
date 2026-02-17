@@ -72,9 +72,7 @@ export default function DashboardCheckIns() {
                         </div>
                     </NeoCard>
 
-                    <ImHereButton
-                        lumaAttendeeId={profile?.lumaAttendeeId}
-                    />
+                    <ImHereButton lumaAttendeeId={profile?.lumaAttendeeId} />
                 </div>
 
                 {/* Check-in history */}
