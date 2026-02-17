@@ -7,6 +7,7 @@ export default [
     route('events', 'routes/events.tsx'),
     route('showcase', 'routes/showcase.tsx'),
     route('showcase/:projectId', 'routes/showcase.$projectId.tsx'),
+    route('showcase/:projectId/edit', 'routes/showcase.$projectId.edit.tsx'),
     route('reports/2025', 'routes/reports/state-of-hack-night-2025/route.tsx'),
 
     // auth routes

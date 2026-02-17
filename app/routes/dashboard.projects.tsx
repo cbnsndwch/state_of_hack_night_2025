@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLoaderData } from 'react-router';
+import { useNavigate, useLoaderData, Link } from 'react-router';
+import { EditIcon, TrashIcon, ExternalLinkIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useSafeQuery } from '@/hooks/use-safe-query';
+import { useDeleteProject } from '@/hooks/use-zero-mutate';
 import { profileQueries, projectQueries } from '@/zero/queries';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { NeoCard } from '@/components/ui/NeoCard';
 import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
+import { EditProjectDialog } from '@/components/projects/EditProjectDialog';
 import {
     createDashboardLoader,
     type DashboardLoaderData
@@ -31,6 +34,17 @@ export default function DashboardProjects() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
+    const [editingProject, setEditingProject] = useState<{
+        id: string;
+        title: string;
+        description: string | null;
+        tags: readonly string[] | string[];
+        imageUrls: readonly string[] | string[];
+        githubUrl: string | null;
+        publicUrl: string | null;
+    } | null>(null);
+
+    const { deleteProject, isLoading: isDeleting } = useDeleteProject();
 
     // Server-side loader data
     const loaderData = useLoaderData<LoaderData>();
@@ -39,13 +53,21 @@ export default function DashboardProjects() {
     const [zeroProfile] = useSafeQuery(
         user?.id ? profileQueries.byClerkUserId(user.id) : null
     );
-    const [zeroProjects] = useSafeQuery(
-        zeroProfile?.id ? projectQueries.byMemberId(zeroProfile.id) : null
+
+    // Resolve profile early so downstream Zero queries activate with loader ID
+    const profile = zeroProfile ?? loaderData?.profile ?? null;
+
+    const [zeroProjects, zeroProjectsStatus] = useSafeQuery(
+        profile?.id ? projectQueries.byMemberId(profile.id) : null
     );
 
-    // Prefer Zero's reactive data, fall back to server-loaded data
-    const profile = zeroProfile ?? loaderData?.profile ?? null;
-    const projects = zeroProjects ?? loaderData?.projects ?? null;
+    // Prefer Zero's reactive data once the query has fully synced
+    // ('complete'). Before that, Zero returns [] for collection queries
+    // — which the ?? operator treats as truthy, silently hiding loader data.
+    const projects =
+        (zeroProjectsStatus?.type === 'complete' ? zeroProjects : null) ??
+        loaderData?.projects ??
+        null;
 
     useEffect(() => {
         if (!loading && !user) {
@@ -97,6 +119,7 @@ export default function DashboardProjects() {
                             community.
                         </p>
                         <AddProjectDialog
+                            memberId={profile?.id ?? ''}
                             open={addProjectDialogOpen}
                             onOpenChange={setAddProjectDialogOpen}
                             onProjectAdded={() => {
@@ -146,9 +169,14 @@ export default function DashboardProjects() {
                                         </div>
                                     )}
 
-                                    <h3 className="text-xl font-bold font-sans text-primary mb-2 truncate">
-                                        {project.title}
-                                    </h3>
+                                    <Link
+                                        to={`/showcase/${project.id}`}
+                                        className="hover:underline"
+                                    >
+                                        <h3 className="text-xl font-bold font-sans text-primary mb-2 truncate">
+                                            {project.title}
+                                        </h3>
+                                    </Link>
 
                                     <p className="text-zinc-400 font-sans text-sm leading-relaxed mb-6 line-clamp-3">
                                         {project.description ||
@@ -171,31 +199,99 @@ export default function DashboardProjects() {
                                             </div>
                                         )}
 
-                                        {project.githubUrl && (
-                                            <a
-                                                href={project.githubUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="block text-right text-xs font-sans text-zinc-500 hover:text-primary hover:underline"
+                                        {/* Action buttons */}
+                                        <div className="flex items-center gap-2 pt-2 border-t border-zinc-800">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                    setEditingProject({
+                                                        id: project.id,
+                                                        title: project.title,
+                                                        description:
+                                                            project.description ??
+                                                            null,
+                                                        tags,
+                                                        imageUrls,
+                                                        githubUrl:
+                                                            project.githubUrl ??
+                                                            null,
+                                                        publicUrl:
+                                                            project.publicUrl ??
+                                                            null
+                                                    })
+                                                }
+                                                className="text-zinc-400 hover:text-primary text-xs gap-1"
                                             >
-                                                view_source -&gt;
-                                            </a>
-                                        )}
-                                        {project.publicUrl && (
-                                            <a
-                                                href={project.publicUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="block text-right text-xs font-sans text-zinc-500 hover:text-primary hover:underline"
+                                                <EditIcon className="w-3 h-3" />
+                                                edit
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled={isDeleting}
+                                                onClick={async () => {
+                                                    if (
+                                                        !confirm(
+                                                            `Delete "${project.title}"? This cannot be undone.`
+                                                        )
+                                                    )
+                                                        return;
+                                                    const result =
+                                                        await deleteProject(
+                                                            project.id
+                                                        );
+                                                    if (!result.success) {
+                                                        alert(
+                                                            `Failed to delete: ${result.error}`
+                                                        );
+                                                    }
+                                                }}
+                                                className="text-zinc-400 hover:text-red-400 text-xs gap-1"
                                             >
-                                                visit_build -&gt;
-                                            </a>
-                                        )}
+                                                <TrashIcon className="w-3 h-3" />
+                                                delete
+                                            </Button>
+                                            <div className="ml-auto flex gap-2">
+                                                {project.githubUrl && (
+                                                    <a
+                                                        href={project.githubUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs font-sans text-zinc-500 hover:text-primary hover:underline"
+                                                    >
+                                                        source
+                                                    </a>
+                                                )}
+                                                {project.publicUrl && (
+                                                    <a
+                                                        href={project.publicUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs font-sans text-zinc-500 hover:text-primary hover:underline flex items-center gap-1"
+                                                    >
+                                                        <ExternalLinkIcon className="w-3 h-3" />
+                                                        visit
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </NeoCard>
                             );
                         })}
                     </div>
+                )}
+
+                {/* Edit Project Dialog */}
+                {editingProject && (
+                    <EditProjectDialog
+                        project={editingProject}
+                        open={!!editingProject}
+                        onOpenChange={open => {
+                            if (!open) setEditingProject(null);
+                        }}
+                    />
                 )}
             </main>
         </AppLayout>
