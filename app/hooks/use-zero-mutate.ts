@@ -32,10 +32,23 @@ type MutateWrite = {
 
 async function settleWrite(write: MutateWrite): Promise<MutateResult> {
     try {
-        const result = await write.client;
-        if (result.type === 'error') {
-            return { success: false, error: result.error.message };
+        // Wait for the optimistic (client-side) write first
+        const clientResult = await write.client;
+        if (clientResult.type === 'error') {
+            return { success: false, error: clientResult.error.message };
         }
+
+        // Then wait for the server to confirm persistence.
+        // If the server rejects, Zero rolls back the optimistic update.
+        const serverResult = await write.server;
+        if (serverResult.type === 'error') {
+            console.error(
+                'Zero mutation server error:',
+                serverResult.error.message
+            );
+            return { success: false, error: serverResult.error.message };
+        }
+
         return { success: true };
     } catch (err) {
         return {

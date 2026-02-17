@@ -28,12 +28,13 @@
  * automatically and provide live/reactive updates.
  */
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Zero } from '@rocicorp/zero';
 import {
     ZeroProvider as ZeroReactProvider,
     ZeroContext as OriginalZeroContext
 } from '@rocicorp/zero/react';
+import { useAuth as useClerkAuth } from '@clerk/react-router';
 import { useAuth } from '@/hooks/use-auth';
 import { schema } from '@/zero/schema';
 import type { Schema } from '@/zero/schema';
@@ -78,44 +79,91 @@ export function useZeroConnection() {
 
 export function ZeroProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
+    const { getToken } = useClerkAuth();
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
     const cacheUrl = import.meta.env.VITE_ZERO_CACHE_URL as string | undefined;
     const [zero, setZero] = useState<Zero<Schema> | null>(null);
 
+    // Keep a stable ref to getToken so the needs-auth handler never goes stale.
+    const getTokenRef = useRef(getToken);
+    getTokenRef.current = getToken;
+
     useEffect(() => {
-        // Wait for strict-mode double-invoke to settle or hydration to complete
-        // This effect will run on mount and when dependencies change.
-        if (!cacheUrl) {
-            return;
-        }
+        if (!cacheUrl) return;
 
         let z: Zero<Schema> | null = null;
-        try {
-            z = new Zero<Schema>({
-                userID: user?.id || 'anonymous',
-                schema,
-                server: cacheUrl,
-                mutators,
-                context: { userId: user?.id || 'anonymous' },
-                // loglevel info in dev, error in prod
-                logLevel: import.meta.env.DEV ? 'info' : 'error'
-            });
+        let unsubscribe: (() => void) | undefined;
+        let cancelled = false;
 
-            setTimeout(() => {
-                setZero(z);
-                setIsConnected(true);
-            }, 0);
-        } catch (e) {
-            setTimeout(() => {
-                setError(e as Error);
-            }, 0);
-            return;
-        }
+        const init = async () => {
+            // For authenticated users, fetch the initial Clerk session token
+            // before opening the Zero connection so zero-cache can forward it
+            // as an Authorization header to the mutate endpoint.
+            let initialAuth: string | undefined;
+            if (user?.id) {
+                try {
+                    const token = await getTokenRef.current();
+                    if (cancelled) return;
+                    initialAuth = token ?? undefined;
+                } catch {
+                    // Proceed without auth — the needs-auth handler below will
+                    // recover when zero-cache reports a 401.
+                    if (cancelled) return;
+                }
+            }
+
+            try {
+                z = new Zero<Schema>({
+                    userID: user?.id || 'anonymous',
+                    auth: initialAuth,
+                    schema,
+                    server: cacheUrl,
+                    mutators,
+                    context: { userId: user?.id || 'anonymous' },
+                    logLevel: import.meta.env.DEV ? 'info' : 'error'
+                });
+
+                // When zero-cache returns a 401 from the mutate endpoint (e.g.
+                // because the Clerk token expired), the client transitions to
+                // "needs-auth". We fetch a fresh token and reconnect.
+                unsubscribe = z.connection.state.subscribe(async (state) => {
+                    if (state.name === 'needs-auth' && user?.id) {
+                        console.log(
+                            '[Zero] needs-auth — refreshing Clerk token…'
+                        );
+                        try {
+                            const freshToken =
+                                await getTokenRef.current();
+                            await z!.connection.connect({
+                                auth: freshToken ?? undefined
+                            });
+                        } catch (err) {
+                            console.error(
+                                '[Zero] Auth refresh failed:',
+                                err
+                            );
+                        }
+                    }
+                });
+
+                if (!cancelled) {
+                    setZero(z);
+                    setIsConnected(true);
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    setError(e as Error);
+                }
+            }
+        };
+
+        init();
 
         return () => {
-            // Cleanup function
+            cancelled = true;
+            unsubscribe?.();
             void (async () => {
                 try {
                     await z?.close();
