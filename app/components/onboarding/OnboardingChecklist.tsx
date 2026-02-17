@@ -1,7 +1,6 @@
 import { Check, X, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router';
 import { NeoCard } from '@/components/ui/NeoCard';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/utils/cn';
 
 interface ChecklistItem {
@@ -102,18 +101,10 @@ export function OnboardingChecklist({
 
                             {/* Action */}
                             {item.action && !item.completed && (
-                                <div className="shrink-0 self-center">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="text-xs font-sans gap-1.5"
-                                        tabIndex={-1}
-                                        onClick={item.action.href ? undefined : item.action.onClick}
-                                    >
-                                        {item.action.label}
-                                        <ArrowRight className="w-3.5 h-3.5" />
-                                    </Button>
-                                </div>
+                                <span className="shrink-0 self-center inline-flex items-center gap-1.5 text-xs font-sans text-zinc-400 hover:text-white transition-colors px-3 py-1.5">
+                                    {item.action.label}
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                </span>
                             )}
                         </>
                     );
@@ -152,10 +143,7 @@ export function OnboardingChecklist({
                     }
 
                     return (
-                        <div
-                            key={item.id}
-                            className={cardClasses}
-                        >
+                        <div key={item.id} className={cardClasses}>
                             {cardContent}
                         </div>
                     );
